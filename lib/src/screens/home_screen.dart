@@ -1,223 +1,439 @@
 import 'package:flutter/material.dart';
 
+import '../core/calendar_service.dart';
+import '../core/event_catalog.dart';
+import '../core/responsive.dart';
+import '../widgets/brand_logo.dart';
+import '../widgets/meetup_media.dart';
+import '../widgets/motion.dart';
 import '../widgets/section_card.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key, required this.onOpenEvent});
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({
+    super.key,
+    required this.onOpenEvent,
+    this.userEmail,
+    this.firstName,
+    required this.selectedEvent,
+    required this.selectedEvents,
+    required this.availableEvents,
+  });
 
-  final VoidCallback onOpenEvent;
+  final ValueChanged<MeetupEvent?> onOpenEvent;
+  final String? userEmail;
+  final String? firstName;
+  final MeetupEvent? selectedEvent;
+  final List<MeetupEvent> selectedEvents;
+  final List<MeetupEvent> availableEvents;
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 140),
+    final greeting = _timeOfDayGreeting();
+    final greetingName =
+        (widget.firstName != null && widget.firstName!.trim().isNotEmpty)
+            ? widget.firstName!.trim()
+            : (widget.userEmail?.split('@').first ?? 'there');
+    final browseEvents = [...widget.availableEvents]
+      ..removeWhere(
+          (event) => widget.selectedEvents.any((saved) => saved.id == event.id))
+      ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFFFFCF7),
+            Color(0xFFEAF7F5),
+            Color(0xFFF7ECE4),
+          ],
+        ),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final horizontal = responsiveHorizontalPadding(width);
+          final maxWidth = responsiveContentMaxWidth(width);
+
+          return SingleChildScrollView(
+            controller: _scrollController,
+            padding: EdgeInsets.fromLTRB(horizontal, 18, horizontal, 140),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxWidth),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    MotionReveal(
+                      index: 0,
+                      child: BrandLockup(
+                        logoSize: 42,
+                        foregroundColor: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    MotionReveal(
+                      index: 1,
+                      child: Text(
+                        '$greeting, $greetingName',
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    MotionReveal(
+                      index: 2,
+                      child: Text(
+                        widget.selectedEvent == null
+                            ? 'Find a small meetup\nnear you.'
+                            : 'Your next meetup',
+                        style: responsiveDisplayStyle(context),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    if (widget.selectedEvent != null)
+                      _NextMeetupReminder(
+                        event: widget.selectedEvent!,
+                        onOpenEvent: () => widget.onOpenEvent(null),
+                        motionIndex: 3,
+                      )
+                    else
+                      _FindMeetupPrompt(
+                        onOpenEvent: () => widget.onOpenEvent(null),
+                        motionIndex: 3,
+                      ),
+                    if (browseEvents.isNotEmpty) ...[
+                      const SizedBox(height: 18),
+                      SectionCard(
+                        motionIndex: 4,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.selectedEvent == null
+                                  ? 'Coming up in Alkmaar'
+                                  : 'Also coming up',
+                              style: theme.textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 16),
+                            for (final event in browseEvents) ...[
+                              _SavedMeetupRow(
+                                event: event,
+                                onTap: () => widget.onOpenEvent(event),
+                              ),
+                              const SizedBox(height: 10),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  String _timeOfDayGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Good morning';
+    }
+    if (hour < 18) {
+      return 'Good afternoon';
+    }
+    return 'Good evening';
+  }
+}
+
+class _NextMeetupReminder extends StatelessWidget {
+  const _NextMeetupReminder({
+    required this.event,
+    required this.onOpenEvent,
+    required this.motionIndex,
+  });
+
+  final MeetupEvent event;
+  final VoidCallback onOpenEvent;
+  final int motionIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return MotionReveal(
+      index: motionIndex,
+      child: Container(
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF062B55),
+              Color(0xFF138B8A),
+              Color(0xFFFF7759),
+            ],
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x26150806),
+              blurRadius: 26,
+              offset: Offset(0, 16),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: _InsightChip(
+                label: 'Your spot is confirmed',
+                dark: true,
+                onGradient: true,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              event.title,
+              style: theme.textTheme.titleLarge?.copyWith(color: Colors.white),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              event.subtitle,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: const Color(0xFFEAF7F5),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _InsightChip(
+                  label: '${event.detailDateLabel} • ${event.detailTimeLabel}',
+                  onGradient: true,
+                ),
+                _InsightChip(
+                  label: '${event.areaLabel} • ${event.city}',
+                  onGradient: true,
+                ),
+                _InsightChip(label: event.groupSizeLabel, onGradient: true),
+              ],
+            ),
+            const SizedBox(height: 16),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final stacked = isCompactWidth(constraints.maxWidth);
+                final viewButton = ElevatedButton(
+                  onPressed: onOpenEvent,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF062B55),
+                  ),
+                  child: const Text('View meetup'),
+                );
+                final calendarButton = OutlinedButton.icon(
+                  onPressed: () async {
+                    final added = await addMeetupToCalendar(event);
+                    if (!context.mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          added
+                              ? 'Calendar opened for ${event.title}.'
+                              : 'We could not open your calendar.',
+                        ),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.72),
+                    ),
+                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                  ),
+                  icon: const Icon(Icons.calendar_month_outlined),
+                  label: const Text('Add to calendar'),
+                );
+
+                if (stacked) {
+                  return Column(
+                    children: [
+                      SizedBox(width: double.infinity, child: viewButton),
+                      const SizedBox(height: 10),
+                      SizedBox(width: double.infinity, child: calendarButton),
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: viewButton),
+                    const SizedBox(width: 12),
+                    Expanded(child: calendarButton),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FindMeetupPrompt extends StatelessWidget {
+  const _FindMeetupPrompt({
+    required this.onOpenEvent,
+    required this.motionIndex,
+  });
+
+  final VoidCallback onOpenEvent;
+  final int motionIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    return SectionCard(
+      motionIndex: motionIndex,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Good evening, Anya', style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 6),
-          Text('Your next meetup is taking shape.', style: theme.textTheme.headlineMedium),
-          const SizedBox(height: 18),
-          SectionCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(22),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF1F1A17),
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _statusPill('Assigned automatically • 6 seats currently filled'),
-                      const SizedBox(height: 16),
-                      const Text('Friday social dinner', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 8),
-                      const Text('Friday, 28 March • 19:00–21:00\nNear the old town, Alkmaar', style: TextStyle(color: Color(0xFFE5D9D0), height: 1.5)),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: const [
-                          _Metric(label: 'Age bracket', value: '25–35'),
-                          SizedBox(width: 12),
-                          _Metric(label: 'Vibe', value: 'Dinner'),
-                          SizedBox(width: 12),
-                          _Metric(label: 'Policy', value: '4+ to go'),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: onOpenEvent,
-                          child: const Text('View meetup'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {},
-                          child: const Text('Request cancel'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          Text(
+            'Choose a coffee, lunch, or dinner when you are ready.',
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
-          const SizedBox(height: 18),
-          SectionCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Your preferences', style: theme.textTheme.titleLarge),
-                const SizedBox(height: 14),
-                const Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    Chip(label: Text('Coffee')),
-                    Chip(label: Text('Dinner')),
-                    Chip(label: Text('Walks')),
-                    Chip(label: Text('Evening 17:00–21:00')),
-                    Chip(label: Text('Weekends')),
-                    Chip(label: Text('English + Dutch')),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'We use these preferences to place you in curated mixed groups, but matching still depends on enough people being available.',
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-          SectionCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('How BakkieBond works', style: theme.textTheme.titleLarge),
-                const SizedBox(height: 16),
-                const _TimelineTile(
-                  index: '01',
-                  title: 'Build your profile',
-                  subtitle: 'Photos, age, language preferences, interests, and the kinds of outings you enjoy.',
-                ),
-                const _TimelineTile(
-                  index: '02',
-                  title: 'Get assigned to a circle',
-                  subtitle: 'Our prototype groups people automatically using availability, activity preferences, and age brackets.',
-                ),
-                const _TimelineTile(
-                  index: '03',
-                  title: 'Meet first, then chat',
-                  subtitle: 'You only see the event type, time, and area ahead of time. Group chat unlocks after the meetup.',
-                  isLast: true,
-                ),
-              ],
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: onOpenEvent,
+              icon: const Icon(Icons.event_available_outlined),
+              label: const Text('Find a meetup'),
             ),
           ),
         ],
       ),
     );
   }
-
-  static Widget _statusPill(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(99),
-      ),
-      child: Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-    );
-  }
 }
 
-class _Metric extends StatelessWidget {
-  const _Metric({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(color: Color(0xFFD5C4B8), fontSize: 12)),
-            const SizedBox(height: 6),
-            Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TimelineTile extends StatelessWidget {
-  const _TimelineTile({
-    required this.index,
-    required this.title,
-    required this.subtitle,
-    this.isLast = false,
+class _SavedMeetupRow extends StatelessWidget {
+  const _SavedMeetupRow({
+    required this.event,
+    required this.onTap,
   });
 
-  final String index;
-  final String title;
-  final String subtitle;
-  final bool isLast;
+  final MeetupEvent event;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(22),
+      child: Ink(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFCF7),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFFDDE7E3)),
+        ),
+        child: Row(
           children: [
-            Container(
-              height: 42,
-              width: 42,
-              decoration: const BoxDecoration(color: Color(0xFF1F1A17), shape: BoxShape.circle),
-              alignment: Alignment.center,
-              child: Text(index, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: SizedBox(
+                width: 54,
+                height: 54,
+                child: MeetupArtwork(
+                  event: event,
+                  height: 54,
+                  radius: 16,
+                ),
+              ),
             ),
-            if (!isLast)
-              Container(width: 2, height: 50, color: const Color(0xFFE7D9CC)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(event.title,
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Text(event.dateLabel,
+                      style: Theme.of(context).textTheme.bodyMedium),
+                ],
+              ),
+            ),
           ],
         ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 6, bottom: 18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 6),
-                Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
-              ],
+      ),
+    );
+  }
+}
+
+class _InsightChip extends StatelessWidget {
+  const _InsightChip({
+    required this.label,
+    this.dark = false,
+    this.onGradient = false,
+  });
+
+  final String label;
+  final bool dark;
+  final bool onGradient;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: dark
+            ? (onGradient
+                ? Colors.white.withValues(alpha: 0.18)
+                : const Color(0xFF062B55))
+            : (onGradient
+                ? Colors.white.withValues(alpha: 0.12)
+                : const Color(0xFFEAF7F5)),
+        borderRadius: BorderRadius.circular(999),
+        border: onGradient
+            ? Border.all(color: Colors.white.withValues(alpha: 0.16))
+            : dark
+                ? null
+                : Border.all(color: const Color(0xFFDDE7E3)),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: onGradient
+                  ? Colors.white
+                  : dark
+                      ? Colors.white
+                      : const Color(0xFF4F6671),
             ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
