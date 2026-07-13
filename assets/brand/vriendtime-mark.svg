@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">VriendTime mark</title>
+  <description id="description">Two people facing each other across a small table.</description>
+  <circle cx="154" cy="116" r="39" fill="#062B55"/>
+  <circle cx="358" cy="116" r="39" fill="#29B8AA"/>
+  <path d="M88 410 C86 330 96 250 164 211 C188 197 218 199 233 220 C248 242 239 268 216 279 C180 296 164 335 170 410 Z" fill="#062B55"/>
+  <path d="M424 410 C426 330 416 250 348 211 C324 197 294 199 279 220 C264 242 273 268 296 279 C332 296 348 335 342 410 Z" fill="#29B8AA"/>
+  <path d="M184 260 L225 300" fill="none" stroke="#062B55" stroke-width="24" stroke-linecap="round"/>
+  <path d="M328 260 L287 300" fill="none" stroke="#29B8AA" stroke-width="24" stroke-linecap="round"/>
+  <rect x="194" y="292" width="124" height="38" rx="19" fill="#FF7759"/>
+  <rect x="246" y="322" width="20" height="84" rx="10" fill="#FF7759"/>
+  <rect x="216" y="396" width="80" height="22" rx="11" fill="#FF7759"/>
+</svg>

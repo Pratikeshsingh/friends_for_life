@@ -8,42 +8,73 @@ class GeneratedImageAssets {
 
   static const _base = 'assets/generated';
 
-  static const onboardingHero = '$_base/onboarding-hero.png';
-  static const brunch = '$_base/meetup-brunch.png';
-  static const dinner = '$_base/meetup-dinner.png';
-  static const coffee = '$_base/meetup-coffee.png';
-  static const games = '$_base/meetup-games.png';
-  static const drinks = '$_base/meetup-drinks.png';
-  static const museum = '$_base/meetup-museum.png';
+  static const onboardingHero = '$_base/onboarding-hero.webp';
+  static const launchTableMeetup = '$_base/launch-table-meetup.webp';
+  static const landingImmersiveMobile =
+      '$_base/landing-immersive-mobile-v2.webp';
+  static const landingImmersiveDesktop =
+      '$_base/landing-immersive-desktop-v2.webp';
+  static const onboardingAccountImmersive =
+      '$_base/onboarding-account-immersive-v2.webp';
+  static const onboardingDetailsImmersive =
+      '$_base/onboarding-details-immersive-v2.webp';
+  static const onboardingCompleteBanner =
+      '$_base/onboarding-complete-banner.webp';
+  static const homeHeroCoffee = '$_base/home-hero-coffee.webp';
+  static const homeHeroLunch = '$_base/home-hero-lunch.webp';
+  static const homeHeroDinner = '$_base/home-hero-dinner.webp';
+  static const profileHeaderIllustration =
+      '$_base/profile-header-illustration.webp';
+  static const homeContinuousScene = '$_base/home-continuous-scene-v3.webp';
+  static const meetupsContinuousScene =
+      '$_base/meetups-continuous-scene-v3.webp';
+  static const profileContinuousScene =
+      '$_base/profile-continuous-scene-v3.webp';
+  static const reservedCoffee = '$_base/meetup-coffee-reserved.webp';
+  static const reservedLunch = '$_base/meetup-lunch-reserved.webp';
+  static const reservedDinner = '$_base/meetup-dinner-reserved.webp';
+  static const profileDefaultAvatar = '$_base/profile-default-avatar.webp';
 
   static String? forEvent(MeetupEvent? event) {
-    switch (event?.id) {
-      case 'day-brunch':
-        return brunch;
-      case 'eve-social':
-        return dinner;
-      case 'day-coffee':
-        return coffee;
-      default:
-        return forActivity(event?.activityLabel);
-    }
+    return homeHeroForEvent(event);
   }
 
   static String? forActivity(String? activityLabel) {
     final activity = activityLabel?.toLowerCase() ?? '';
     if (activity.contains('brunch') || activity.contains('lunch')) {
-      return brunch;
+      return homeHeroLunch;
     }
-    if (activity.contains('dinner')) return dinner;
+    if (activity.contains('dinner') || activity.contains('drink')) {
+      return homeHeroDinner;
+    }
+    return homeHeroCoffee;
+  }
+
+  static String homeHeroForEvent(MeetupEvent? event) {
+    final activity = event?.activityLabel.toLowerCase() ?? '';
+    if (activity.contains('brunch') || activity.contains('lunch')) {
+      return homeHeroLunch;
+    }
+    if (activity.contains('dinner')) return homeHeroDinner;
     if (activity.contains('coffee') || activity.contains('walk')) {
-      return coffee;
+      return homeHeroCoffee;
     }
-    if (activity.contains('game')) return games;
-    if (activity.contains('drink')) return drinks;
-    if (activity.contains('museum') || activity.contains('culture')) {
-      return museum;
+    return homeHeroCoffee;
+  }
+
+  static String compactCardForEvent(MeetupEvent? event) {
+    return homeHeroForEvent(event);
+  }
+
+  static String reservedCardForEvent(MeetupEvent? event) {
+    final activity = event?.activityLabel.toLowerCase() ?? '';
+    if (activity.contains('brunch') || activity.contains('lunch')) {
+      return reservedLunch;
     }
-    return onboardingHero;
+    if (activity.contains('dinner')) return reservedDinner;
+    if (activity.contains('coffee')) return reservedCoffee;
+    if (activity.contains('walk')) return reservedCoffee;
+    return reservedCoffee;
   }
 }
 
@@ -56,6 +87,7 @@ class MeetupArtwork extends StatelessWidget {
     this.caption,
     this.secondaryCaption,
     this.assetName,
+    this.preferFullBleed = false,
   });
 
   final MeetupEvent? event;
@@ -64,6 +96,7 @@ class MeetupArtwork extends StatelessWidget {
   final String? caption;
   final String? secondaryCaption;
   final String? assetName;
+  final bool preferFullBleed;
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +124,8 @@ class MeetupArtwork extends StatelessWidget {
                         imageUrl: resolvedImageUrl,
                         fallback: _GeneratedArtworkBase(
                           assetName: resolvedAsset,
+                          height: height,
+                          preferFullBleed: preferFullBleed,
                           fallback: _AbstractArtworkBase(
                             palette: palette,
                             height: height,
@@ -99,6 +134,8 @@ class MeetupArtwork extends StatelessWidget {
                       )
                     : _GeneratedArtworkBase(
                         assetName: resolvedAsset,
+                        height: height,
+                        preferFullBleed: preferFullBleed,
                         fallback: _AbstractArtworkBase(
                           palette: palette,
                           height: height,
@@ -242,7 +279,11 @@ class SeatMeter extends StatelessWidget {
       children: [
         if (showLabel) ...[
           Text(
-            total - filled <= 0 ? 'Full' : '${total - filled} spots left',
+            total - filled <= 0
+                ? 'Full'
+                : total - filled <= 2
+                    ? 'Nearly full'
+                    : 'Available',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 8),
@@ -295,18 +336,71 @@ class _GlowOrb extends StatelessWidget {
 class _GeneratedArtworkBase extends StatelessWidget {
   const _GeneratedArtworkBase({
     required this.assetName,
+    required this.height,
+    required this.preferFullBleed,
     required this.fallback,
   });
 
   final String assetName;
+  final double height;
+  final bool preferFullBleed;
   final Widget fallback;
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      assetName,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) => fallback,
+    final illustratedAsset = assetName.contains('-illustrated');
+    final useFullBleed = preferFullBleed || height <= 100;
+    final compactCardAsset =
+        assetName.contains('-compact') || assetName.contains('-reserved');
+    final imageAlignment = assetName.contains('home-hero')
+        ? Alignment.centerRight
+        : compactCardAsset
+            ? const Alignment(0, 0.18)
+            : Alignment.center;
+    final cacheWidth = _artworkCacheWidth(context);
+
+    if (!illustratedAsset) {
+      return Image.asset(
+        assetName,
+        fit: BoxFit.cover,
+        alignment: imageAlignment,
+        cacheWidth: cacheWidth,
+        errorBuilder: (context, error, stackTrace) => fallback,
+      );
+    }
+
+    if (useFullBleed) {
+      return Image.asset(
+        assetName,
+        fit: BoxFit.cover,
+        alignment: imageAlignment,
+        cacheWidth: cacheWidth,
+        errorBuilder: (context, error, stackTrace) => fallback,
+      );
+    }
+
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFFFFCF7),
+            Color(0xFFEFF7F3),
+            Color(0xFFF8EEE7),
+          ],
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+        child: Image.asset(
+          assetName,
+          fit: BoxFit.contain,
+          alignment: Alignment.topCenter,
+          cacheWidth: cacheWidth,
+          errorBuilder: (context, error, stackTrace) => fallback,
+        ),
+      ),
     );
   }
 }
@@ -325,10 +419,20 @@ class _RemoteArtworkBase extends StatelessWidget {
     return Image.network(
       imageUrl,
       fit: BoxFit.cover,
+      cacheWidth: _artworkCacheWidth(context),
       filterQuality: FilterQuality.medium,
       errorBuilder: (context, error, stackTrace) => fallback,
     );
   }
+}
+
+int _artworkCacheWidth(BuildContext context) {
+  final mediaQuery = MediaQuery.of(context);
+  final logicalWidth = mediaQuery.size.width.clamp(320.0, 900.0);
+  return (logicalWidth * mediaQuery.devicePixelRatio)
+      .round()
+      .clamp(420, 1600)
+      .toInt();
 }
 
 class _AbstractArtworkBase extends StatelessWidget {

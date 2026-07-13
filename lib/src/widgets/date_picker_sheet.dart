@@ -28,52 +28,73 @@ class _DatePickerSheetState extends State<DatePickerSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final size = MediaQuery.sizeOf(context);
+    final horizontalPadding = size.width < 380 ? 16.0 : 20.0;
 
-    return SafeArea(
-      top: false,
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFFFFFCF7),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 640,
+          maxHeight: size.height * 0.82,
         ),
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(widget.title, style: theme.textTheme.headlineSmall),
-            if (widget.description != null) ...[
-              const SizedBox(height: 12),
-              Text(widget.description!, style: theme.textTheme.bodyMedium),
-            ],
-            const SizedBox(height: 16),
-            Center(
-              child: CalendarDatePicker(
-                initialDate: _selectedDate,
-                firstDate: widget.firstDate,
-                lastDate: widget.lastDate,
-                onDateChanged: (value) => setState(() => _selectedDate = value),
+        child: SafeArea(
+          top: false,
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFFCF7),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+            ),
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              18,
+              horizontalPadding,
+              28,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.title, style: theme.textTheme.headlineSmall),
+                  if (widget.description != null) ...[
+                    const SizedBox(height: 12),
+                    Text(widget.description!,
+                        style: theme.textTheme.bodyMedium),
+                  ],
+                  const SizedBox(height: 16),
+                  Center(
+                    child: CalendarDatePicker(
+                      initialDate: _selectedDate,
+                      firstDate: widget.firstDate,
+                      lastDate: widget.lastDate,
+                      onDateChanged: (value) =>
+                          setState(() => _selectedDate = value),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () =>
+                              Navigator.of(context).pop(_selectedDate),
+                          child: Text(widget.confirmLabel),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(_selectedDate),
-                    child: Text(widget.confirmLabel),
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -1,5 +1,7 @@
 enum EventSlot { daytime, evening }
 
+const Duration meetupCancellationCutoff = Duration(hours: 12);
+
 class MeetupEvent {
   const MeetupEvent({
     required this.id,
@@ -18,6 +20,9 @@ class MeetupEvent {
     required this.seatsTotal,
     required this.tags,
     required this.languages,
+    this.status = 'open',
+    this.venueName,
+    this.venueAddress,
     this.imageUrl,
   });
 
@@ -37,11 +42,18 @@ class MeetupEvent {
   final int seatsTotal;
   final List<String> tags;
   final List<String> languages;
+  final String status;
+  final String? venueName;
+  final String? venueAddress;
   final String? imageUrl;
 
   MeetupEvent copyWith({
     int? seatsFilled,
     int? seatsTotal,
+    String? status,
+    String? venueName,
+    String? venueAddress,
+    String? imageUrl,
   }) {
     return MeetupEvent(
       id: id,
@@ -60,7 +72,10 @@ class MeetupEvent {
       seatsTotal: seatsTotal ?? this.seatsTotal,
       tags: tags,
       languages: languages,
-      imageUrl: imageUrl,
+      status: status ?? this.status,
+      venueName: venueName ?? this.venueName,
+      venueAddress: venueAddress ?? this.venueAddress,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 
@@ -79,7 +94,6 @@ class MeetupEvent {
     final languages = (row['languages'] as List<dynamic>? ?? const [])
         .whereType<String>()
         .toList();
-
     return MeetupEvent(
       id: row['id'].toString(),
       title: (row['title'] as String?) ?? 'Untitled meetup',
@@ -100,6 +114,9 @@ class MeetupEvent {
       seatsTotal: (row['capacity'] as num?)?.toInt() ?? 6,
       tags: tags,
       languages: languages,
+      status: ((row['status'] as String?) ?? 'open').toLowerCase(),
+      venueName: (row['venue_name'] as String?)?.trim(),
+      venueAddress: (row['venue_address'] as String?)?.trim(),
       imageUrl: (row['image_url'] as String?)?.trim(),
     );
   }
@@ -116,9 +133,42 @@ class MeetupEvent {
     return '${_formatTime(startsAt)}–${_formatTime(endsAt)}';
   }
 
-  String get statusLabel => isFull ? 'Full' : '$spotsLeft spots left';
+  String get statusLabel {
+    if (status == 'closed') return 'Reservations closed';
+    if (status == 'cancelled') return 'Cancelled';
+    if (isFull) return 'Full';
+    return isAlmostFull ? 'Nearly full' : 'Available';
+  }
 
   String get locationSummary => 'Near $areaLabel, $city';
+
+  bool get hasExactAddress => (venueAddress ?? '').isNotEmpty;
+
+  // Exact venue fields only come from the authenticated attendee RPC after the
+  // server-calculated Amsterdam release time. Their presence is therefore the
+  // source of truth; client clock and device timezone are not used as a gate.
+  bool get shouldRevealExactAddress => hasExactAddress;
+
+  MeetupEvent withRevealedVenue(RevealedMeetupVenue venue) {
+    if (venue.eventId != id) return this;
+    return copyWith(
+      venueName: venue.venueName,
+      venueAddress: venue.venueAddress,
+    );
+  }
+
+  String get locationDetailLabel {
+    if (!shouldRevealExactAddress) {
+      return '$areaLabel, $city';
+    }
+
+    final trimmedVenueName = venueName?.trim();
+    if (trimmedVenueName != null && trimmedVenueName.isNotEmpty) {
+      return '$trimmedVenueName, ${venueAddress!.trim()}';
+    }
+
+    return venueAddress!.trim();
+  }
 
   String get groupSizeLabel {
     if (seatsTotal <= 6) return '4 to 6 people';
@@ -132,11 +182,31 @@ class MeetupEvent {
     return 'Evening';
   }
 
+  String get languageLabel {
+    if (languages.isEmpty) return 'English';
+    if (languages.contains('English')) return 'English';
+    return languages.first;
+  }
+
   int get spotsLeft => seatsTotal - seatsFilled;
 
-  bool get isFull => spotsLeft <= 0;
+  bool get hasStarted => !startsAt.isAfter(DateTime.now().toLocal());
 
-  String get availabilityLabel => isFull ? 'Full' : '$spotsLeft spots left';
+  bool get isFull => status == 'full' || spotsLeft <= 0;
+
+  bool get isAlmostFull => isFull || spotsLeft <= 2;
+
+  bool get isOpenForReservation => status == 'open' && !isFull && !hasStarted;
+
+  String get reservationUnavailableLabel {
+    if (status == 'cancelled') return 'This meetup has been cancelled.';
+    if (status == 'closed') return 'Reservations are closed for this meetup.';
+    if (hasStarted) return 'This meetup has already started.';
+    if (isFull) return 'This meetup is currently full.';
+    return 'This meetup cannot be reserved right now.';
+  }
+
+  String get availabilityLabel => statusLabel;
 }
 
 final recommendedMeetupEvents = <MeetupEvent>[
@@ -346,6 +416,14 @@ bool _eventsOverlap(MeetupEvent first, MeetupEvent second) {
       second.startsAt.isBefore(first.endsAt);
 }
 
+bool canCancelMeetupReservation(
+  MeetupEvent event, {
+  DateTime? now,
+}) {
+  final referenceTime = (now ?? DateTime.now()).toLocal();
+  return event.startsAt.isAfter(referenceTime.add(meetupCancellationCutoff));
+}
+
 bool sameMeetupEventLists(List<MeetupEvent> first, List<MeetupEvent> second) {
   if (identical(first, second)) return true;
   if (first.length != second.length) return false;
@@ -360,6 +438,8 @@ bool sameMeetupEventLists(List<MeetupEvent> first, List<MeetupEvent> second) {
         current.slot != next.slot ||
         current.city != next.city ||
         current.areaLabel != next.areaLabel ||
+        current.venueName != next.venueName ||
+        current.venueAddress != next.venueAddress ||
         current.startsAt != next.startsAt ||
         current.endsAt != next.endsAt ||
         current.activityLabel != next.activityLabel ||
@@ -367,6 +447,7 @@ bool sameMeetupEventLists(List<MeetupEvent> first, List<MeetupEvent> second) {
         current.policyLabel != next.policyLabel ||
         current.seatsFilled != next.seatsFilled ||
         current.seatsTotal != next.seatsTotal ||
+        current.status != next.status ||
         current.imageUrl != next.imageUrl ||
         !_sameStringList(current.tags, next.tags) ||
         !_sameStringList(current.languages, next.languages)) {
@@ -375,6 +456,43 @@ bool sameMeetupEventLists(List<MeetupEvent> first, List<MeetupEvent> second) {
   }
 
   return true;
+}
+
+class RevealedMeetupVenue {
+  const RevealedMeetupVenue({
+    required this.eventId,
+    required this.venueAddress,
+    required this.city,
+    required this.releasedAt,
+    this.venueName,
+  });
+
+  factory RevealedMeetupVenue.fromRow(Map<String, dynamic> row) {
+    return RevealedMeetupVenue(
+      eventId: row['event_id'].toString(),
+      venueName: _trimmedOrNull(row['venue_name']),
+      venueAddress: (row['venue_address'] as String).trim(),
+      city: (row['city'] as String).trim(),
+      releasedAt: DateTime.parse(row['released_at'] as String).toLocal(),
+    );
+  }
+
+  final String eventId;
+  final String? venueName;
+  final String venueAddress;
+  final String city;
+  final DateTime releasedAt;
+
+  String get locationLabel {
+    if (venueName == null) return venueAddress;
+    return '$venueName, $venueAddress';
+  }
+}
+
+String? _trimmedOrNull(dynamic value) {
+  if (value is! String) return null;
+  final trimmed = value.trim();
+  return trimmed.isEmpty ? null : trimmed;
 }
 
 bool _sameStringList(List<String> first, List<String> second) {

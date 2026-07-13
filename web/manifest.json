@@ -3,10 +3,9 @@
     "short_name": "VriendTime",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
+    "background_color": "#F8F5EF",
+    "theme_color": "#062B55",
     "description": "Small, planned meetups for meeting people nearby.",
-    "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
         {

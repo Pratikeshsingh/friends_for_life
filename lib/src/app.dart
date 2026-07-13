@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'core/auth_redirects.dart';
 import 'core/responsive.dart';
 import 'core/theme.dart';
 import 'screens/prototype_shell.dart';
+import 'screens/reset_password_screen.dart';
 
 class VriendTimeApp extends StatefulWidget {
   const VriendTimeApp({super.key});
@@ -17,6 +19,8 @@ class _VriendTimeAppState extends State<VriendTimeApp> {
 
   @override
   Widget build(BuildContext context) {
+    final isResetPasswordRoute = AuthRedirects.isPasswordResetUri(Uri.base);
+
     return MaterialApp(
       title: 'VriendTime',
       debugShowCheckedModeBanner: false,
@@ -44,6 +48,13 @@ class _VriendTimeAppState extends State<VriendTimeApp> {
         ),
         builder: (context, snapshot) {
           final session = snapshot.data?.session;
+          final authEvent = snapshot.data?.event;
+          if (isResetPasswordRoute) {
+            return ResetPasswordScreen(
+              session: session,
+              authEvent: authEvent,
+            );
+          }
           return PrototypeShell(session: session);
         },
       ),

@@ -1,8 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 ThemeData buildTheme() {
-  const canvas = Color(0xFFF7F4EE);
+  const canvas = Color(0xFFF8F5EF);
   const surface = Color(0xFFFFFCF7);
   const ink = Color(0xFF08294A);
   const muted = Color(0xFF66727C);
@@ -16,12 +16,12 @@ ThemeData buildTheme() {
     useMaterial3: true,
     scaffoldBackgroundColor: canvas,
     splashFactory: InkRipple.splashFactory,
-    textTheme: GoogleFonts.manropeTextTheme(
-      ThemeData.light().textTheme,
-    ).apply(
-      bodyColor: ink,
-      displayColor: ink,
-    ),
+    fontFamily: 'Manrope',
+    textTheme: ThemeData.light().textTheme.apply(
+          bodyColor: ink,
+          displayColor: ink,
+          fontFamily: 'Manrope',
+        ),
     colorScheme: ColorScheme.fromSeed(
       seedColor: primary,
       brightness: Brightness.light,
@@ -106,11 +106,14 @@ ThemeData buildTheme() {
         elevation: 0,
         backgroundColor: primary,
         foregroundColor: Colors.white,
+        disabledBackgroundColor: const Color(0xFFE1E8E5),
+        disabledForegroundColor: muted.withValues(alpha: 0.72),
         shadowColor: Colors.transparent,
         minimumSize: const Size.fromHeight(56),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-        textStyle: GoogleFonts.manrope(
+        textStyle: const TextStyle(
+          fontFamily: 'Manrope',
           fontSize: 14,
           fontWeight: FontWeight.w700,
         ),
@@ -121,13 +124,41 @@ ThemeData buildTheme() {
         foregroundColor: ink,
         side: const BorderSide(color: outline),
         backgroundColor: surface,
+        disabledForegroundColor: muted.withValues(alpha: 0.7),
         minimumSize: const Size.fromHeight(56),
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        textStyle: GoogleFonts.manrope(
+        textStyle: const TextStyle(
+          fontFamily: 'Manrope',
           fontSize: 14,
           fontWeight: FontWeight.w700,
         ),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: const Color(0xFF138B8A),
+        disabledForegroundColor: muted.withValues(alpha: 0.64),
+        minimumSize: const Size(44, 44),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        textStyle: const TextStyle(
+          fontFamily: 'Manrope',
+          fontSize: 14,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(
+        foregroundColor: primary,
+        disabledForegroundColor: muted.withValues(alpha: 0.62),
+        minimumSize: const Size(44, 44),
+        tapTargetSize: MaterialTapTargetSize.padded,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        focusColor: primarySoft,
+        hoverColor: primarySoft.withValues(alpha: 0.72),
+        highlightColor: primarySoft.withValues(alpha: 0.88),
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
@@ -135,10 +166,13 @@ ThemeData buildTheme() {
       indicatorColor: primarySoft,
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         return TextStyle(
+          fontFamily: 'Manrope',
+          fontSize: 12,
+          height: 1.15,
           color: states.contains(WidgetState.selected) ? ink : muted,
           fontWeight: states.contains(WidgetState.selected)
-              ? FontWeight.w800
-              : FontWeight.w500,
+              ? FontWeight.w700
+              : FontWeight.w600,
         );
       }),
       iconTheme: WidgetStateProperty.resolveWith((states) {
@@ -148,19 +182,19 @@ ThemeData buildTheme() {
       }),
       elevation: 0,
       shadowColor: Colors.transparent,
-      height: 68,
+      height: 72,
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
     ),
     dividerColor: outline,
     snackBarTheme: SnackBarThemeData(
       backgroundColor: const Color(0xFF062B55),
-      contentTextStyle: GoogleFonts.manrope(
+      contentTextStyle: const TextStyle(
+        fontFamily: 'Manrope',
         color: Colors.white,
         fontSize: 14,
         fontWeight: FontWeight.w600,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      behavior: SnackBarBehavior.floating,
+      behavior: SnackBarBehavior.fixed,
     ),
     bottomSheetTheme: const BottomSheetThemeData(
       backgroundColor: surface,
@@ -195,40 +229,42 @@ TextTheme _buildTextTheme(TextTheme base) {
       fontWeight: FontWeight.w700,
       color: const Color(0xFF08294A),
       letterSpacing: 0,
-      height: 0.92,
+      height: 1.02,
     ),
     displayMedium: _editorialSerif(
       fontSize: 40,
       fontWeight: FontWeight.w700,
       color: const Color(0xFF08294A),
       letterSpacing: 0,
-      height: 0.96,
+      height: 1.04,
     ),
     headlineMedium: _editorialSerif(
       fontSize: 32,
       fontWeight: FontWeight.w700,
       color: const Color(0xFF08294A),
       letterSpacing: 0,
+      height: 1.08,
     ),
     headlineSmall: _editorialSerif(
       fontSize: 24,
       fontWeight: FontWeight.w700,
       color: const Color(0xFF08294A),
       letterSpacing: 0,
+      height: 1.1,
     ),
     titleLarge: _cleanSans(
       fontSize: 20,
-      fontWeight: FontWeight.w800,
+      fontWeight: FontWeight.w700,
       color: const Color(0xFF08294A),
     ),
     titleMedium: _cleanSans(
       fontSize: 16,
-      fontWeight: FontWeight.w800,
+      fontWeight: FontWeight.w700,
       color: const Color(0xFF08294A),
     ),
     titleSmall: _cleanSans(
       fontSize: 14,
-      fontWeight: FontWeight.w800,
+      fontWeight: FontWeight.w700,
       color: const Color(0xFF08294A),
     ),
     bodyLarge: _cleanSans(
@@ -261,7 +297,8 @@ TextStyle _cleanSans({
   double? height,
   double? letterSpacing,
 }) {
-  return GoogleFonts.manrope(
+  return TextStyle(
+    fontFamily: 'Manrope',
     fontSize: fontSize,
     fontWeight: fontWeight,
     color: color,
@@ -277,7 +314,8 @@ TextStyle _editorialSerif({
   double? height,
   double? letterSpacing,
 }) {
-  return GoogleFonts.newsreader(
+  return TextStyle(
+    fontFamily: 'Newsreader',
     fontSize: fontSize,
     fontWeight: fontWeight,
     color: color,

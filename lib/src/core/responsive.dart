@@ -36,20 +36,27 @@ double responsiveHorizontalPadding(double width) {
   if (width >= 1200) return 40;
   if (width >= 900) return 32;
   if (width >= 600) return 28;
-  if (width >= 360) return 20;
   return 16;
 }
 
 double responsiveContentMaxWidth(double width) {
-  if (width >= 1280) return 980;
-  if (width >= 900) return 860;
-  if (width >= 700) return 760;
-  return width;
+  final availableWidth = width - (responsiveHorizontalPadding(width) * 2);
+  final safeAvailableWidth = availableWidth > 0 ? availableWidth : width;
+  final targetWidth = switch (width) {
+    >= 1280 => 1180.0,
+    >= 900 => 1040.0,
+    >= 700 => 760.0,
+    _ => width,
+  };
+
+  return targetWidth > safeAvailableWidth ? safeAvailableWidth : targetWidth;
 }
 
 bool isCompactWidth(double width) => width < 420;
 
 bool isVeryCompactWidth(double width) => width < 360;
+
+bool isWideContentWidth(double width) => width >= 900;
 
 double responsiveChipMaxWidth(double width) {
   if (width < 360) return width * 0.86;

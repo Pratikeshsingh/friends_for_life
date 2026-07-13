@@ -6,6 +6,7 @@ class ProfilePhotoService {
   static const bucketName = 'profile-photos';
   static const maxUploadBytes = 8 * 1024 * 1024;
   static const maxUploadLabel = '8 MB';
+  static final Map<String, _SignedUrlCacheEntry> _signedUrlCache = {};
 
   static Future<String> uploadPhoto({
     required SupabaseClient supabase,
@@ -42,14 +43,34 @@ class ProfilePhotoService {
     required SupabaseClient supabase,
     required String? path,
     int expiresInSeconds = 60 * 10,
+    bool forceRefresh = false,
   }) async {
     if (path == null || path.isEmpty) {
       return null;
     }
 
-    return supabase.storage
+    final cached = _signedUrlCache[path];
+    if (!forceRefresh && cached != null && !cached.isExpired) {
+      return cached.url;
+    }
+
+    final url = await supabase.storage
         .from(bucketName)
         .createSignedUrl(path, expiresInSeconds);
+    final refreshSeconds =
+        (expiresInSeconds - 30).clamp(1, expiresInSeconds).toInt();
+    _signedUrlCache[path] = _SignedUrlCacheEntry(
+      url: url,
+      expiresAt: DateTime.now().add(
+        Duration(seconds: refreshSeconds),
+      ),
+    );
+    return url;
+  }
+
+  static void invalidateSignedPhotoUrl(String? path) {
+    if (path == null || path.isEmpty) return;
+    _signedUrlCache.remove(path);
   }
 
   static String _safeExtension(String fileName) {
@@ -75,6 +96,31 @@ class ProfilePhotoService {
 
   static bool isTooLarge(Uint8List bytes) {
     return bytes.lengthInBytes > maxUploadBytes;
+  }
+
+  static bool hasSupportedImageSignature(Uint8List bytes) {
+    if (_startsWith(bytes, const [0xFF, 0xD8, 0xFF])) {
+      return true;
+    }
+
+    if (_startsWith(
+      bytes,
+      const [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A],
+    )) {
+      return true;
+    }
+
+    return bytes.lengthInBytes >= 12 &&
+        String.fromCharCodes(bytes.sublist(0, 4)) == 'RIFF' &&
+        String.fromCharCodes(bytes.sublist(8, 12)) == 'WEBP';
+  }
+
+  static bool _startsWith(Uint8List bytes, List<int> prefix) {
+    if (bytes.lengthInBytes < prefix.length) return false;
+    for (var index = 0; index < prefix.length; index++) {
+      if (bytes[index] != prefix[index]) return false;
+    }
+    return true;
   }
 
   static String fileSizeLabel(int bytes) {
@@ -104,4 +150,16 @@ class ProfilePhotoService {
         message.contains('entity too large') ||
         message.contains('413');
   }
+}
+
+class _SignedUrlCacheEntry {
+  const _SignedUrlCacheEntry({
+    required this.url,
+    required this.expiresAt,
+  });
+
+  final String url;
+  final DateTime expiresAt;
+
+  bool get isExpired => !DateTime.now().isBefore(expiresAt);
 }

@@ -1,22 +1,49 @@
+import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'event_catalog.dart';
 
 Future<bool> addMeetupToCalendar(MeetupEvent event) async {
+  final url = buildGoogleCalendarUri(event);
+
+  return launchUrl(
+    url,
+    mode: kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
+  );
+}
+
+Uri buildGoogleCalendarUri(MeetupEvent event) {
   final start = _formatCalendarDate(event.startsAt.toUtc());
   final end = _formatCalendarDate(event.endsAt.toUtc());
-  final details =
-      'VriendTime meetup. You see the area now. The exact address is shared 24 hours before the meetup. ${event.subtitle}';
 
-  final url = Uri.https('calendar.google.com', '/calendar/render', {
+  return Uri.https('calendar.google.com', '/calendar/render', {
     'action': 'TEMPLATE',
-    'text': event.title,
+    'text': 'VriendTime · ${event.title}',
     'dates': '$start/$end',
-    'details': details,
-    'location': '${event.areaLabel}, ${event.city}',
+    'details': buildMeetupCalendarDescription(event),
+    'location': event.hasExactAddress
+        ? event.locationDetailLabel
+        : '${event.areaLabel}, ${event.city}',
   });
+}
 
-  return launchUrl(url, mode: LaunchMode.platformDefault);
+String buildMeetupCalendarDescription(MeetupEvent event) {
+  final sections = <String>[
+    'Hosted by VriendTime',
+    event.subtitle.trim(),
+  ];
+
+  if (event.hasExactAddress) {
+    sections.add('Venue: ${event.locationDetailLabel}');
+  } else {
+    sections.add(
+      'Area: ${event.areaLabel}, ${event.city}\n'
+      'The exact address is shared at 10:00 the day before the meetup.',
+    );
+  }
+
+  sections.add('Phone-free, so conversation comes easier.');
+  return sections.where((section) => section.isNotEmpty).join('\n\n');
 }
 
 String _formatCalendarDate(DateTime value) {

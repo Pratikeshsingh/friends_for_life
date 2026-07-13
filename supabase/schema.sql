@@ -65,6 +65,24 @@ create table if not exists public.event_attendees (
   primary key (event_id, profile_id)
 );
 
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  recipient_profile_id uuid not null references public.profiles (id) on delete cascade,
+  event_id uuid references public.events (id) on delete cascade,
+  kind text not null check (kind in ('address', 'reminder', 'update', 'support')),
+  title text not null,
+  body text not null,
+  dedupe_key text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default timezone('utc', now()),
+  read_at timestamptz
+);
+
+alter table public.notifications
+  add column if not exists dedupe_key text,
+  add column if not exists metadata jsonb not null default '{}'::jsonb,
+  add column if not exists read_at timestamptz;
+
 alter table public.event_attendees
   drop constraint if exists event_attendees_status_check;
 
@@ -120,6 +138,16 @@ on public.event_attendees (profile_id, status);
 
 create index if not exists event_attendees_event_status_idx
 on public.event_attendees (event_id, status);
+
+create index if not exists notifications_recipient_created_at_idx
+on public.notifications (recipient_profile_id, created_at desc);
+
+create index if not exists notifications_recipient_read_at_idx
+on public.notifications (recipient_profile_id, read_at);
+
+create unique index if not exists notifications_recipient_dedupe_key_idx
+on public.notifications (recipient_profile_id, dedupe_key)
+where dedupe_key is not null;
 
 create index if not exists chat_participants_profile_thread_idx
 on public.chat_participants (profile_id, thread_id);
@@ -219,6 +247,223 @@ begin
 end;
 $$;
 
+-- The exact venue is released at 10:00 Europe/Amsterdam on the calendar day
+-- before the meetup. This intentionally ignores events.reveal_venue_at.
+create or replace function public.event_venue_release_at(
+  event_starts_at timestamptz
+)
+returns timestamptz
+language sql
+stable
+strict
+set search_path = pg_catalog
+as $$
+  select (
+    ((event_starts_at at time zone 'Europe/Amsterdam')::date - 1)
+      + time '10:00'
+  ) at time zone 'Europe/Amsterdam';
+$$;
+
+create or replace function public.queue_event_notifications(
+  target_event_id uuid,
+  run_at timestamptz default now()
+)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  effective_run_at timestamptz := coalesce(run_at, now());
+  queued_count integer := 0;
+begin
+  with due_event as (
+    select
+      e.id,
+      e.title,
+      e.city,
+      e.starts_at,
+      public.event_venue_release_at(e.starts_at) as released_at,
+      nullif(btrim(e.venue_name), '') as venue_name,
+      nullif(btrim(e.venue_address), '') as venue_address
+    from public.events e
+    where e.id = target_event_id
+      and e.status in ('open', 'full', 'closed')
+      and e.starts_at > effective_run_at
+      and public.event_venue_release_at(e.starts_at) <= effective_run_at
+  ),
+  inserted as (
+    insert into public.notifications (
+      recipient_profile_id,
+      event_id,
+      kind,
+      title,
+      body,
+      dedupe_key,
+      metadata
+    )
+    select
+      attendee.profile_id,
+      due_event.id,
+      'address',
+      'Address ready: ' || due_event.title,
+      'Your VriendTime meetup address is ready.' || E'\n' ||
+        coalesce(due_event.venue_name || E'\n', '') ||
+        due_event.venue_address,
+      'event:' || due_event.id::text || ':address',
+      jsonb_build_object(
+        'venue_name', due_event.venue_name,
+        'address', due_event.venue_address,
+        'city', due_event.city,
+        'starts_at', due_event.starts_at,
+        'released_at', due_event.released_at
+      )
+    from due_event
+    join public.event_attendees attendee
+      on attendee.event_id = due_event.id
+    where attendee.status = 'joined'
+      and due_event.venue_address is not null
+    on conflict do nothing
+    returning 1
+  )
+  select count(*)::integer
+  into queued_count
+  from inserted;
+
+  return queued_count;
+end;
+$$;
+
+create or replace function public.queue_due_event_notifications(
+  run_at timestamptz default now()
+)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  effective_run_at timestamptz := coalesce(run_at, now());
+  event_row record;
+  queued_count integer := 0;
+begin
+  for event_row in
+    select e.id
+    from public.events e
+    where e.status in ('open', 'full', 'closed')
+      and e.starts_at > effective_run_at
+      and nullif(btrim(e.venue_address), '') is not null
+      and public.event_venue_release_at(e.starts_at) <= effective_run_at
+  loop
+    queued_count := queued_count + public.queue_event_notifications(event_row.id, run_at);
+  end loop;
+
+  return queued_count;
+end;
+$$;
+
+-- Secure source of truth for exact venues. Only the signed-in member's joined
+-- meetups are returned, and only after the server-calculated release instant.
+create or replace function public.get_revealed_event_venues(
+  target_event_id uuid default null
+)
+returns table (
+  event_id uuid,
+  venue_name text,
+  venue_address text,
+  city text,
+  released_at timestamptz
+)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  current_profile_id uuid := auth.uid();
+begin
+  if current_profile_id is null then
+    raise exception 'Not authenticated.';
+  end if;
+
+  return query
+  select
+    e.id,
+    nullif(btrim(e.venue_name), ''),
+    btrim(e.venue_address),
+    e.city,
+    public.event_venue_release_at(e.starts_at)
+  from public.events e
+  join public.event_attendees attendee
+    on attendee.event_id = e.id
+  where attendee.profile_id = current_profile_id
+    and attendee.status = 'joined'
+    and e.status in ('open', 'full', 'closed')
+    and e.starts_at > now()
+    and (target_event_id is null or e.id = target_event_id)
+    and nullif(btrim(e.venue_address), '') is not null
+    and public.event_venue_release_at(e.starts_at) <= now()
+  order by e.starts_at;
+end;
+$$;
+
+create or replace function public.queue_due_notifications_for_joined_attendee()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.status = 'joined'
+    and (
+      tg_op = 'INSERT'
+      or old.status is distinct from new.status
+    ) then
+    perform public.queue_event_notifications(new.event_id);
+  end if;
+
+  return new;
+end;
+$$;
+
+create or replace function public.cleanup_notifications_for_unjoined_attendee()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.status <> 'joined'
+    and (
+      tg_op = 'UPDATE'
+      and old.status is distinct from new.status
+    ) then
+    delete from public.notifications
+    where recipient_profile_id = new.profile_id
+      and event_id = new.event_id
+      and dedupe_key in (
+        'event:' || new.event_id::text || ':reminder-day-before',
+        'event:' || new.event_id::text || ':address'
+      );
+  end if;
+
+  return new;
+end;
+$$;
+
+revoke all on function public.event_venue_release_at(timestamptz) from public;
+revoke all on function public.queue_event_notifications(uuid, timestamptz) from public;
+revoke all on function public.queue_due_event_notifications(timestamptz) from public;
+revoke all on function public.get_revealed_event_venues(uuid) from public;
+revoke all on function public.queue_due_notifications_for_joined_attendee() from public;
+revoke all on function public.cleanup_notifications_for_unjoined_attendee() from public;
+grant execute on function public.event_venue_release_at(timestamptz) to service_role;
+grant execute on function public.queue_event_notifications(uuid, timestamptz) to service_role;
+grant execute on function public.queue_due_event_notifications(timestamptz) to service_role;
+grant execute on function public.get_revealed_event_venues(uuid) to authenticated;
+grant execute on function public.queue_due_notifications_for_joined_attendee() to service_role;
+grant execute on function public.cleanup_notifications_for_unjoined_attendee() to service_role;
+
 drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at
 before update on public.profiles
@@ -236,6 +481,18 @@ create trigger event_attendees_refresh_count
 after insert or update or delete on public.event_attendees
 for each row
 execute function public.refresh_event_confirmed_count();
+
+drop trigger if exists event_attendees_queue_due_notifications on public.event_attendees;
+create trigger event_attendees_queue_due_notifications
+after insert or update on public.event_attendees
+for each row
+execute function public.queue_due_notifications_for_joined_attendee();
+
+drop trigger if exists event_attendees_cleanup_due_notifications on public.event_attendees;
+create trigger event_attendees_cleanup_due_notifications
+after update on public.event_attendees
+for each row
+execute function public.cleanup_notifications_for_unjoined_attendee();
 
 update public.events
 set confirmed_count = counts.confirmed_count
@@ -347,6 +604,7 @@ execute procedure public.handle_new_user();
 alter table public.profiles enable row level security;
 alter table public.events enable row level security;
 alter table public.event_attendees enable row level security;
+alter table public.notifications enable row level security;
 alter table public.chat_threads enable row level security;
 alter table public.chat_participants enable row level security;
 alter table public.messages enable row level security;
@@ -417,6 +675,21 @@ for update
 to authenticated
 using (profile_id = auth.uid())
 with check (profile_id = auth.uid());
+
+drop policy if exists "users can read own notifications" on public.notifications;
+create policy "users can read own notifications"
+on public.notifications
+for select
+to authenticated
+using (recipient_profile_id = auth.uid());
+
+drop policy if exists "users can update own notifications" on public.notifications;
+create policy "users can update own notifications"
+on public.notifications
+for update
+to authenticated
+using (recipient_profile_id = auth.uid())
+with check (recipient_profile_id = auth.uid());
 
 drop policy if exists "participants can read threads" on public.chat_threads;
 create policy "participants can read threads"

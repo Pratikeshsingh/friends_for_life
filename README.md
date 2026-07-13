@@ -19,7 +19,9 @@ The app is currently wired to this Supabase project URL by default:
 
 - `https://sageyiqyvzgoayehahyq.supabase.co`
 
-For local overrides, run Flutter with `--dart-define` values:
+For local debug builds, the app can use the bundled defaults. Profile and
+release builds require explicit `--dart-define` values so staging/test builds
+cannot accidentally point at the wrong backend.
 
 ```bash
 flutter run -d chrome \
@@ -27,9 +29,18 @@ flutter run -d chrome \
   --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_your_key
 ```
 
+Example release build:
+
+```bash
+flutter build web --release \
+  --dart-define=SUPABASE_URL=https://your-project-ref.supabase.co \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_your_key
+```
+
 ## Database bootstrap
 
-Run the SQL in [supabase/schema.sql](supabase/schema.sql) inside the Supabase SQL editor before testing sign-up fully. It creates:
+Run the SQL in [supabase/schema.sql](supabase/schema.sql) inside the Supabase
+SQL editor before testing sign-up fully. It creates:
 
 - `profiles`
 - `events`
@@ -39,3 +50,27 @@ Run the SQL in [supabase/schema.sql](supabase/schema.sql) inside the Supabase SQ
 - `messages`
 
 It also enables Row Level Security and adds a trigger that creates a profile row automatically when a user signs up.
+
+Then run [supabase/release_hardening.sql](supabase/release_hardening.sql). It
+adds the release-safe catalog view/RPCs/policies used by the app for
+reservation safety, address privacy, attendance writes, and storage limits.
+
+## Auth redirects
+
+Configure these URLs in Supabase Auth before tester launch:
+
+- Site URL: `https://vriendtime.com`
+- Password recovery redirect: `https://vriendtime.com/#/reset-password`
+- Mobile email callback/deep link: `vriendtime://auth/callback`
+
+For web hosting, keep [web/_redirects.txt](web/_redirects.txt) or an equivalent
+SPA fallback so routes resolve to `index.html`.
+
+## Tester launch checklist
+
+- Run `flutter analyze`.
+- Run `flutter test`.
+- Run both SQL files in Supabase in order.
+- Confirm the `profile-photos` bucket accepts only JPG, PNG, and WebP under the configured size limit.
+- Build profile/release targets with explicit Supabase `--dart-define` values.
+- Smoke test sign-up, email confirmation, password reset, reservation, cancellation, notification address reveal, profile edit, photo upload, logout, and app resume.

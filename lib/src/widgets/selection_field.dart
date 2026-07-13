@@ -18,34 +18,42 @@ class SelectionField extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasValue = value != null && value!.trim().isNotEmpty;
+    final displayValue = hasValue ? value! : placeholder;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: onTap,
-      child: Ink(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFDDE7E3)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                hasValue ? value! : placeholder,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: hasValue ? null : const Color(0xFF66727C),
+    return Semantics(
+      button: true,
+      label: displayValue,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Ink(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFDDE7E3)),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 24),
+            child: Row(
+              children: [
+                Icon(icon),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    displayValue,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: hasValue ? null : const Color(0xFF66727C),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                const Icon(Icons.keyboard_arrow_down_rounded),
+              ],
             ),
-            const SizedBox(width: 12),
-            const Icon(Icons.keyboard_arrow_down_rounded),
-          ],
+          ),
         ),
       ),
     );
