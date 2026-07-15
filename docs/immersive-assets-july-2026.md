@@ -1,45 +1,18 @@
 # Immersive illustration assets — July 2026
 
-The app ships the optimized WebP versions listed below. Lossless PNG source
-copies remain beside them in `assets/generated/` for future crops or edits.
+The app ships only the optimized WebP files listed in `pubspec.yaml`. Historical
+PNG source copies and superseded landing variants were removed from the working
+tree after the current version was published to Git. They remain recoverable
+from Git history if a future crop or edit needs them.
 
-## Mobile landing hero
+## Current landing hero
 
-- App asset: `assets/generated/landing-immersive-mobile-v2.webp`
-- Source copy: `assets/generated/landing-immersive-mobile-v2.png`
-
-Prompt:
-
-> Create a warm, text-free, hand-painted editorial illustration of exactly
-> four diverse adults sharing a natural conversation around one round café
-> table over coffee and a casual meal. Use a welcoming contemporary Dutch
-> café, plants, a warm pendant lamp, soft morning daylight, and the VriendTime
-> navy, teal, cream, coral, and amber palette. Compose it as a portrait mobile
-> hero with clean cream negative space across the upper third for live UI and
-> a full-bleed group scene below. Keep every face inside safe crop margins. No
-> logo, interface, signage, words, phones, romance symbolism, engagement-ring
-> shapes, infinity marks, watermark, glossy 3D rendering, or photorealism.
-
-## Desktop landing hero
-
-- App asset: `assets/generated/landing-immersive-desktop-v2.webp`
-- Source copy: `assets/generated/landing-immersive-desktop-v2.png`
-
-Prompt:
-
-> Create the wide desktop companion to the VriendTime mobile hero in the same
-> polished hand-painted editorial style. Show exactly four diverse adults at
-> one real round café table, mainly on the right and lower-right, and reserve a
-> calm cream area across the left 42% for live logo, headline, and supporting
-> copy. Use a warm contemporary Dutch café with plants, pendant lighting, and
-> subtle arched windows. Bleed to every edge and keep faces and hands inside
-> safe margins. No words, logo, interface, phones, ring or infinity symbols,
-> watermark, photorealism, or baked-in UI.
+- Mobile: `assets/generated/landing-open-seat-mobile-v1.webp`
+- Desktop: `assets/generated/landing-open-seat-desktop-v1.webp`
 
 ## Account onboarding banner
 
 - App asset: `assets/generated/onboarding-account-immersive-v2.webp`
-- Source copy: `assets/generated/onboarding-account-immersive-v2.png`
 
 Prompt:
 
@@ -54,7 +27,6 @@ Prompt:
 ## About-you onboarding banner
 
 - App asset: `assets/generated/onboarding-details-immersive-v2.webp`
-- Source copy: `assets/generated/onboarding-details-immersive-v2.png`
 
 Prompt:
 
