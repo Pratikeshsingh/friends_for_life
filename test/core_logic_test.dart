@@ -1,8 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vriendtime/src/core/auth_redirects.dart';
 import 'package:vriendtime/src/core/calendar_service.dart';
 import 'package:vriendtime/src/core/event_catalog.dart';
 import 'package:vriendtime/src/core/notification_service.dart';
+import 'package:vriendtime/src/core/profile_photo_service.dart';
 
 void main() {
   group('meetup availability', () {
@@ -102,7 +104,8 @@ void main() {
       expect(details, isNot(contains('shared at 10:00')));
     });
 
-    test('uses area and states the 10:00 rule before venue release', () {
+    test('uses area and states the exact release date before venue release',
+        () {
       final event = _meetup(startsAt: DateTime.utc(2026, 7, 11, 17));
       final uri = buildGoogleCalendarUri(event);
       final details = uri.queryParameters['details']!;
@@ -111,7 +114,56 @@ void main() {
       expect(details, contains('Area: centre, Alkmaar'));
       expect(
         details,
-        contains('shared at 10:00 the day before the meetup'),
+        contains('available in VriendTime on 10 July at 10:00'),
+      );
+    });
+  });
+
+  group('address release date', () {
+    test('formats the Amsterdam calendar day before the meetup', () {
+      final startsAt = DateTime.utc(2026, 7, 26, 17);
+
+      expect(
+        formatMeetupAddressReleaseDateTime(startsAt),
+        '25 July at 10:00',
+      );
+      expect(
+        buildMeetupAddressReleaseSentence(startsAt),
+        'The exact address will be available in VriendTime on '
+        '25 July at 10:00.',
+      );
+    });
+
+    test('crosses month and year boundaries by calendar date', () {
+      expect(
+        formatMeetupAddressReleaseDateTime(DateTime.utc(2026, 1, 1, 18)),
+        '31 December at 10:00',
+      );
+      expect(
+        formatMeetupAddressReleaseDateTime(DateTime.utc(2026, 5, 1, 18)),
+        '30 April at 10:00',
+      );
+    });
+
+    test('uses the Amsterdam date for UTC instants near midnight', () {
+      // 22:30 UTC is 00:30 on 25 July in Amsterdam.
+      final startsAt = DateTime.utc(2026, 7, 24, 22, 30);
+
+      expect(
+        formatMeetupAddressReleaseDateTime(startsAt),
+        '24 July at 10:00',
+      );
+    });
+
+    test('returns the correct instant across daylight-saving boundaries', () {
+      // Amsterdam changes to UTC+2 on 29 March 2026 and UTC+1 on 25 October.
+      expect(
+        meetupAddressReleaseAt(DateTime.utc(2026, 3, 30, 10)),
+        DateTime.utc(2026, 3, 29, 8),
+      );
+      expect(
+        meetupAddressReleaseAt(DateTime.utc(2026, 10, 26, 11)),
+        DateTime.utc(2026, 10, 25, 9),
       );
     });
   });
@@ -170,6 +222,44 @@ void main() {
       expect(
         AuthRedirects.isPasswordResetUri(Uri.parse('https://vriendtime.com/')),
         isFalse,
+      );
+    });
+  });
+
+  group('profile photo feedback', () {
+    test('reports the actual file size and inclusive upload limit', () {
+      expect(
+        ProfilePhotoService.tooLargeMessage(9 * 1024 * 1024),
+        'That photo is 9.00 MB. Choose a photo up to 8 MB.',
+      );
+    });
+
+    test('turns permission and format failures into actionable guidance', () {
+      expect(
+        ProfilePhotoService.uploadErrorMessage(
+          const StorageException('Unauthorized', statusCode: '403'),
+        ),
+        contains('Sign in again'),
+      );
+      expect(
+        ProfilePhotoService.uploadErrorMessage(
+          const StorageException(
+            'The mime type is not supported',
+            statusCode: '415',
+          ),
+        ),
+        contains('JPG, PNG, or WebP'),
+      );
+    });
+
+    test('does not blame every unknown upload failure on connectivity', () {
+      expect(
+        ProfilePhotoService.uploadErrorMessage(Exception('unknown')),
+        ProfilePhotoService.genericUploadErrorMessage,
+      );
+      expect(
+        ProfilePhotoService.genericUploadErrorMessage,
+        isNot(contains('connection')),
       );
     });
   });

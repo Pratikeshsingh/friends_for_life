@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/calendar_service.dart';
 import '../core/event_catalog.dart';
@@ -77,18 +78,15 @@ class _HomeScreenState extends State<HomeScreen> {
             .toList();
     final browseEvents =
         sameCityEvents.isNotEmpty ? sameCityEvents : allBrowseEvents;
-    final showingOtherCities = widget.selectedEvent == null &&
-        cityLabel != null &&
-        cityLabel.isNotEmpty &&
-        allBrowseEvents.isNotEmpty &&
-        sameCityEvents.isEmpty;
-    final upcomingTitle = widget.selectedEvent == null
-        ? showingOtherCities
-            ? 'Meetups in other cities'
-            : cityLabel != null && cityLabel.isNotEmpty
-                ? 'Coming up in $cityLabel'
-                : 'Coming up near you'
-        : 'More meetups you might like';
+    final browseSummary = _browseSummary(
+      events: browseEvents,
+      allEvents: allBrowseEvents,
+      preferredCity: preferredCity,
+      isUsingOtherCities: preferredCity != null &&
+          preferredCity.isNotEmpty &&
+          allBrowseEvents.isNotEmpty &&
+          sameCityEvents.isEmpty,
+    );
     return ContinuousImmersiveScene(
       assetName: GeneratedImageAssets.homeContinuousScene,
       semanticLabel: 'A warm cafe prepared for people to meet',
@@ -98,13 +96,20 @@ class _HomeScreenState extends State<HomeScreen> {
           final width = constraints.maxWidth;
           final horizontal = responsiveHorizontalPadding(width);
           final maxWidth = responsiveContentMaxWidth(width);
-          final wideHome = isWideContentWidth(width) && browseEvents.isNotEmpty;
+          final wideHome =
+              isWideContentWidth(width) && widget.selectedEvent != null;
           Widget buildPrimaryMeetup() {
             if (widget.selectedEvent != null) {
+              final event = widget.selectedEvent!;
+              final locationOverride =
+                  widget.revealedLocationsByEventId[event.id]?.trim();
+              final hasRevealedLocation =
+                  (locationOverride?.isNotEmpty ?? false) ||
+                      event.shouldRevealExactAddress;
               return _NextMeetupReminder(
-                event: widget.selectedEvent!,
-                revealedLocationLabel:
-                    widget.revealedLocationsByEventId[widget.selectedEvent!.id],
+                event: event,
+                revealedLocationLabel: locationOverride,
+                hasRevealedLocation: hasRevealedLocation,
                 onOpenEvent: () => widget.onOpenEvent(null),
                 motionIndex: 3,
               );
@@ -114,7 +119,22 @@ class _HomeScreenState extends State<HomeScreen> {
             }
             return _FindMeetupPrompt(
               onOpenEvent: () => widget.onOpenEvent(null),
+              availabilityLabel: browseSummary,
               motionIndex: 3,
+            );
+          }
+
+          Widget buildMeetupGuidance() {
+            final event = widget.selectedEvent!;
+            final locationOverride =
+                widget.revealedLocationsByEventId[event.id]?.trim();
+            final hasRevealedLocation =
+                (locationOverride?.isNotEmpty ?? false) ||
+                    event.shouldRevealExactAddress;
+            return _MeetupGuidanceCard(
+              event: event,
+              hasRevealedLocation: hasRevealedLocation,
+              motionIndex: 4,
             );
           }
 
@@ -153,10 +173,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         MotionReveal(
                           index: 2,
                           child: Text(
-                            widget.selectedEvent == null &&
-                                    !widget.isMeetupLoading
-                                ? 'Find a meetup\nthat fits your day.'
-                                : 'Your next meetup',
+                            widget.selectedEvent == null
+                                ? widget.isMeetupLoading
+                                    ? 'Getting your next\nmeetup ready.'
+                                    : 'A simple way to\nmeet new people.'
+                                : _isSameCalendarDay(
+                                    widget.selectedEvent!.startsAt,
+                                    DateTime.now(),
+                                  )
+                                    ? 'Your meetup is today'
+                                    : 'Your next meetup',
                             style: responsiveDisplayStyle(context),
                           ),
                         ),
@@ -169,28 +195,25 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(width: 18),
                               Expanded(
                                 flex: 5,
-                                child: _UpcomingMeetupsCard(
-                                  motionIndex: 4,
-                                  title: upcomingTitle,
-                                  events: browseEvents,
-                                  onOpenAll: () => widget.onOpenEvent(null),
-                                  onOpenEvent: widget.onOpenEvent,
-                                ),
+                                child: buildMeetupGuidance(),
                               ),
                             ],
                           )
                         else ...[
                           buildPrimaryMeetup(),
-                          if (browseEvents.isNotEmpty) ...[
+                          if (widget.selectedEvent != null) ...[
                             const SizedBox(height: 18),
-                            _UpcomingMeetupsCard(
-                              motionIndex: 4,
-                              title: upcomingTitle,
-                              events: browseEvents,
-                              onOpenAll: () => widget.onOpenEvent(null),
-                              onOpenEvent: widget.onOpenEvent,
-                            ),
+                            buildMeetupGuidance(),
                           ],
+                        ],
+                        if (widget.selectedEvent != null &&
+                            browseEvents.isNotEmpty) ...[
+                          const SizedBox(height: 18),
+                          _BrowseMoreMeetupsCard(
+                            summary: browseSummary,
+                            onTap: () => widget.onOpenEvent(null),
+                            motionIndex: 5,
+                          ),
                         ],
                       ],
                     ),
@@ -226,17 +249,24 @@ class _NextMeetupReminder extends StatelessWidget {
   const _NextMeetupReminder({
     required this.event,
     this.revealedLocationLabel,
+    required this.hasRevealedLocation,
     required this.onOpenEvent,
     required this.motionIndex,
   });
 
   final MeetupEvent event;
   final String? revealedLocationLabel;
+  final bool hasRevealedLocation;
   final VoidCallback onOpenEvent;
   final int motionIndex;
 
   @override
   Widget build(BuildContext context) {
+    final isToday = _isSameCalendarDay(event.startsAt, DateTime.now());
+    final locationLabel = hasRevealedLocation
+        ? (revealedLocationLabel ?? event.locationDetailLabel)
+        : '${event.areaLabel}, ${event.city}';
+
     return MotionReveal(
       index: motionIndex,
       child: Container(
@@ -270,8 +300,14 @@ class _NextMeetupReminder extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _InsightChip(
-                    label: 'Upcoming',
+                  _InsightChip(
+                    label: isToday
+                        ? hasRevealedLocation
+                            ? 'Today · Address ready'
+                            : 'Today · Seat confirmed'
+                        : hasRevealedLocation
+                            ? 'Address ready'
+                            : 'Seat confirmed',
                     dark: false,
                     onGradient: false,
                   ),
@@ -296,22 +332,30 @@ class _NextMeetupReminder extends StatelessWidget {
                   const SizedBox(height: 10),
                   _HeroInfoRow(
                     icon: Icons.location_on_outlined,
-                    label: revealedLocationLabel ?? event.locationDetailLabel,
+                    label: locationLabel,
                   ),
                   const SizedBox(height: 10),
                   _HeroInfoRow(
                     icon: Icons.groups_2_outlined,
                     label: event.groupSizeLabel,
                   ),
+                  if (!hasRevealedLocation) ...[
+                    const SizedBox(height: 18),
+                    _AddressReleaseNotice(event: event),
+                  ],
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: onOpenEvent,
+                    onPressed: hasRevealedLocation
+                        ? () => _openDirections(context, locationLabel)
+                        : onOpenEvent,
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 52),
                       backgroundColor: const Color(0xF7FFFCF7),
                       foregroundColor: const Color(0xFF062B55),
                     ),
-                    child: const Text('View meetup'),
+                    child: Text(
+                      hasRevealedLocation ? 'Open directions' : 'View meetup',
+                    ),
                   ),
                   const SizedBox(height: 10),
                   OutlinedButton.icon(
@@ -326,6 +370,19 @@ class _NextMeetupReminder extends StatelessWidget {
                     icon: const Icon(Icons.calendar_month_outlined),
                     label: const Text('Add to calendar'),
                   ),
+                  if (hasRevealedLocation) ...[
+                    const SizedBox(height: 4),
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton(
+                        onPressed: onOpenEvent,
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF062B55),
+                        ),
+                        child: const Text('View meetup details'),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -333,6 +390,31 @@ class _NextMeetupReminder extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _openDirections(
+    BuildContext context,
+    String locationLabel,
+  ) async {
+    final uri = Uri.https(
+      'www.google.com',
+      '/maps/search/',
+      <String, String>{
+        'api': '1',
+        'query': '$locationLabel, ${event.city}',
+      },
+    );
+    final opened = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Maps did not open. Try again from meetup details.'),
+        ),
+      );
+    }
   }
 
   Future<void> _openCalendar(
@@ -353,13 +435,66 @@ class _NextMeetupReminder extends StatelessWidget {
   }
 }
 
+class _AddressReleaseNotice extends StatelessWidget {
+  const _AddressReleaseNotice({required this.event});
+
+  final MeetupEvent event;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF7F5).withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFBFDCD7)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.lock_clock_outlined,
+            color: Color(0xFF138B8A),
+            size: 21,
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Address available in VriendTime on '
+                  '${event.addressReleaseDateTimeLabel}',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: const Color(0xFF062B55),
+                      ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Open VriendTime after that time to see the exact public venue.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF4F6671),
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _FindMeetupPrompt extends StatelessWidget {
   const _FindMeetupPrompt({
     required this.onOpenEvent,
+    required this.availabilityLabel,
     required this.motionIndex,
   });
 
   final VoidCallback onOpenEvent;
+  final String availabilityLabel;
   final int motionIndex;
 
   @override
@@ -387,14 +522,60 @@ class _FindMeetupPrompt extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            'Small groups, real plans',
-            style: theme.textTheme.titleMedium,
+            'Your first table starts here',
+            style: theme.textTheme.titleLarge,
           ),
           const SizedBox(height: 6),
           Text(
-            'Browse relaxed meetups in welcoming public places near you.',
+            'VriendTime takes care of the plan, so you can simply show up and meet a small group.',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: const Color(0xFF60727A),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const _HowItWorksStep(
+            number: '1',
+            title: 'Choose a time',
+            body: 'Pick a relaxed meetup that fits your day.',
+          ),
+          const SizedBox(height: 14),
+          const _HowItWorksStep(
+            number: '2',
+            title: 'Reserve your place',
+            body: 'Your seat is saved in a small group of 4 to 6 people.',
+          ),
+          const SizedBox(height: 14),
+          const _HowItWorksStep(
+            number: '3',
+            title: 'Meet your table',
+            body:
+                'Your reservation shows the exact address-release date and time.',
+          ),
+          const SizedBox(height: 18),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF6E8),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.near_me_outlined,
+                  color: Color(0xFFC4683C),
+                  size: 19,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    availabilityLabel,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: const Color(0xFF5D4034),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 18),
@@ -408,6 +589,57 @@ class _FindMeetupPrompt extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _HowItWorksStep extends StatelessWidget {
+  const _HowItWorksStep({
+    required this.number,
+    required this.title,
+    required this.body,
+  });
+
+  final String number;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          decoration: const BoxDecoration(
+            color: Color(0xFF062B55),
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            number,
+            style: theme.textTheme.labelMedium?.copyWith(color: Colors.white),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: theme.textTheme.titleSmall),
+              const SizedBox(height: 2),
+              Text(
+                body,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFF60727A),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -538,60 +770,86 @@ class _LoadingLine extends StatelessWidget {
   }
 }
 
-class _UpcomingMeetupsCard extends StatelessWidget {
-  const _UpcomingMeetupsCard({
+class _MeetupGuidanceCard extends StatelessWidget {
+  const _MeetupGuidanceCard({
+    required this.event,
+    required this.hasRevealedLocation,
     required this.motionIndex,
-    required this.title,
-    required this.events,
-    required this.onOpenAll,
-    required this.onOpenEvent,
   });
 
+  final MeetupEvent event;
+  final bool hasRevealedLocation;
   final int motionIndex;
-  final String title;
-  final List<MeetupEvent> events;
-  final VoidCallback onOpenAll;
-  final ValueChanged<MeetupEvent?> onOpenEvent;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isToday = _isSameCalendarDay(event.startsAt, DateTime.now());
 
     return SectionCard(
       motionIndex: motionIndex,
+      highlight: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.textTheme.titleLarge,
-                ),
-              ),
-              TextButton(
-                onPressed: onOpenAll,
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF138B8A),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 4,
-                  ),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text('View all'),
-              ),
-            ],
+          Text(
+            hasRevealedLocation
+                ? isToday
+                    ? 'For today'
+                    : 'Before you go'
+                : 'What happens next',
+            style: theme.textTheme.titleLarge,
           ),
-          const SizedBox(height: 16),
-          for (final event in events) ...[
-            _SavedMeetupRow(
-              event: event,
-              onTap: () => onOpenEvent(event),
+          const SizedBox(height: 6),
+          Text(
+            hasRevealedLocation
+                ? 'Everything you need for a relaxed arrival.'
+                : 'Your reservation is confirmed. We’ll keep the rest simple.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: const Color(0xFF60727A),
             ),
-            if (event != events.last) const SizedBox(height: 10),
+          ),
+          const SizedBox(height: 20),
+          if (!hasRevealedLocation) ...[
+            const _GuidanceStep(
+              icon: Icons.check_rounded,
+              title: 'Seat confirmed',
+              body: 'Your place at the table is saved.',
+              complete: true,
+            ),
+            const _GuidanceDivider(),
+            _GuidanceStep(
+              icon: Icons.lock_clock_outlined,
+              title: 'Address available in VriendTime',
+              body: event.addressReleaseDateTimeLabel,
+            ),
+            const _GuidanceDivider(),
+            _GuidanceStep(
+              icon: Icons.groups_2_outlined,
+              title: 'Meet your table',
+              body:
+                  '${event.detailDateLabel} at ${_formatHomeTime(event.startsAt)}',
+            ),
+          ] else ...[
+            _GuidanceStep(
+              icon: Icons.route_outlined,
+              title: 'Plan your journey',
+              body: 'Use Open directions and check your travel time.',
+              complete: true,
+            ),
+            const _GuidanceDivider(),
+            _GuidanceStep(
+              icon: Icons.schedule_outlined,
+              title: 'Arrive a little early',
+              body: 'Aim for ${_arrivalTimeLabel(event)} so you can settle in.',
+            ),
+            const _GuidanceDivider(),
+            const _GuidanceStep(
+              icon: Icons.phonelink_erase_outlined,
+              title: 'Come as you are',
+              body:
+                  'We keep the table phone-free so conversation comes easier.',
+            ),
           ],
         ],
       ),
@@ -599,126 +857,164 @@ class _UpcomingMeetupsCard extends StatelessWidget {
   }
 }
 
-class _SavedMeetupRow extends StatelessWidget {
-  const _SavedMeetupRow({
-    required this.event,
-    required this.onTap,
+class _GuidanceStep extends StatelessWidget {
+  const _GuidanceStep({
+    required this.icon,
+    required this.title,
+    required this.body,
+    this.complete = false,
   });
 
-  final MeetupEvent event;
-  final VoidCallback onTap;
+  final IconData icon;
+  final String title;
+  final String body;
+  final bool complete;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 360;
-        final leading = ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: SizedBox(
-            width: compact ? 56 : 62,
-            height: compact ? 56 : 62,
-            child: MeetupArtwork(
-              event: event,
-              height: compact ? 56 : 62,
-              radius: 18,
-              preferFullBleed: true,
-            ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: complete ? const Color(0xFF138B8A) : const Color(0xFFEAF7F5),
+            borderRadius: BorderRadius.circular(13),
           ),
-        );
-        final copy = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(event.title, style: theme.textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(
-              event.subtitle,
-              maxLines: compact ? 3 : 2,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyMedium,
-            ),
-          ],
-        );
-        final dateCopy = Text(
-          '${_shortDateLabel(event)} | ${_startTimeLabel(event)}',
-          style: theme.textTheme.titleSmall?.copyWith(
-            color: const Color(0xFF4F6671),
+          alignment: Alignment.center,
+          child: Icon(
+            icon,
+            size: 19,
+            color: complete ? Colors.white : const Color(0xFF138B8A),
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        );
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: theme.textTheme.titleSmall),
+              const SizedBox(height: 2),
+              Text(
+                body,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFF60727A),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
 
-        return InkWell(
+class _GuidanceDivider extends StatelessWidget {
+  const _GuidanceDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 16,
+      margin: const EdgeInsets.only(left: 18, top: 4, bottom: 4),
+      color: const Color(0xFFD1E5E1),
+    );
+  }
+}
+
+class _BrowseMoreMeetupsCard extends StatelessWidget {
+  const _BrowseMoreMeetupsCard({
+    required this.summary,
+    required this.onTap,
+    required this.motionIndex,
+  });
+
+  final String summary;
+  final VoidCallback onTap;
+  final int motionIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return MotionReveal(
+      index: motionIndex,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(24),
           child: Ink(
-            padding: EdgeInsets.all(compact ? 14 : 16),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFCF7),
-              borderRadius: BorderRadius.circular(22),
+              color: const Color(0xF5FFFCF7),
+              borderRadius: BorderRadius.circular(24),
               border: Border.all(color: const Color(0xFFDDE7E3)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x0F150806),
+                  blurRadius: 16,
+                  offset: Offset(0, 8),
+                ),
+              ],
             ),
-            child: compact
-                ? Column(
+            child: Row(
+              children: [
+                Semantics(
+                  image: true,
+                  label: 'An open cafe table ready for another meetup',
+                  child: ExcludeSemantics(
+                    child: Container(
+                      width: 68,
+                      height: 68,
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF6EA),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFFFD9BD)),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.asset(
+                          GeneratedImageAssets.browseMoreMeetups,
+                          fit: BoxFit.cover,
+                          cacheWidth: 180,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          leading,
-                          const SizedBox(width: 12),
-                          Expanded(child: copy),
-                        ],
+                      Text(
+                        'Browse more meetups',
+                        style: theme.textTheme.titleMedium,
                       ),
-                      const SizedBox(height: 12),
-                      Container(
-                        height: 1,
-                        color: const Color(0xFFDDE7E3),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.calendar_today_outlined,
-                            size: 17,
-                            color: Color(0xFF60727A),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(child: dateCopy),
-                          const Icon(
-                            Icons.chevron_right_rounded,
-                            color: Color(0xFF60727A),
-                          ),
-                        ],
-                      ),
-                    ],
-                  )
-                : Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      leading,
-                      const SizedBox(width: 12),
-                      Expanded(child: copy),
-                      const SizedBox(width: 12),
-                      Container(
-                        width: 1,
-                        height: 56,
-                        color: const Color(0xFFDDE7E3),
-                      ),
-                      const SizedBox(width: 12),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 132),
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: dateCopy,
+                      const SizedBox(height: 2),
+                      Text(
+                        summary,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFF60727A),
                         ),
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Color(0xFF138B8A),
+                ),
+              ],
+            ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -796,30 +1092,40 @@ class _HeroInfoRow extends StatelessWidget {
   }
 }
 
-String _shortDateLabel(MeetupEvent event) {
-  return '${event.startsAt.day} ${_monthShortLabel(event.startsAt.month)}';
+String _browseSummary({
+  required List<MeetupEvent> events,
+  required List<MeetupEvent> allEvents,
+  required String? preferredCity,
+  required bool isUsingOtherCities,
+}) {
+  if (events.isEmpty) return 'New meetups are added regularly';
+  if (isUsingOtherCities) return 'Meetups in other cities';
+
+  final count = events.length;
+  final meetupLabel = count == 1 ? 'meetup' : 'meetups';
+  final city = preferredCity?.trim();
+  if (city != null && city.isNotEmpty) {
+    return '$count $meetupLabel available in $city';
+  }
+
+  if (allEvents.isNotEmpty) {
+    return '$count $meetupLabel ready to explore';
+  }
+  return 'New meetups are added regularly';
 }
 
-String _startTimeLabel(MeetupEvent event) {
-  return _formatHomeTime(event.startsAt);
+String _arrivalTimeLabel(MeetupEvent event) {
+  return _formatHomeTime(
+    event.startsAt.subtract(const Duration(minutes: 10)),
+  );
 }
 
-String _monthShortLabel(int month) {
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  return months[(month - 1).clamp(0, 11)];
+bool _isSameCalendarDay(DateTime first, DateTime second) {
+  final localFirst = first.toLocal();
+  final localSecond = second.toLocal();
+  return localFirst.year == localSecond.year &&
+      localFirst.month == localSecond.month &&
+      localFirst.day == localSecond.day;
 }
 
 String _formatHomeTime(DateTime value) {

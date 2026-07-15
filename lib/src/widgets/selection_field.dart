@@ -7,12 +7,14 @@ class SelectionField extends StatelessWidget {
     required this.value,
     required this.placeholder,
     required this.onTap,
+    this.label,
   });
 
   final IconData icon;
   final String? value;
   final String placeholder;
   final VoidCallback onTap;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +24,7 @@ class SelectionField extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: displayValue,
+      label: label == null ? displayValue : '$label, $displayValue',
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
@@ -40,14 +42,39 @@ class SelectionField extends StatelessWidget {
                 Icon(icon),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    displayValue,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: hasValue ? null : const Color(0xFF66727C),
-                    ),
-                  ),
+                  child: label == null
+                      ? Text(
+                          displayValue,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: hasValue ? null : const Color(0xFF66727C),
+                          ),
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              label!,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: const Color(0xFF60727A),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              displayValue,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: hasValue
+                                    ? const Color(0xFF062B55)
+                                    : const Color(0xFF66727C),
+                                fontWeight: hasValue ? FontWeight.w700 : null,
+                              ),
+                            ),
+                          ],
+                        ),
                 ),
                 const SizedBox(width: 12),
                 const Icon(Icons.keyboard_arrow_down_rounded),

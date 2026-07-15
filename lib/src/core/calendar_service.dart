@@ -37,8 +37,7 @@ String buildMeetupCalendarDescription(MeetupEvent event) {
     sections.add('Venue: ${event.locationDetailLabel}');
   } else {
     sections.add(
-      'Area: ${event.areaLabel}, ${event.city}\n'
-      'The exact address is shared at 10:00 the day before the meetup.',
+      'Area: ${event.areaLabel}, ${event.city}\n${event.addressReleaseSentence}',
     );
   }
 

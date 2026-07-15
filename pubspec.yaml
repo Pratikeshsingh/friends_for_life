@@ -28,8 +28,9 @@ flutter:
     - assets/generated/home-continuous-scene-v3.webp
     - assets/generated/meetups-continuous-scene-v3.webp
     - assets/generated/profile-continuous-scene-v3.webp
-    - assets/generated/landing-immersive-desktop-v2.webp
-    - assets/generated/landing-immersive-mobile-v2.webp
+    - assets/generated/browse-more-meetups-v1.webp
+    - assets/generated/landing-open-seat-desktop-v1.webp
+    - assets/generated/landing-open-seat-mobile-v1.webp
     - assets/generated/launch-table-meetup.webp
     - assets/generated/meetup-coffee-reserved.webp
     - assets/generated/meetup-dinner-reserved.webp

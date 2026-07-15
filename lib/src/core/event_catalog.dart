@@ -2,6 +2,33 @@ enum EventSlot { daytime, evening }
 
 const Duration meetupCancellationCutoff = Duration(hours: 12);
 
+/// The exact venue is released at 10:00 Europe/Amsterdam on the calendar day
+/// before a meetup. These helpers mirror that server-side rule without using
+/// the device timezone, so the label stays stable for people travelling.
+DateTime meetupAddressReleaseAt(DateTime eventStartsAt) {
+  final eventDateInAmsterdam = _amsterdamWallClock(eventStartsAt);
+  final releaseWallClock = DateTime.utc(
+    eventDateInAmsterdam.year,
+    eventDateInAmsterdam.month,
+    eventDateInAmsterdam.day - 1,
+    10,
+  );
+  final offsetHours = _isAmsterdamSummerTimeAtTen(releaseWallClock) ? 2 : 1;
+  return releaseWallClock.subtract(Duration(hours: offsetHours));
+}
+
+String formatMeetupAddressReleaseDateTime(DateTime eventStartsAt) {
+  final releaseAt = meetupAddressReleaseAt(eventStartsAt);
+  final releaseInAmsterdam = _amsterdamWallClock(releaseAt);
+  return '${releaseInAmsterdam.day} ${_monthLabel(releaseInAmsterdam.month)} '
+      'at 10:00';
+}
+
+String buildMeetupAddressReleaseSentence(DateTime eventStartsAt) {
+  return 'The exact address will be available in VriendTime on '
+      '${formatMeetupAddressReleaseDateTime(eventStartsAt)}.';
+}
+
 class MeetupEvent {
   const MeetupEvent({
     required this.id,
@@ -132,6 +159,14 @@ class MeetupEvent {
   String get detailTimeLabel {
     return '${_formatTime(startsAt)}–${_formatTime(endsAt)}';
   }
+
+  DateTime get addressReleaseAt => meetupAddressReleaseAt(startsAt);
+
+  String get addressReleaseDateTimeLabel =>
+      formatMeetupAddressReleaseDateTime(startsAt);
+
+  String get addressReleaseSentence =>
+      buildMeetupAddressReleaseSentence(startsAt);
 
   String get statusLabel {
     if (status == 'closed') return 'Reservations closed';
@@ -564,4 +599,35 @@ String _formatTime(DateTime value) {
   final hour = value.hour.toString().padLeft(2, '0');
   final minute = value.minute.toString().padLeft(2, '0');
   return '$hour:$minute';
+}
+
+DateTime _amsterdamWallClock(DateTime value) {
+  final utc = value.toUtc();
+  final offset = _isAmsterdamSummerTimeAtUtc(utc)
+      ? const Duration(hours: 2)
+      : const Duration(hours: 1);
+  return utc.add(offset);
+}
+
+bool _isAmsterdamSummerTimeAtUtc(DateTime utcValue) {
+  final utc = utcValue.toUtc();
+  final year = utc.year;
+  final startsAt = DateTime.utc(year, 3, _lastSundayOfMonth(year, 3), 1);
+  final endsAt = DateTime.utc(year, 10, _lastSundayOfMonth(year, 10), 1);
+  return !utc.isBefore(startsAt) && utc.isBefore(endsAt);
+}
+
+bool _isAmsterdamSummerTimeAtTen(DateTime wallClock) {
+  final month = wallClock.month;
+  if (month > DateTime.march && month < DateTime.october) return true;
+  if (month < DateTime.march || month > DateTime.october) return false;
+
+  final transitionDay = _lastSundayOfMonth(wallClock.year, month);
+  if (month == DateTime.march) return wallClock.day >= transitionDay;
+  return wallClock.day < transitionDay;
+}
+
+int _lastSundayOfMonth(int year, int month) {
+  final lastDay = DateTime.utc(year, month + 1, 0);
+  return lastDay.day - (lastDay.weekday % DateTime.daysPerWeek);
 }

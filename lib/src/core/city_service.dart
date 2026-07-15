@@ -4,12 +4,7 @@ class CityService {
   const CityService(this._supabase);
 
   final SupabaseClient _supabase;
-  static const defaultCityOptions = <String>[
-    'Alkmaar',
-    'Amsterdam',
-    'Haarlem',
-    'Utrecht',
-  ];
+  static const defaultCityOptions = <String>['Alkmaar'];
   static List<String>? _cachedOptions;
   static Future<List<String>>? _pendingRequest;
 
@@ -27,22 +22,19 @@ class CityService {
     }
 
     final previousOptions = _cachedOptions;
-    final request = _fetchCityOptions();
+    final request = _fetchCityOptions(fallbackOptions: previousOptions);
     _pendingRequest = request;
     final options = await request;
     if (identical(_pendingRequest, request)) {
       _pendingRequest = null;
     }
-    final nextOptions = ((options.isEmpty || _isDefaultOptions(options)) &&
-            previousOptions != null &&
-            previousOptions.isNotEmpty)
-        ? previousOptions
-        : options;
-    _cachedOptions = nextOptions;
-    return nextOptions;
+    _cachedOptions = options;
+    return options;
   }
 
-  Future<List<String>> _fetchCityOptions() async {
+  Future<List<String>> _fetchCityOptions({
+    List<String>? fallbackOptions,
+  }) async {
     try {
       final rows = await _supabase
           .from('city_options')
@@ -59,15 +51,10 @@ class CityService {
 
       return options;
     } catch (_) {
+      if (fallbackOptions != null && fallbackOptions.isNotEmpty) {
+        return fallbackOptions;
+      }
       return defaultCityOptions;
     }
-  }
-
-  bool _isDefaultOptions(List<String> options) {
-    if (options.length != defaultCityOptions.length) return false;
-    for (var index = 0; index < options.length; index++) {
-      if (options[index] != defaultCityOptions[index]) return false;
-    }
-    return true;
   }
 }

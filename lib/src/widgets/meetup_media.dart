@@ -11,9 +11,10 @@ class GeneratedImageAssets {
   static const onboardingHero = '$_base/onboarding-hero.webp';
   static const launchTableMeetup = '$_base/launch-table-meetup.webp';
   static const landingImmersiveMobile =
-      '$_base/landing-immersive-mobile-v2.webp';
+      '$_base/landing-open-seat-mobile-v1.webp';
   static const landingImmersiveDesktop =
-      '$_base/landing-immersive-desktop-v2.webp';
+      '$_base/landing-open-seat-desktop-v1.webp';
+  static const browseMoreMeetups = '$_base/browse-more-meetups-v1.webp';
   static const onboardingAccountImmersive =
       '$_base/onboarding-account-immersive-v2.webp';
   static const onboardingDetailsImmersive =

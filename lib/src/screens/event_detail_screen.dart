@@ -5,6 +5,7 @@ import '../core/event_catalog.dart';
 import '../core/responsive.dart';
 import '../widgets/app_shell_header.dart';
 import '../widgets/continuous_immersive_scene.dart';
+import '../widgets/meetup_explorer_tile.dart';
 import '../widgets/meetup_media.dart';
 import '../widgets/motion.dart';
 import '../widgets/section_card.dart';
@@ -373,27 +374,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                 const SizedBox(width: 18),
                                 Expanded(
                                   flex: 5,
-                                  child: Column(
-                                    children: [
-                                      _CurrentMeetupAtGlanceCard(
-                                        motionIndex: 5,
-                                        event: widget.event!,
-                                        revealedLocationLabel:
-                                            _resolvedLocationLabel(
-                                                widget.event!),
-                                        hasRevealedLocation:
-                                            _hasRevealedLocation(widget.event!),
-                                      ),
-                                      const SizedBox(height: 18),
-                                      _BeforeMeetupCard(
-                                        motionIndex: 6,
-                                        revealedLocationLabel:
-                                            _resolvedLocationLabel(
-                                                widget.event!),
-                                        hasRevealedLocation:
-                                            _hasRevealedLocation(widget.event!),
-                                      ),
-                                    ],
+                                  child: _CurrentMeetupAtGlanceCard(
+                                    motionIndex: 5,
+                                    event: widget.event!,
+                                    revealedLocationLabel:
+                                        _resolvedLocationLabel(widget.event!),
+                                    hasRevealedLocation:
+                                        _hasRevealedLocation(widget.event!),
                                   ),
                                 ),
                               ],
@@ -418,19 +405,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                               hasRevealedLocation:
                                   _hasRevealedLocation(widget.event!),
                             ),
-                            const SizedBox(height: 18),
-                            _BeforeMeetupCard(
-                              motionIndex: 6,
-                              revealedLocationLabel:
-                                  _resolvedLocationLabel(widget.event!),
-                              hasRevealedLocation:
-                                  _hasRevealedLocation(widget.event!),
-                            ),
                           ],
                         ],
                         const SizedBox(height: 18),
                         SectionCard(
-                          motionIndex: widget.event == null ? 5 : 7,
+                          motionIndex: widget.event == null ? 5 : 6,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -458,11 +437,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                               else ...[
                                 for (final otherEvent
                                     in unreservedOpenEvents) ...[
-                                  _ExploreMeetupListTile(
+                                  MeetupExplorerTile(
                                     event: otherEvent,
                                     key: _keyForEvent(otherEvent.id),
-                                    isUpdatingSelection:
-                                        widget.isUpdatingSelection,
+                                    enabled: !widget.isUpdatingSelection,
                                     onOpenDetails: () async {
                                       await _openMeetupPreviewSheet(
                                         context: context,
@@ -504,7 +482,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         if (reservedOpenEvents.isNotEmpty) ...[
                           const SizedBox(height: 18),
                           SectionCard(
-                            motionIndex: widget.event == null ? 6 : 8,
+                            motionIndex: widget.event == null ? 6 : 7,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -555,7 +533,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         if (visiblePastEvents.isNotEmpty) ...[
                           const SizedBox(height: 18),
                           SectionCard(
-                            motionIndex: widget.event == null ? 7 : 9,
+                            motionIndex: widget.event == null ? 7 : 8,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -685,7 +663,7 @@ class _CurrentMeetupHero extends StatelessWidget {
           if (!hasRevealedLocation) ...[
             const SizedBox(height: 14),
             Text(
-              'Exact address shared the day before.',
+              event.addressReleaseSentence,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: const Color(0xFF60727A),
               ),
@@ -742,50 +720,6 @@ class _CurrentMeetupAtGlanceCard extends StatelessWidget {
             icon: Icons.translate_outlined,
             title: 'Languages',
             body: event.languages.join(' • '),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BeforeMeetupCard extends StatelessWidget {
-  const _BeforeMeetupCard({
-    required this.motionIndex,
-    required this.revealedLocationLabel,
-    required this.hasRevealedLocation,
-  });
-
-  final int motionIndex;
-  final String revealedLocationLabel;
-  final bool hasRevealedLocation;
-
-  @override
-  Widget build(BuildContext context) {
-    return SectionCard(
-      motionIndex: motionIndex,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Before the meetup',
-              style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 16),
-          if (!hasRevealedLocation) ...[
-            const _ExpectationLine(
-              title: 'Address',
-              body: 'Shared the day before.',
-            ),
-            const SizedBox(height: 12),
-          ] else ...[
-            _ExpectationLine(
-              title: 'Address',
-              body: revealedLocationLabel,
-            ),
-            const SizedBox(height: 12),
-          ],
-          const _ExpectationLine(
-            title: 'The vibe',
-            body: 'Relaxed and low-pressure—come as you are.',
           ),
         ],
       ),
@@ -874,230 +808,6 @@ class _EmptyMeetupsCatalog extends StatelessWidget {
   }
 }
 
-class _ExploreMeetupListTile extends StatelessWidget {
-  const _ExploreMeetupListTile({
-    super.key,
-    required this.event,
-    required this.isUpdatingSelection,
-    required this.onOpenDetails,
-  });
-
-  final MeetupEvent event;
-  final bool isUpdatingSelection;
-  final VoidCallback onOpenDetails;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final canOpen = !isUpdatingSelection;
-    final badgeColor = _compactBadgeColorForEvent(event);
-    final badgeIcon = _compactIconForEvent(event);
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 420;
-        final imageSize = compact ? 88.0 : 136.0;
-        final imageRadius = compact ? 18.0 : 24.0;
-        final arrowSize = compact ? 38.0 : 52.0;
-        final horizontalGap = compact ? 12.0 : 18.0;
-        final arrowGap = compact ? 8.0 : 14.0;
-        final titleStyle = (compact
-                ? theme.textTheme.headlineSmall
-                : theme.textTheme.headlineSmall)
-            ?.copyWith(
-          fontSize: compact ? 18 : 24,
-          height: 1.08,
-        );
-        final artwork = ClipRRect(
-          borderRadius: BorderRadius.circular(imageRadius),
-          child: SizedBox(
-            width: imageSize,
-            height: imageSize,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                MeetupArtwork(
-                  event: event,
-                  height: imageSize,
-                  radius: imageRadius,
-                  assetName: GeneratedImageAssets.compactCardForEvent(event),
-                  preferFullBleed: true,
-                ),
-                Positioned(
-                  left: 8,
-                  right: compact ? 8 : null,
-                  bottom: 8,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: compact ? 10 : 12,
-                      vertical: compact ? 7 : 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: badgeColor,
-                      borderRadius: BorderRadius.circular(999),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x22000000),
-                          blurRadius: 12,
-                          offset: Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            badgeIcon,
-                            size: compact ? 14 : 16,
-                            color: Colors.white,
-                          ),
-                          SizedBox(width: compact ? 6 : 8),
-                          Text(
-                            event.activityLabel,
-                            maxLines: 1,
-                            softWrap: false,
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: Colors.white,
-                              fontSize: compact ? 12 : null,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-        final arrow = Container(
-          width: arrowSize,
-          height: arrowSize,
-          decoration: const BoxDecoration(
-            color: Color(0xFFEAF7F5),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            !event.isOpenForReservation
-                ? Icons.do_not_disturb_on_outlined
-                : Icons.arrow_forward_ios_rounded,
-            size: compact ? 20 : 22,
-            color: !event.isOpenForReservation
-                ? const Color(0xFFD85F4D)
-                : const Color(0xFF60727A),
-          ),
-        );
-        final infoLines = <Widget>[
-          _CompactInfoLine(
-            icon: Icons.calendar_today_outlined,
-            child: Text(
-              '${_monthDayLabel(event)} • ${event.detailTimeLabel}',
-              style: theme.textTheme.bodyMedium,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(height: 10),
-          _CompactInfoLine(
-            icon: Icons.place_outlined,
-            child: Text(
-              event.city,
-              style: theme.textTheme.bodyMedium,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          if (!event.isOpenForReservation) ...[
-            const SizedBox(height: 10),
-            Text(
-              event.reservationUnavailableLabel,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: const Color(0xFFD85F4D),
-              ),
-            ),
-          ],
-        ];
-        final details = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              event.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: titleStyle,
-            ),
-            SizedBox(height: compact ? 12 : 16),
-            ...infoLines,
-          ],
-        );
-
-        final availability = event.isOpenForReservation
-            ? 'Available to reserve'
-            : event.reservationUnavailableLabel;
-
-        return Semantics(
-          button: true,
-          enabled: canOpen,
-          label:
-              '${event.title}. ${event.activityLabel}. ${_monthDayLabel(event)} at ${event.detailTimeLabel}. ${event.city}. $availability.',
-          hint: canOpen ? 'Open meetup details' : 'Reservations are updating',
-          child: ExcludeSemantics(
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(24),
-                onTap: canOpen ? onOpenDetails : null,
-                child: Ink(
-                  padding: EdgeInsets.all(compact ? 14 : 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFFCF7),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: const Color(0xFFDDE7E3),
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x1206294A),
-                        blurRadius: 18,
-                        offset: Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: compact
-                      ? Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            artwork,
-                            SizedBox(width: horizontalGap),
-                            Expanded(child: details),
-                            SizedBox(width: arrowGap),
-                            arrow,
-                          ],
-                        )
-                      : Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            artwork,
-                            SizedBox(width: horizontalGap),
-                            Expanded(child: details),
-                            SizedBox(width: arrowGap),
-                            arrow,
-                          ],
-                        ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
 class _CompactInfoLine extends StatelessWidget {
   const _CompactInfoLine({
     required this.icon,
@@ -1137,20 +847,6 @@ IconData _compactIconForEvent(MeetupEvent event) {
     return Icons.directions_walk_outlined;
   }
   return Icons.local_cafe_outlined;
-}
-
-Color _compactBadgeColorForEvent(MeetupEvent event) {
-  final activity = event.activityLabel.toLowerCase();
-  if (activity.contains('lunch') || activity.contains('brunch')) {
-    return const Color(0xCCCF9A54);
-  }
-  if (activity.contains('dinner')) {
-    return const Color(0xCCCF7C58);
-  }
-  if (activity.contains('walk')) {
-    return const Color(0xCC5F8D76);
-  }
-  return const Color(0xCC29322E);
 }
 
 class _MeetupPreviewSheet extends StatelessWidget {
@@ -1370,20 +1066,26 @@ class _ReservedOpenMeetupRow extends StatelessWidget {
         _CompactInfoLine(
           icon: Icons.calendar_today_outlined,
           child: Text(
-            '${_monthDayLabel(event)} • ${event.detailTimeLabel}',
+            _monthDayLabel(event),
             style: theme.textTheme.bodyMedium,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            key: ValueKey('reserved-meetup-date-${event.id}'),
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
+        _CompactInfoLine(
+          icon: Icons.schedule_outlined,
+          child: Text(
+            event.detailTimeLabel,
+            style: theme.textTheme.bodyMedium,
+            key: ValueKey('reserved-meetup-time-${event.id}'),
+          ),
+        ),
+        const SizedBox(height: 8),
         _CompactInfoLine(
           icon: Icons.place_outlined,
           child: Text(
             event.city,
             style: theme.textTheme.bodyMedium,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -1462,8 +1164,10 @@ class _ReservedOpenMeetupRow extends StatelessWidget {
                             artwork,
                             SizedBox(width: compact ? 12 : 18),
                             Expanded(child: infoLines),
-                            SizedBox(width: compact ? 10 : 14),
-                            arrow,
+                            if (!compact) ...[
+                              const SizedBox(width: 14),
+                              arrow,
+                            ],
                           ],
                         ),
                       ],
@@ -1837,51 +1541,6 @@ class _DetailRow extends StatelessWidget {
               const SizedBox(height: 4),
               Text(body, style: Theme.of(context).textTheme.bodyMedium),
             ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ExpectationLine extends StatelessWidget {
-  const _ExpectationLine({
-    required this.title,
-    required this.body,
-  });
-
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          margin: const EdgeInsets.only(top: 6),
-          decoration: const BoxDecoration(
-            color: Color(0xFFFF7759),
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: RichText(
-            text: TextSpan(
-              style: Theme.of(context).textTheme.bodyMedium,
-              children: [
-                TextSpan(
-                  text: '$title: ',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontSize: 14,
-                      ),
-                ),
-                TextSpan(text: body),
-              ],
-            ),
           ),
         ),
       ],

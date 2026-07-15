@@ -619,13 +619,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            ProfilePhotoService.isBucketMissing(error)
-                ? 'Photo uploads are temporarily unavailable.'
-                : ProfilePhotoService.isUploadTooLargeError(error)
-                    ? 'That photo is too large. Choose a photo under ${ProfilePhotoService.maxUploadLabel}.'
-                    : 'We could not upload your photo. Check your connection and try again.',
-          ),
+          content: Text(ProfilePhotoService.uploadErrorMessage(error)),
         ),
       );
       setState(() => _isSaving = false);
@@ -633,9 +627,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text(
-          'We could not upload your photo. Check your connection and try again.',
-        )),
+          content: Text(ProfilePhotoService.genericUploadErrorMessage),
+        ),
       );
       setState(() => _isSaving = false);
     }
@@ -820,93 +813,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final photoActionLabel =
         shouldShowPhoto ? 'Replace profile photo' : 'Add profile photo';
 
-    return SizedBox(
-      width: 118,
-      height: 118,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned.fill(
-            child: Semantics(
-              button: shouldShowPhoto,
-              image: !shouldShowPhoto,
-              label:
-                  shouldShowPhoto ? 'Profile photo' : 'Default profile image',
-              hint: shouldShowPhoto ? 'Open full-size preview' : null,
-              child: ExcludeSemantics(
-                child: InkWell(
-                  onTap: shouldShowPhoto ? _openProfilePhotoPreview : null,
-                  borderRadius: BorderRadius.circular(32),
-                  child: Ink(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE7F4F2),
-                      borderRadius: BorderRadius.circular(32),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        width: 4,
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x14062B55),
-                          blurRadius: 18,
-                          offset: Offset(0, 8),
-                        ),
-                      ],
-                      gradient: !shouldShowPhoto
-                          ? const LinearGradient(
-                              colors: [
-                                Color(0xFF062B55),
-                                Color(0xFF36B8A5),
-                              ],
-                            )
-                          : null,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(28),
-                      child: shouldShowPhoto
-                          ? _buildPhotoWidget(fit: BoxFit.cover)
-                          : const Center(
-                              child: _DefaultAvatarIllustration(),
-                            ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            right: -2,
-            bottom: -2,
-            child: Tooltip(
-              message: photoActionLabel,
-              child: Semantics(
-                button: true,
-                enabled: !_isSaving,
-                label: photoActionLabel,
-                child: ExcludeSemantics(
-                  child: Material(
-                    color: Colors.white,
-                    shape: const CircleBorder(),
-                    elevation: 4,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 118,
+          height: 118,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                child: Semantics(
+                  button: shouldShowPhoto,
+                  image: !shouldShowPhoto,
+                  label: shouldShowPhoto
+                      ? 'Profile photo'
+                      : 'Default profile image',
+                  hint: shouldShowPhoto ? 'Open full-size preview' : null,
+                  child: ExcludeSemantics(
                     child: InkWell(
-                      onTap: _isSaving ? null : _changeProfilePhoto,
-                      customBorder: const CircleBorder(),
-                      child: SizedBox(
-                        width: 44,
-                        height: 44,
-                        child: Center(
-                          child: _isLoadingPhoto || _isSaving
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
+                      onTap: shouldShowPhoto ? _openProfilePhotoPreview : null,
+                      borderRadius: BorderRadius.circular(32),
+                      child: Ink(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE7F4F2),
+                          borderRadius: BorderRadius.circular(32),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            width: 4,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x14062B55),
+                              blurRadius: 18,
+                              offset: Offset(0, 8),
+                            ),
+                          ],
+                          gradient: !shouldShowPhoto
+                              ? const LinearGradient(
+                                  colors: [
+                                    Color(0xFF062B55),
+                                    Color(0xFF36B8A5),
+                                  ],
                                 )
-                              : const Icon(
-                                  Icons.camera_alt_outlined,
-                                  size: 18,
-                                  color: Color(0xFF138B8A),
+                              : null,
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(28),
+                          child: shouldShowPhoto
+                              ? _buildPhotoWidget(fit: BoxFit.cover)
+                              : const Center(
+                                  child: _DefaultAvatarIllustration(),
                                 ),
                         ),
                       ),
@@ -914,10 +871,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
-            ),
+              Positioned(
+                right: -2,
+                bottom: -2,
+                child: Tooltip(
+                  message: photoActionLabel,
+                  child: Semantics(
+                    button: true,
+                    enabled: !_isSaving,
+                    label: photoActionLabel,
+                    child: ExcludeSemantics(
+                      child: Material(
+                        color: Colors.white,
+                        shape: const CircleBorder(),
+                        elevation: 4,
+                        child: InkWell(
+                          onTap: _isSaving ? null : _changeProfilePhoto,
+                          customBorder: const CircleBorder(),
+                          child: SizedBox(
+                            width: 44,
+                            height: 44,
+                            child: Center(
+                              child: _isLoadingPhoto || _isSaving
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.camera_alt_outlined,
+                                      size: 18,
+                                      color: Color(0xFF138B8A),
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '${ProfilePhotoService.supportedFormatsLabel} · max ${ProfilePhotoService.maxUploadLabel}',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: const Color(0xFF60727A),
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+      ],
     );
   }
 
@@ -1719,8 +1727,9 @@ class _FaqPage extends StatelessWidget {
         _HelpAnswerCard(
           icon: Icons.location_on_outlined,
           title: 'When do I get the exact location?',
-          body:
-              'The area is shown before you reserve. The exact address is shared the day before your meetup.',
+          body: 'The area is shown before you reserve. The exact venue appears '
+              'in your VriendTime notifications at 10:00 on the date shown '
+              'in your reservation.',
         ),
         _HelpAnswerCard(
           icon: Icons.event_repeat_outlined,

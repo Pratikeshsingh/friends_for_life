@@ -7,6 +7,7 @@ class OptionPickerSheet extends StatefulWidget {
     required this.currentValue,
     required this.options,
     this.searchHintText,
+    this.supportingText,
     this.emptyStateTitle,
     this.emptyStateBody,
   });
@@ -15,6 +16,7 @@ class OptionPickerSheet extends StatefulWidget {
   final String? currentValue;
   final List<String> options;
   final String? searchHintText;
+  final String? supportingText;
   final String? emptyStateTitle;
   final String? emptyStateBody;
 
@@ -70,6 +72,17 @@ class _OptionPickerSheetState extends State<OptionPickerSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(widget.title, style: theme.textTheme.headlineSmall),
+                  if (widget.supportingText != null &&
+                      widget.supportingText!.trim().isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.supportingText!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF60727A),
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
                   if (widget.searchHintText != null) ...[
                     const SizedBox(height: 16),
                     TextField(
@@ -129,7 +142,8 @@ class _OptionPickerSheetState extends State<OptionPickerSheet> {
                                           color: Color(0xFF138B8A),
                                         )
                                       : const Icon(
-                                          Icons.chevron_right_rounded,
+                                          Icons.circle_outlined,
+                                          color: Color(0xFF9AABA9),
                                         ),
                                   onTap: () =>
                                       Navigator.of(context).pop(option),

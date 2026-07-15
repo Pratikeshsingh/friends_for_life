@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../core/event_catalog.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/meetup_media.dart';
 import '../widgets/motion.dart';
+import 'web_marketing_landing.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({
@@ -56,6 +58,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       builder: (context) => _PublicMeetupExplorer(
         events: widget.availableEvents,
         focusedEvent: focusedEvent,
+        onCreateAccount: () => Navigator.of(context).pop(true),
         onSignIn: () {
           Navigator.of(context).pop();
           _handleSignIn();
@@ -70,12 +73,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) {
+      return WebMarketingLandingPage(
+        availableEvents: widget.availableEvents,
+        isLoadingMeetups: widget.isLoadingMeetups,
+        hasEventLoadError: widget.hasEventLoadError,
+        onRetryMeetups: widget.onRetryMeetups,
+        onCreateAccount: _handleStart,
+        onSignIn: _handleSignIn,
+        onBrowseMeetups: () => _openExplorer(),
+        onOpenEvent: _openExplorer,
+      );
+    }
+
     final width = MediaQuery.sizeOf(context).width;
     final compact = width < 700;
     final textScale = MediaQuery.textScalerOf(context).scale(16) / 16;
+    // Keep the artwork immersive without making people scroll through its full
+    // 2:3 source ratio before they can see a real meetup. The proof panel now
+    // genuinely overlaps the scene instead of overlapping an empty reserve.
+    final compactHeroHeight = (width * 1.34).clamp(460.0, 560.0).toDouble();
     final heroHeight = compact
-        ? 560.0 + ((textScale - 1).clamp(0, 1) * 150)
+        ? compactHeroHeight + ((textScale - 1).clamp(0, 1) * 260)
         : 610.0 + ((textScale - 1).clamp(0, 1) * 90);
+    final proofPanelOverlap = compact ? 112.0 : 64.0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFAF4),
@@ -88,14 +109,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
         ),
         child: SingleChildScrollView(
-          child: Column(
+          child: Stack(
+            alignment: Alignment.topCenter,
             children: [
               _ImmersiveLaunchHero(
                 height: heroHeight,
                 compact: compact,
               ),
-              Transform.translate(
-                offset: Offset(0, compact ? -52 : -64),
+              Padding(
+                // Lay out the panel at its overlapped position so the scroll
+                // extent ends with the content instead of reserving a blank
+                // transform-sized strip underneath it.
+                padding: EdgeInsets.only(
+                  top: heroHeight - proofPanelOverlap,
+                ),
                 child: _MeetupProofPanel(
                   events: widget.availableEvents,
                   isLoading: widget.isLoadingMeetups,
@@ -128,12 +155,19 @@ class _ImmersiveLaunchHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final width = MediaQuery.sizeOf(context).width;
-    final imageAsset = compact
+    final usePortraitArtwork = width < 520;
+    final imageAsset = usePortraitArtwork
         ? GeneratedImageAssets.landingImmersiveMobile
         : GeneratedImageAssets.landingImmersiveDesktop;
+    final imageAlignment = usePortraitArtwork
+        ? Alignment.bottomCenter
+        : compact
+            ? const Alignment(-0.25, 0)
+            : Alignment.center;
     final contentWidth = compact ? width : 1180.0;
 
     return SizedBox(
+      key: const ValueKey('landing-immersive-hero'),
       height: height,
       width: double.infinity,
       child: Stack(
@@ -142,14 +176,14 @@ class _ImmersiveLaunchHero extends StatelessWidget {
           Image.asset(
             imageAsset,
             fit: BoxFit.cover,
-            alignment: compact ? Alignment.topCenter : Alignment.center,
-            cacheWidth: compact ? 1000 : 1800,
+            alignment: imageAlignment,
+            cacheWidth: usePortraitArtwork ? 1000 : 1800,
             semanticLabel:
-                'Four people sharing coffee and a meal around a cafe table',
+                'An inviting cafe table with an open coral chair waiting for a guest',
             errorBuilder: (context, error, stackTrace) => Image.asset(
               GeneratedImageAssets.launchTableMeetup,
               fit: BoxFit.cover,
-              alignment: Alignment.center,
+              alignment: imageAlignment,
             ),
           ),
           const Positioned.fill(
@@ -159,11 +193,14 @@ class _ImmersiveLaunchHero extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color(0x18FFF9F1),
-                    Color(0x00FFF9F1),
-                    Color(0x10062B55),
+                    Color(0xFAFFFAF4),
+                    Color(0xF7FFFAF4),
+                    Color(0xE8FFFAF4),
+                    Color(0xA8FFFAF4),
+                    Color(0x38FFFAF4),
+                    Color(0x18062B55),
                   ],
-                  stops: [0, 0.62, 1],
+                  stops: [0, 0.24, 0.45, 0.64, 0.78, 1],
                 ),
               ),
             ),
@@ -226,8 +263,8 @@ class _ImmersiveLaunchHero extends StatelessWidget {
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 fontSize: compact ? 16 : 18,
                                 height: 1.45,
-                                color: const Color(0xFF526771),
-                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF294956),
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
@@ -277,6 +314,7 @@ class _MeetupProofPanel extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 1040),
         child: Container(
+          key: const ValueKey('landing-meetup-proof-panel'),
           width: double.infinity,
           margin: EdgeInsets.symmetric(horizontal: compact ? 0 : 28),
           padding: EdgeInsets.fromLTRB(
@@ -334,7 +372,7 @@ class _MeetupProofPanel extends StatelessWidget {
                 const _TypicalMeetupStrip()
               else
                 SizedBox(
-                  height: compact ? 190 : 226,
+                  height: compact ? 214 : 232,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     padding: EdgeInsets.zero,
@@ -642,25 +680,21 @@ class _PublicMeetupCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            event.dateLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.fade,
-                            softWrap: false,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFF60727A),
-                              fontWeight: FontWeight.w600,
-                            ),
+                          _PublicMeetupMetadataLine(
+                            icon: Icons.calendar_today_outlined,
+                            label: event.detailDateLabel,
+                            emphasized: true,
                           ),
                           const SizedBox(height: 2),
-                          Text(
-                            'Near ${event.areaLabel}',
-                            maxLines: 1,
-                            overflow: TextOverflow.fade,
-                            softWrap: false,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFF728187),
-                            ),
+                          _PublicMeetupMetadataLine(
+                            icon: Icons.schedule_outlined,
+                            label: event.detailTimeLabel,
+                            emphasized: true,
+                          ),
+                          const SizedBox(height: 2),
+                          _PublicMeetupMetadataLine(
+                            icon: Icons.location_on_outlined,
+                            label: 'Near ${event.areaLabel}',
                           ),
                         ],
                       ),
@@ -672,6 +706,52 @@ class _PublicMeetupCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _PublicMeetupMetadataLine extends StatelessWidget {
+  const _PublicMeetupMetadataLine({
+    required this.icon,
+    required this.label,
+    this.emphasized = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool emphasized;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 13,
+          color: emphasized ? const Color(0xFF138B8A) : const Color(0xFF728187),
+        ),
+        const SizedBox(width: 5),
+        Expanded(
+          child: SizedBox(
+            height: 16,
+            child: FittedBox(
+              alignment: Alignment.centerLeft,
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: emphasized
+                          ? const Color(0xFF526B73)
+                          : const Color(0xFF728187),
+                      fontWeight:
+                          emphasized ? FontWeight.w700 : FontWeight.w500,
+                    ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -740,21 +820,24 @@ class _TrustNote extends StatelessWidget {
 class _PublicMeetupExplorer extends StatelessWidget {
   const _PublicMeetupExplorer({
     required this.events,
+    required this.onCreateAccount,
     required this.onSignIn,
     this.focusedEvent,
   });
 
   final List<MeetupEvent> events;
+  final VoidCallback onCreateAccount;
   final VoidCallback onSignIn;
   final MeetupEvent? focusedEvent;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final orderedEvents = [
       if (focusedEvent != null) focusedEvent!,
       ...events.where((event) => event.id != focusedEvent?.id),
     ];
+    final textScale = MediaQuery.textScalerOf(context).scale(16) / 16;
+    final extraHeaderHeight = ((textScale - 1).clamp(0, 1) * 54).toDouble();
 
     return DraggableScrollableSheet(
       initialChildSize: focusedEvent == null ? 0.84 : 0.9,
@@ -762,93 +845,52 @@ class _PublicMeetupExplorer extends StatelessWidget {
       maxChildSize: 0.96,
       expand: false,
       builder: (context, scrollController) {
-        return DecoratedBox(
-          decoration: const BoxDecoration(
-            color: Color(0xFFFFFCF8),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        return ClipRRect(
+          key: const ValueKey('public-meetup-explorer-surface'),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(30),
           ),
-          child: CustomScrollView(
-            controller: scrollController,
-            slivers: [
-              SliverToBoxAdapter(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 10),
-                    Container(
-                      width: 42,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFD2D8D5),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 12, 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  focusedEvent == null
-                                      ? 'Explore upcoming meetups'
-                                      : 'Meetup details',
-                                  style: theme.textTheme.headlineSmall,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Browse first. Create an account only when you’re ready to reserve.',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: const Color(0xFF60727A),
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                TextButton(
-                                  onPressed: onSignIn,
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: const Size(44, 40),
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  child: const Text(
-                                    'Already have an account? Sign in',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: 'Close',
-                            onPressed: () => Navigator.of(context).pop(),
-                            icon: const Icon(Icons.close_rounded),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+          clipBehavior: Clip.antiAlias,
+          child: ColoredBox(
+            color: const Color(0xFFFFFCF8),
+            child: CustomScrollView(
+              key: const ValueKey('public-meetup-explorer-scroll-view'),
+              controller: scrollController,
+              slivers: [
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _PublicMeetupExplorerHeaderDelegate(
+                    title: focusedEvent == null
+                        ? 'Explore upcoming meetups'
+                        : 'Meetup details',
+                    subtitle: focusedEvent == null
+                        ? 'See what feels right. Reservation options are on each meetup.'
+                        : 'Everything you need to decide, before you reserve.',
+                    expandedExtent: 138 + extraHeaderHeight,
+                    collapsedExtent: 78 + (extraHeaderHeight * 0.35),
+                    onClose: () => Navigator.of(context).pop(),
+                  ),
                 ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
-                sliver: SliverList.separated(
-                  itemCount: orderedEvents.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 14),
-                  itemBuilder: (context, index) {
-                    final event = orderedEvents[index];
-                    return _PublicMeetupDetailCard(
-                      event: event,
-                      highlighted: event.id == focusedEvent?.id,
-                      onJoin: event.isOpenForReservation
-                          ? () => Navigator.of(context).pop(true)
-                          : null,
-                    );
-                  },
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+                  sliver: SliverList.separated(
+                    itemCount: orderedEvents.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 14),
+                    itemBuilder: (context, index) {
+                      final event = orderedEvents[index];
+                      return _PublicMeetupDetailCard(
+                        event: event,
+                        highlighted: event.id == focusedEvent?.id,
+                        onCreateAccount:
+                            event.isOpenForReservation ? onCreateAccount : null,
+                        onSignIn: event.isOpenForReservation ? onSignIn : null,
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -856,16 +898,168 @@ class _PublicMeetupExplorer extends StatelessWidget {
   }
 }
 
+class _PublicMeetupExplorerHeaderDelegate
+    extends SliverPersistentHeaderDelegate {
+  const _PublicMeetupExplorerHeaderDelegate({
+    required this.title,
+    required this.subtitle,
+    required this.expandedExtent,
+    required this.collapsedExtent,
+    required this.onClose,
+  });
+
+  final String title;
+  final String subtitle;
+  final double expandedExtent;
+  final double collapsedExtent;
+  final VoidCallback onClose;
+
+  @override
+  double get minExtent => collapsedExtent;
+
+  @override
+  double get maxExtent => expandedExtent;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final theme = Theme.of(context);
+    final collapseRange = maxExtent - minExtent;
+    final collapseProgress = collapseRange == 0
+        ? 1.0
+        : (shrinkOffset / collapseRange).clamp(0.0, 1.0);
+    final subtitleProgress = (collapseProgress * 1.6).clamp(0.0, 1.0);
+    final subtitleOpacity = 1 - Curves.easeIn.transform(subtitleProgress);
+    final hasScrolledContent = overlapsContent || shrinkOffset > 0.5;
+    final textScale = MediaQuery.textScalerOf(context).scale(16) / 16;
+    final titleTop = 32.0 - (collapseProgress * 5);
+    final titleHeight = 36.0 + ((textScale - 1).clamp(0, 1) * 20);
+    final closeTop = 23.0 - (collapseProgress * 3);
+    final subtitleTop = 72.0 + ((textScale - 1).clamp(0, 1) * 32);
+
+    return Material(
+      key: const ValueKey('public-meetup-explorer-header-surface'),
+      color: const Color(0xFFFFFCF8),
+      child: DecoratedBox(
+        key: const ValueKey('public-meetup-explorer-header-decoration'),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFCF8),
+          border: Border(
+            bottom: BorderSide(
+              color: hasScrolledContent
+                  ? const Color(0xFFE2E7E3)
+                  : Colors.transparent,
+            ),
+          ),
+          boxShadow: hasScrolledContent
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF062B55).withValues(alpha: 0.08),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : const [],
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              top: 10,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  key: const ValueKey('public-meetup-explorer-drag-handle'),
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD2D8D5),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: titleTop,
+              left: 20,
+              right: 68,
+              height: titleHeight,
+              child: Semantics(
+                header: true,
+                child: FittedBox(
+                  alignment: Alignment.centerLeft,
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    title,
+                    key: const ValueKey('public-meetup-explorer-title'),
+                    maxLines: 1,
+                    style: theme.textTheme.headlineSmall,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: subtitleTop,
+              left: 20,
+              right: 68,
+              child: IgnorePointer(
+                child: Opacity(
+                  key: const ValueKey('public-meetup-explorer-subtitle'),
+                  opacity: subtitleOpacity,
+                  child: Text(
+                    subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.fade,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF60727A),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: closeTop,
+              right: 12,
+              child: IconButton(
+                key: const ValueKey('public-meetup-explorer-close'),
+                tooltip: 'Close',
+                onPressed: onClose,
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(_PublicMeetupExplorerHeaderDelegate oldDelegate) {
+    return title != oldDelegate.title ||
+        subtitle != oldDelegate.subtitle ||
+        expandedExtent != oldDelegate.expandedExtent ||
+        collapsedExtent != oldDelegate.collapsedExtent ||
+        onClose != oldDelegate.onClose;
+  }
+}
+
 class _PublicMeetupDetailCard extends StatelessWidget {
   const _PublicMeetupDetailCard({
     required this.event,
     required this.highlighted,
-    required this.onJoin,
+    required this.onCreateAccount,
+    required this.onSignIn,
   });
 
   final MeetupEvent event;
   final bool highlighted;
-  final VoidCallback? onJoin;
+  final VoidCallback? onCreateAccount;
+  final VoidCallback? onSignIn;
 
   @override
   Widget build(BuildContext context) {
@@ -945,18 +1139,125 @@ class _PublicMeetupDetailCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: onJoin,
-                    child: Text(
-                      event.isOpenForReservation
-                          ? 'Create an account to reserve'
-                          : availability,
-                    ),
+                if (event.isOpenForReservation)
+                  _PublicReservationActions(
+                    onCreateAccount: onCreateAccount!,
+                    onSignIn: onSignIn!,
+                  )
+                else
+                  _PublicReservationUnavailable(availability: availability),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PublicReservationActions extends StatelessWidget {
+  const _PublicReservationActions({
+    required this.onCreateAccount,
+    required this.onSignIn,
+  });
+
+  final VoidCallback onCreateAccount;
+  final VoidCallback onSignIn;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 11, 12, 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F8F6),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFCFE7E1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Create an account or sign in to reserve.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: const Color(0xFF355D64),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: onCreateAccount,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  child: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Create account'),
                   ),
                 ),
-              ],
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(
+                onPressed: onSignIn,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(92, 44),
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                ),
+                child: const Text('Sign in'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PublicReservationUnavailable extends StatelessWidget {
+  const _PublicReservationUnavailable({required this.availability});
+
+  final String availability;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final message = switch (availability) {
+      'Full' => 'This meetup is full. Reservations are no longer available.',
+      'Cancelled' => 'This meetup was cancelled and cannot be reserved.',
+      _ => 'Reservations are no longer available for this meetup.',
+    };
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFCF1ED),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFF0D2C9)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.event_busy_outlined,
+            size: 19,
+            color: Color(0xFFA44D3E),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              message,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF79493F),
+                height: 1.35,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

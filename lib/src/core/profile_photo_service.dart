@@ -6,6 +6,9 @@ class ProfilePhotoService {
   static const bucketName = 'profile-photos';
   static const maxUploadBytes = 8 * 1024 * 1024;
   static const maxUploadLabel = '8 MB';
+  static const supportedFormatsLabel = 'JPG, PNG or WebP';
+  static const genericUploadErrorMessage =
+      "We couldn't upload this photo. Choose a JPG, PNG, or WebP up to 8 MB and try again.";
   static final Map<String, _SignedUrlCacheEntry> _signedUrlCache = {};
 
   static Future<String> uploadPhoto({
@@ -134,7 +137,7 @@ class ProfilePhotoService {
   }
 
   static String tooLargeMessage(int bytes) {
-    return 'That photo is ${fileSizeLabel(bytes)}. Choose a photo under $maxUploadLabel.';
+    return 'That photo is ${fileSizeLabel(bytes)}. Choose a photo up to $maxUploadLabel.';
   }
 
   static bool isUploadTooLargeError(Object error) {
@@ -149,6 +152,54 @@ class ProfilePhotoService {
         message.contains('payload') ||
         message.contains('entity too large') ||
         message.contains('413');
+  }
+
+  static String uploadErrorMessage(Object error) {
+    if (isBucketMissing(error)) {
+      return 'Photo uploads are temporarily unavailable. Your current photo has not changed.';
+    }
+
+    if (isUploadTooLargeError(error)) {
+      return 'That photo exceeds $maxUploadLabel. Choose a smaller JPG, PNG, or WebP image.';
+    }
+
+    if (error is! StorageException) {
+      return genericUploadErrorMessage;
+    }
+
+    final statusCode = int.tryParse(error.statusCode ?? '');
+    final details = '${error.message} ${error.error ?? ''}'.toLowerCase();
+
+    if (statusCode == 401 ||
+        statusCode == 403 ||
+        details.contains('unauthorized') ||
+        details.contains('jwt') ||
+        details.contains('row-level security') ||
+        details.contains('permission')) {
+      return 'Your photo upload permission has expired. Sign in again, then retry; your current photo is unchanged.';
+    }
+
+    if (statusCode == 415 ||
+        details.contains('mime') ||
+        details.contains('content type') ||
+        details.contains('unsupported')) {
+      return 'That image type is not supported. Choose a JPG, PNG, or WebP image up to $maxUploadLabel.';
+    }
+
+    if ((statusCode != null && statusCode >= 500) ||
+        details.contains('service unavailable') ||
+        details.contains('internal server')) {
+      return 'Photo uploads are temporarily unavailable. Your current photo is unchanged; try again later.';
+    }
+
+    if (details.contains('network') ||
+        details.contains('socket') ||
+        details.contains('timeout') ||
+        details.contains('connection')) {
+      return 'The upload was interrupted. Check your connection and try again; your current photo is unchanged.';
+    }
+
+    return genericUploadErrorMessage;
   }
 }
 

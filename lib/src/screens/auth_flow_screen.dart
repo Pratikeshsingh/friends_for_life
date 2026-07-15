@@ -12,6 +12,7 @@ import '../core/responsive.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/continuous_immersive_scene.dart';
 import '../widgets/date_picker_sheet.dart';
+import '../widgets/meetup_explorer_tile.dart';
 import '../widgets/meetup_media.dart';
 import '../widgets/motion.dart';
 import '../widgets/option_picker_sheet.dart';
@@ -29,12 +30,18 @@ class AuthFlowScreen extends StatefulWidget {
     this.onUserUpdated,
     this.onClose,
     this.startInSignIn = false,
+    this.supabaseClient,
+    this.initialEvents,
+    this.initialCityOptions,
   });
 
   final User? existingUser;
   final ValueChanged<User>? onUserUpdated;
   final VoidCallback? onClose;
   final bool startInSignIn;
+  final SupabaseClient? supabaseClient;
+  final List<MeetupEvent>? initialEvents;
+  final List<String>? initialCityOptions;
 
   @override
   State<AuthFlowScreen> createState() => _AuthFlowScreenState();
@@ -78,13 +85,17 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
     'Non-binary',
     'Prefer not to say'
   ];
-  SupabaseClient get _supabase => Supabase.instance.client;
+  SupabaseClient get _supabase =>
+      widget.supabaseClient ?? Supabase.instance.client;
 
   List<MeetupEvent> get _allOptions =>
       [..._availableEvents]..sort((a, b) => a.startsAt.compareTo(b.startsAt));
   User? get _signedInUser => _supabase.auth.currentUser ?? widget.existingUser;
 
-  bool get _detailsReady => _selectedCity != null && _selectedBirthDate != null;
+  bool get _detailsReady =>
+      _selectedCity?.trim().isNotEmpty == true &&
+      _selectedBirthDate != null &&
+      _underAgeErrorMessage() == null;
 
   bool get _canNavigateBack =>
       widget.onClose != null || _stage != _AuthStage.access;
@@ -156,8 +167,19 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
     _firstNameController.addListener(_refreshValidation);
     _lastNameController.addListener(_refreshValidation);
     _hydrateFromExistingUser();
-    _loadEvents();
-    _loadCityOptions();
+    final initialEvents = widget.initialEvents;
+    if (initialEvents == null) {
+      _loadEvents();
+    } else {
+      _availableEvents = List<MeetupEvent>.of(initialEvents);
+    }
+    final initialCityOptions = widget.initialCityOptions;
+    if (initialCityOptions == null) {
+      _loadCityOptions();
+    } else {
+      _cityOptions = List<String>.of(initialCityOptions);
+      _reconcileSelectedCity();
+    }
   }
 
   @override
@@ -222,6 +244,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
             .whereType<String>(),
       );
 
+    _reconcileSelectedCity();
     _stage = _firstIncompleteStageForUser(user);
   }
 
@@ -245,29 +268,46 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
     final options = await CityService(_supabase).fetchCityOptions();
     if (!mounted) return;
     if (listEquals(_cityOptions, options)) return;
-    setState(() => _cityOptions = options);
+    setState(() {
+      _cityOptions = options;
+      _reconcileSelectedCity();
+    });
+  }
+
+  void _reconcileSelectedCity() {
+    if (_cityOptions.isNotEmpty &&
+        _selectedCity != null &&
+        !_cityOptions.contains(_selectedCity)) {
+      _selectedCity = null;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final mediaSize = MediaQuery.sizeOf(context);
+    final compact = mediaSize.width < 700;
 
     return Scaffold(
       body: Stack(
+        fit: StackFit.expand,
         children: [
           Positioned.fill(
-            child: ContinuousImmersiveScene(
-              assetName: MediaQuery.sizeOf(context).width < 700 &&
-                      (_stage == _AuthStage.access ||
-                          _stage == _AuthStage.details)
-                  ? GeneratedImageAssets.landingImmersiveMobile
-                  : _stageHeaderAsset,
-              semanticLabel: _stageHeaderSemanticLabel,
-              compactExtent: 980,
-              regularExtent: 820,
-              alignment: Alignment.topRight,
-              child: const SizedBox.expand(),
-            ),
+            child: _stage == _AuthStage.access
+                ? _AccessImmersiveBackground(
+                    compact: compact,
+                    semanticLabel: _stageHeaderSemanticLabel,
+                  )
+                : ContinuousImmersiveScene(
+                    assetName: compact && _stage == _AuthStage.details
+                        ? GeneratedImageAssets.landingImmersiveMobile
+                        : _stageHeaderAsset,
+                    semanticLabel: _stageHeaderSemanticLabel,
+                    compactExtent: 980,
+                    regularExtent: 820,
+                    alignment: Alignment.topRight,
+                    child: const SizedBox.expand(),
+                  ),
           ),
           SafeArea(
             child: LayoutBuilder(
@@ -365,7 +405,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
       case _AuthStage.access:
         return _buildAccessStep(theme);
       case _AuthStage.details:
-        return _buildDetailsStep(theme);
+        return _buildDetailsStep();
       case _AuthStage.recommendations:
         return _buildRecommendationsStep(theme);
       case _AuthStage.complete:
@@ -377,6 +417,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
     final isSignUp = _accountMode == _AccountMode.signUp;
 
     return SectionCard(
+      key: const ValueKey('auth-access-form'),
       motionIndex: 4,
       enableReveal: false,
       backgroundColor: const Color(0xE6FFFDF9),
@@ -601,8 +642,9 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
     );
   }
 
-  Widget _buildDetailsStep(ThemeData theme) {
+  Widget _buildDetailsStep() {
     return SectionCard(
+      key: const ValueKey('details-form'),
       motionIndex: 4,
       enableReveal: false,
       backgroundColor: const Color(0xE6FFFDF9),
@@ -610,16 +652,26 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _DetailsPrivacySummary(onWhyWeAsk: _showDetailsPrivacyInfo),
-          const SizedBox(height: 18),
-          Text('Date of birth', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              '* Required',
+              key: const ValueKey('details-required-legend'),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: const Color(0xFF138B8A),
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ),
+          const SizedBox(height: 8),
           SelectionField(
+            key: const ValueKey('details-birth-date-field'),
             icon: Icons.cake_outlined,
+            label: 'Date of birth *',
             value: _selectedBirthDate == null
                 ? null
                 : _formatBirthDate(_selectedBirthDate!),
-            placeholder: 'Your date of birth',
+            placeholder: 'Choose your date',
             onTap: _pickBirthDate,
           ),
           if (_birthDateValidationMessage != null) ...[
@@ -629,57 +681,35 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
               positive: _underAgeErrorMessage() == null,
             ),
           ],
-          const SizedBox(height: 8),
-          const _FieldPrivacyNote(
-            text: 'Used only to confirm you’re 18+.',
-          ),
-          const SizedBox(height: 18),
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Text('Gender', style: theme.textTheme.titleMedium),
-              Text(
-                'Optional',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: const Color(0xFF60727A),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           SelectionField(
+            key: const ValueKey('city-selection-field'),
+            icon: Icons.location_city_outlined,
+            label: 'City *',
+            value: _selectedCity,
+            placeholder: 'Choose your city',
+            onTap: _pickCity,
+          ),
+          const SizedBox(height: 12),
+          SelectionField(
+            key: const ValueKey('details-gender-field'),
             icon: Icons.person_outline,
+            label: 'Gender',
             value: _selectedGender,
-            placeholder: 'Your gender',
+            placeholder: 'Choose if you want',
             onTap: _pickGender,
           ),
-          const SizedBox(height: 18),
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Text('Phone number', style: theme.textTheme.titleMedium),
-              Text(
-                'Optional',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: const Color(0xFF60727A),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           TextField(
+            key: const ValueKey('details-phone-field'),
             controller: _phoneController,
             keyboardType: TextInputType.phone,
             textInputAction: TextInputAction.done,
             autofillHints: const [AutofillHints.telephoneNumber],
             decoration: const InputDecoration(
+              labelText: 'Phone number',
               hintText: '+31 6 12345678',
+              prefixIcon: Icon(Icons.phone_outlined),
             ),
             onChanged: (_) => _refreshValidation(),
             onSubmitted: (_) {
@@ -688,15 +718,8 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
               }
             },
           ),
-          const SizedBox(height: 18),
-          Text('City', style: theme.textTheme.titleMedium),
           const SizedBox(height: 10),
-          SelectionField(
-            icon: Icons.location_city_outlined,
-            value: _selectedCity,
-            placeholder: 'Your city',
-            onTap: _pickCity,
-          ),
+          _DetailsPrivacySummary(onWhyWeAsk: _showDetailsPrivacyInfo),
           const SizedBox(height: 18),
           if (_statusMessage != null) ...[
             _OnboardingStatusNotice(message: _statusMessage!),
@@ -857,10 +880,12 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
             )
           else ...[
             for (final option in recommendationOptions) ...[
-              _EventOptionCard(
-                option: option,
+              MeetupExplorerTile(
+                key: ValueKey('onboarding-meetup-${option.id}'),
+                event: option,
                 selected: _selectedEventIds.contains(option.id),
-                onTap: () => _showRecommendationPreview(option),
+                keyPrefix: 'onboarding-meetup',
+                onOpenDetails: () => _showRecommendationPreview(option),
               ),
               const SizedBox(height: 12),
             ],
@@ -1060,9 +1085,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
       await _ensureProfileForUser(response.user);
       if (!mounted) return;
 
-      setState(() {
-        _statusMessage = 'Account created. Let\'s add your basic details.';
-      });
+      setState(() => _statusMessage = null);
       _setStage(_AuthStage.details);
     });
   }
@@ -1099,35 +1122,48 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
   }
 
   Future<void> _showDetailsPrivacyInfo() {
-    return showDialog<void>(
+    return showModalBottomSheet<void>(
       context: context,
-      builder: (context) => Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
-        backgroundColor: const Color(0xFFFFFCF7),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: 720,
-            maxHeight: MediaQuery.sizeOf(context).height * 0.86,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: const Color(0x8F062B55),
+      builder: (context) => FractionallySizedBox(
+        heightFactor: MediaQuery.sizeOf(context).height < 700 ? 0.92 : 0.82,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: const _DetailsPrivacySheet(),
           ),
-          child: const _DetailsPrivacySheet(),
         ),
       ),
     );
   }
 
   Future<void> _pickCity() async {
+    final cityCount = _cityOptions.length;
+    final coverageText = cityCount == 0
+        ? 'No cities are available for selection right now. Please check back soon.'
+        : cityCount == 1
+            ? 'VriendTime is currently available in 1 city. More cities are coming soon.'
+            : 'VriendTime is currently available in $cityCount cities. More cities are coming soon.';
+
     final picked = await _pickOption(
       title: 'Choose your city',
       currentValue: _selectedCity,
       options: _cityOptions,
-      searchHintText: 'Search cities',
+      searchHintText: cityCount > 5 ? 'Search cities' : null,
+      supportingText: coverageText,
       emptyStateTitle: 'We are launching city by city.',
       emptyStateBody:
           'We are live in a limited set of cities for now and adding more as we grow.',
     );
 
     if (!mounted || picked == null) return;
-    setState(() => _selectedCity = picked);
+    setState(() {
+      _selectedCity = picked;
+      _statusMessage = null;
+    });
   }
 
   Future<void> _pickGender() async {
@@ -1146,6 +1182,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
     required String? currentValue,
     required List<String> options,
     String? searchHintText,
+    String? supportingText,
     String? emptyStateTitle,
     String? emptyStateBody,
   }) {
@@ -1159,6 +1196,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
           currentValue: currentValue,
           options: options,
           searchHintText: searchHintText,
+          supportingText: supportingText,
           emptyStateTitle: emptyStateTitle,
           emptyStateBody: emptyStateBody,
         );
@@ -1761,6 +1799,78 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
   }
 }
 
+class _AccessImmersiveBackground extends StatelessWidget {
+  const _AccessImmersiveBackground({
+    required this.compact,
+    required this.semanticLabel,
+  });
+
+  final bool compact;
+  final String semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final image = Image.asset(
+      compact
+          ? GeneratedImageAssets.landingImmersiveMobile
+          : GeneratedImageAssets.onboardingAccountImmersive,
+      fit: compact ? BoxFit.fitWidth : BoxFit.cover,
+      alignment: compact ? Alignment.bottomCenter : Alignment.center,
+      cacheWidth: compact ? 900 : 1600,
+      filterQuality: FilterQuality.medium,
+      semanticLabel: semanticLabel,
+    );
+    final wash = compact
+        ? const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xF7FFFCF7),
+              Color(0xEDFFFCF7),
+              Color(0xC8FFFCF7),
+              Color(0x78FFFCF7),
+              Color(0xA8FFFCF7),
+            ],
+            stops: [0, 0.22, 0.46, 0.74, 1],
+          )
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xEFFFFCF7),
+              Color(0xA8FFFCF7),
+              Color(0x42FFFCF7),
+              Color(0x92FFFCF7),
+              Color(0xE6FFFCF7),
+            ],
+            stops: [0, 0.2, 0.43, 0.76, 1],
+          );
+
+    return KeyedSubtree(
+      key: const ValueKey('auth-access-background'),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const ColoredBox(color: Color(0xFFFFFCF7)),
+          image,
+          DecoratedBox(decoration: BoxDecoration(gradient: wash)),
+          if (!compact)
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [Color(0xE8FFFCF7), Color(0x10FFFCF7)],
+                  stops: [0, 0.58],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _OnboardingTopBar extends StatelessWidget {
   const _OnboardingTopBar({
     required this.canNavigateBack,
@@ -1806,21 +1916,24 @@ class _OnboardingTopBar extends StatelessWidget {
             ),
           ),
           SizedBox(
-            width: showSkip ? 76 : 52,
+            width: showSkip ? 88 : 52,
             height: 52,
             child: showSkip
                 ? Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
+                      key: const ValueKey('skip-onboarding'),
                       onPressed: onSkip,
                       style: TextButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.94),
+                        side: const BorderSide(color: Color(0xFFD5E5E2)),
+                        shape: const StadiumBorder(),
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
+                          horizontal: 14,
                           vertical: 8,
                         ),
-                        minimumSize: const Size(0, 40),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        foregroundColor: const Color(0xFF138B8A),
+                        minimumSize: const Size(72, 44),
+                        foregroundColor: const Color(0xFF062B55),
                         textStyle: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
@@ -1908,7 +2021,7 @@ class _StageIntro extends StatelessWidget {
       _AuthStage.access => accountMode == _AccountMode.signIn
           ? 'Sign in to see your next meetup.'
           : 'Save your details and meetup choices in one secure place.',
-      _AuthStage.details => 'A few basics before we find your first meetup.',
+      _AuthStage.details => 'Your age and city help us show the right meetups.',
       _AuthStage.recommendations => 'Pick up to three meetups—one on each day.',
       _AuthStage.complete => '',
     };
@@ -1929,245 +2042,6 @@ class _StageIntro extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _EventOptionCard extends StatelessWidget {
-  const _EventOptionCard({
-    required this.option,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final MeetupEvent option;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final badgeColor = _compactBadgeColorForEvent(option);
-    final badgeIcon = _compactIconForEvent(option);
-    final availability = _availabilityForEvent(option, selected: selected);
-    final unavailable = !selected && !option.isOpenForReservation;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 420;
-        final imageSize = compact ? 88.0 : 120.0;
-        final imageRadius = compact ? 18.0 : 24.0;
-        final arrowSize = compact ? 38.0 : 50.0;
-        final titleStyle = theme.textTheme.headlineSmall?.copyWith(
-          fontSize: compact ? 18 : 23,
-          height: 1.08,
-        );
-        final artworkHeight = imageSize;
-        final artwork = ClipRRect(
-          borderRadius: BorderRadius.circular(imageRadius),
-          child: SizedBox(
-            width: imageSize,
-            height: artworkHeight,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Opacity(
-                  opacity: unavailable ? 0.72 : 1,
-                  child: MeetupArtwork(
-                    event: option,
-                    height: artworkHeight,
-                    radius: imageRadius,
-                    assetName: GeneratedImageAssets.compactCardForEvent(
-                      option,
-                    ),
-                    preferFullBleed: true,
-                  ),
-                ),
-                Positioned(
-                  left: compact ? 6 : 8,
-                  right: compact ? 6 : null,
-                  bottom: compact ? 6 : 8,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: compact ? 7 : 12,
-                      vertical: compact ? 5 : 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: badgeColor,
-                      borderRadius: BorderRadius.circular(999),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x22000000),
-                          blurRadius: 12,
-                          offset: Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: compact
-                        ? FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.center,
-                            child: Text(
-                              option.activityLabel,
-                              maxLines: 1,
-                              softWrap: false,
-                              style: theme.textTheme.labelLarge?.copyWith(
-                                color: Colors.white,
-                                fontSize: 11.5,
-                                height: 1.1,
-                              ),
-                            ),
-                          )
-                        : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                badgeIcon,
-                                size: 16,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                option.activityLabel,
-                                maxLines: 1,
-                                softWrap: false,
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-        final availabilityChip = _MeetupAvailabilityChip(
-          availability: availability,
-        );
-        final arrow = Container(
-          width: arrowSize,
-          height: arrowSize,
-          decoration: BoxDecoration(
-            color:
-                unavailable ? const Color(0xFFE8E8E4) : const Color(0xFFEAF7F5),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            selected
-                ? Icons.check_rounded
-                : unavailable
-                    ? availability.icon
-                    : Icons.arrow_forward_ios_rounded,
-            size: compact ? 20 : 22,
-            color: selected
-                ? const Color(0xFF138B8A)
-                : unavailable
-                    ? availability.foregroundColor
-                    : const Color(0xFF60727A),
-          ),
-        );
-        final infoLines = <Widget>[
-          _CompactInfoLine(
-            icon: Icons.calendar_today_outlined,
-            child: Text(
-              '${_onboardingDateLabel(option)} | ${option.detailTimeLabel}',
-              style: theme.textTheme.bodyMedium,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(height: 10),
-          _CompactInfoLine(
-            icon: Icons.place_outlined,
-            child: Text(
-              option.city,
-              style: theme.textTheme.bodyMedium,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ];
-        final details = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            availabilityChip,
-            const SizedBox(height: 8),
-            Text(
-              option.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: titleStyle,
-            ),
-            const SizedBox(height: 12),
-            ...infoLines,
-          ],
-        );
-
-        return Semantics(
-          button: true,
-          excludeSemantics: true,
-          label:
-              '${option.title}. ${option.activityLabel}. ${_onboardingDateLabel(option)}, ${option.detailTimeLabel}, ${option.city}. ${availability.label}. Open meetup details.',
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(24),
-              onTap: onTap,
-              child: Ink(
-                padding: EdgeInsets.all(compact ? 14 : 16),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? const Color(0xFFF3FBF9)
-                      : unavailable
-                          ? const Color(0xFFF4F3EF)
-                          : const Color(0xFFFFFCF7),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: selected
-                        ? const Color(0xFF9ED6CC)
-                        : unavailable
-                            ? const Color(0xFFD4D5D1)
-                            : const Color(0xFFDDE7E3),
-                    width: selected ? 1.5 : 1,
-                  ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x1206294A),
-                      blurRadius: 18,
-                      offset: Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: compact
-                    ? Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          artwork,
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: details,
-                          ),
-                          const SizedBox(width: 10),
-                          arrow,
-                        ],
-                      )
-                    : Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          artwork,
-                          const SizedBox(width: 18),
-                          Expanded(child: details),
-                          const SizedBox(width: 14),
-                          arrow,
-                        ],
-                      ),
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }
@@ -2241,51 +2115,6 @@ _MeetupAvailability _availabilityForEvent(
     foregroundColor: Color(0xFF0B7474),
     backgroundColor: Color(0xFFE2F3EF),
   );
-}
-
-class _MeetupAvailabilityChip extends StatelessWidget {
-  const _MeetupAvailabilityChip({required this.availability});
-
-  final _MeetupAvailability availability;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-        decoration: BoxDecoration(
-          color: availability.backgroundColor,
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                availability.icon,
-                size: 13,
-                color: availability.foregroundColor,
-              ),
-              const SizedBox(width: 5),
-              Text(
-                availability.label,
-                maxLines: 1,
-                softWrap: false,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: availability.foregroundColor,
-                      fontWeight: FontWeight.w700,
-                      height: 1.1,
-                    ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _SelectedEventSummaryCard extends StatelessWidget {
@@ -2403,59 +2232,6 @@ class _FinishSummaryRow extends StatelessWidget {
   }
 }
 
-class _CompactInfoLine extends StatelessWidget {
-  const _CompactInfoLine({
-    required this.icon,
-    required this.child,
-  });
-
-  final IconData icon;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        SizedBox(
-          width: 20,
-          child: Icon(icon, size: 18, color: const Color(0xFF60727A)),
-        ),
-        const SizedBox(width: 12),
-        Expanded(child: child),
-      ],
-    );
-  }
-}
-
-IconData _compactIconForEvent(MeetupEvent event) {
-  final activity = event.activityLabel.toLowerCase();
-  if (activity.contains('lunch') || activity.contains('brunch')) {
-    return Icons.restaurant_outlined;
-  }
-  if (activity.contains('dinner')) {
-    return Icons.restaurant_menu_outlined;
-  }
-  if (activity.contains('walk')) {
-    return Icons.directions_walk_outlined;
-  }
-  return Icons.local_cafe_outlined;
-}
-
-Color _compactBadgeColorForEvent(MeetupEvent event) {
-  final activity = event.activityLabel.toLowerCase();
-  if (activity.contains('lunch') || activity.contains('brunch')) {
-    return const Color(0xCCCF9A54);
-  }
-  if (activity.contains('dinner')) {
-    return const Color(0xCCCF7C58);
-  }
-  if (activity.contains('walk')) {
-    return const Color(0xCC5F8D76);
-  }
-  return const Color(0xCC29322E);
-}
-
 class _RecommendationPreviewSheet extends StatelessWidget {
   const _RecommendationPreviewSheet({
     required this.event,
@@ -2472,6 +2248,7 @@ class _RecommendationPreviewSheet extends StatelessWidget {
     final theme = Theme.of(context);
     final canCancel = selected && canCancelMeetupReservation(event);
     final availability = _availabilityForEvent(event, selected: selected);
+    final heroHeight = MediaQuery.sizeOf(context).width < 380 ? 260.0 : 220.0;
 
     return Align(
       alignment: Alignment.bottomCenter,
@@ -2493,13 +2270,13 @@ class _RecommendationPreviewSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(26),
                   child: SizedBox(
                     width: double.infinity,
-                    height: 220,
+                    height: heroHeight,
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
                         MeetupArtwork(
                           event: event,
-                          height: 220,
+                          height: heroHeight,
                           radius: 26,
                         ),
                         const DecoratedBox(
@@ -2755,48 +2532,34 @@ class _DetailsPrivacySummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 13, 10, 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEAF7F5),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFB9E3DC)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Semantics(
+      container: true,
+      label: 'Your details stay private. Learn why we ask.',
+      child: Row(
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 2),
-                child: Icon(
-                  Icons.lock_outline_rounded,
-                  size: 18,
-                  color: Color(0xFF138B8A),
-                ),
-              ),
-              const SizedBox(width: 9),
-              Expanded(
-                child: Text(
-                  'We use these details to keep meetups safe and relevant. Your answers stay private.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF4F6671),
-                    height: 1.35,
-                  ),
-                ),
-              ),
-            ],
+          const Icon(
+            Icons.lock_outline_rounded,
+            size: 18,
+            color: Color(0xFF60727A),
           ),
-          TextButton.icon(
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Your details stay private.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF60727A),
+              ),
+            ),
+          ),
+          TextButton(
+            key: const ValueKey('why-we-ask'),
             onPressed: onWhyWeAsk,
             style: TextButton.styleFrom(
-              minimumSize: const Size(48, 48),
-              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
+              minimumSize: const Size(48, 40),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            icon: const Icon(Icons.info_outline_rounded, size: 18),
-            label: const Text('Why we ask'),
+            child: const Text('Why we ask'),
           ),
         ],
       ),
@@ -2814,66 +2577,121 @@ class _DetailsPrivacySheet extends StatelessWidget {
     return Semantics(
       scopesRoute: true,
       namesRoute: true,
+      explicitChildNodes: true,
       label: 'Why we ask for these details',
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(22, 4, 22, 28),
+      child: Material(
+        color: const Color(0xFFFFFCF7),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Why we ask',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: const Color(0xFF062B55),
-                    ),
-                  ),
+            const SizedBox(height: 10),
+            Center(
+              child: Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCAD6D2),
+                  borderRadius: BorderRadius.circular(99),
                 ),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  tooltip: 'Close',
-                  icon: const Icon(Icons.close_rounded),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'These details help VriendTime run safe, relevant meetups. They stay private and are not shown to other members.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: const Color(0xFF4F6671),
               ),
             ),
-            const SizedBox(height: 22),
-            const _PrivacyDetailRow(
-              icon: Icons.cake_outlined,
-              title: 'Date of birth',
-              body: 'Required so we can confirm every member is at least 18.',
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 12, 10, 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE4F4F1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.shield_outlined,
+                      color: Color(0xFF138B8A),
+                    ),
+                  ),
+                  const SizedBox(width: 13),
+                  Expanded(
+                    child: Text(
+                      'Why we ask',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: const Color(0xFF062B55),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    tooltip: 'Close',
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 18),
-            const _PrivacyDetailRow(
-              icon: Icons.person_outline_rounded,
-              title: 'Gender · Optional',
-              body:
-                  'Helps us understand and improve the mix of VriendTime groups.',
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(22, 4, 22, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Each detail has a clear purpose. Nothing here appears on your public profile.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF4F6671),
+                        height: 1.45,
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    const _PrivacyDetailRow(
+                      icon: Icons.cake_outlined,
+                      title: 'Date of birth',
+                      body:
+                          'Required only to confirm every member is at least 18.',
+                    ),
+                    const SizedBox(height: 18),
+                    const _PrivacyDetailRow(
+                      icon: Icons.person_outline_rounded,
+                      title: 'Gender',
+                      body:
+                          'Helps us understand and improve the mix of VriendTime groups.',
+                    ),
+                    const SizedBox(height: 18),
+                    const _PrivacyDetailRow(
+                      icon: Icons.phone_outlined,
+                      title: 'Phone number',
+                      body:
+                          'Used only for important or last-minute meetup updates.',
+                    ),
+                    const SizedBox(height: 18),
+                    const _PrivacyDetailRow(
+                      icon: Icons.location_city_outlined,
+                      title: 'City',
+                      body: 'Required so we can show meetups near you.',
+                    ),
+                    const SizedBox(height: 22),
+                    Text(
+                      'You can update optional answers later from Profile.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF60727A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 18),
-            const _PrivacyDetailRow(
-              icon: Icons.phone_outlined,
-              title: 'Phone number · Optional',
-              body: 'Used only for important or last-minute meetup updates.',
-            ),
-            const SizedBox(height: 18),
-            const _PrivacyDetailRow(
-              icon: Icons.location_city_outlined,
-              title: 'City',
-              body: 'Required so we can show meetups near you.',
-            ),
-            const SizedBox(height: 22),
-            Text(
-              'You can update your optional answers later from Profile.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: const Color(0xFF60727A),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(22, 10, 22, 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    key: const ValueKey('close-why-we-ask'),
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Got it'),
+                  ),
+                ),
               ),
             ),
           ],
@@ -2925,39 +2743,6 @@ class _PrivacyDetailRow extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _FieldPrivacyNote extends StatelessWidget {
-  const _FieldPrivacyNote({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(top: 2),
-          child: Icon(
-            Icons.lock_outline_rounded,
-            size: 15,
-            color: Color(0xFF60727A),
-          ),
-        ),
-        const SizedBox(width: 7),
-        Expanded(
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFF60727A),
-                  height: 1.35,
-                ),
           ),
         ),
       ],

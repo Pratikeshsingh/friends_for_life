@@ -67,6 +67,107 @@ void main() {
     });
   }
 
+  for (final viewport in const <Size>[
+    Size(375, 740),
+    Size(430, 820),
+    Size(600, 900),
+    Size(699, 900),
+    Size(700, 900),
+  ]) {
+    testWidgets(
+      'landing brings real meetups into the first screen at '
+      '${viewport.width.toInt()}x${viewport.height.toInt()}',
+      (tester) async {
+        final event = _responsiveTestMeetup(
+          id: 'landing-density-${viewport.width.toInt()}',
+          title: 'Coffee by the canal',
+          startsAt: DateTime(2026, 9, 23, 10),
+        );
+
+        await _expectNoLayoutOverflow(
+          tester,
+          width: viewport.width,
+          height: viewport.height,
+          child: OnboardingScreen(
+            onStart: () {},
+            onSignIn: () {},
+            availableEvents: [event],
+          ),
+        );
+
+        final proofHeadingTop =
+            tester.getTopLeft(find.text('Upcoming meetups')).dy;
+        final firstMeetupTop = tester
+            .getTopLeft(
+              find.bySemanticsLabel(
+                RegExp('Coffee by the canal.*Open meetup details'),
+              ),
+            )
+            .dy;
+
+        expect(
+          proofHeadingTop,
+          lessThan(viewport.height * 0.72),
+          reason: 'Meetup proof should begin within the first screen.',
+        );
+        expect(
+          firstMeetupTop,
+          lessThan(viewport.height * 0.80),
+          reason: 'A real meetup should be visible without an initial scroll.',
+        );
+      },
+    );
+  }
+
+  testWidgets('landing keeps both account actions in a tall phone view', (
+    tester,
+  ) async {
+    const viewport = Size(402, 874);
+
+    await _expectNoLayoutOverflow(
+      tester,
+      width: viewport.width,
+      height: viewport.height,
+      child: OnboardingScreen(
+        onStart: () {},
+        onSignIn: () {},
+        availableEvents: sampleEvents.take(4).toList(),
+      ),
+    );
+
+    final createAccountButton =
+        find.widgetWithText(ElevatedButton, 'Create an account');
+    final signInButton =
+        find.widgetWithText(TextButton, 'I already have an account');
+
+    expect(createAccountButton, findsOneWidget);
+    expect(signInButton, findsOneWidget);
+    expect(
+      tester.getBottomRight(createAccountButton).dy,
+      lessThan(viewport.height),
+    );
+    expect(
+      tester.getBottomRight(signInButton).dy,
+      lessThan(viewport.height),
+    );
+
+    final verticalScrollable = find.byWidgetPredicate(
+      (widget) =>
+          widget is Scrollable && widget.axisDirection == AxisDirection.down,
+    );
+    expect(verticalScrollable, findsOneWidget);
+    final scrollPosition =
+        tester.state<ScrollableState>(verticalScrollable).position;
+    final panel = find.byKey(const ValueKey('landing-meetup-proof-panel'));
+    final panelBottomAtRest = tester.getBottomRight(panel).dy;
+
+    expect(
+      panelBottomAtRest - scrollPosition.maxScrollExtent,
+      closeTo(viewport.height, 0.5),
+      reason: 'The page should end with the panel, not a phantom bottom gap.',
+    );
+  });
+
   testWidgets('home does not mislabel other-city meetups as local', (
     tester,
   ) async {
@@ -136,14 +237,282 @@ void main() {
     expect(find.text('Meetup details'), findsOneWidget);
     expect(
       find.text(
-        'Browse first. Create an account only when you’re ready to reserve.',
+        'Everything you need to decide, before you reserve.',
       ),
       findsOneWidget,
     );
     expect(
       find.text('Already have an account? Sign in'),
+      findsNothing,
+    );
+    expect(
+      find.text('Create an account or sign in to reserve.'),
       findsOneWidget,
     );
+    expect(
+      find.widgetWithText(ElevatedButton, 'Create account'),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(OutlinedButton, 'Sign in'), findsOneWidget);
+
+    await tester.ensureVisible(
+      find.text('This meetup is full. Reservations are no longer available.'),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.text('This meetup is full. Reservations are no longer available.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+      'public meetup explorer clips and pins its header while scrolling',
+      (tester) async {
+    const sheetRadius = BorderRadius.vertical(top: Radius.circular(30));
+    final explorerEvents = List.generate(
+      5,
+      (index) => _responsiveTestMeetup(
+        id: 'pinned-explorer-$index',
+        title: 'Meetup number ${index + 1}',
+        startsAt: DateTime(2026, 8, 18 + index, 10 + index),
+      ),
+    );
+
+    await _expectNoLayoutOverflow(
+      tester,
+      width: 320,
+      height: 900,
+      child: OnboardingScreen(
+        onStart: () {},
+        onSignIn: () {},
+        availableEvents: explorerEvents,
+      ),
+    );
+
+    final seeAll = find.widgetWithText(TextButton, 'See all');
+    await tester.ensureVisible(seeAll);
+    await tester.tap(seeAll);
+    await tester.pumpAndSettle();
+
+    final surface = find.byKey(
+      const ValueKey('public-meetup-explorer-surface'),
+    );
+    final pinnedHeader = find.descendant(
+      of: surface,
+      matching: find.byType(SliverPersistentHeader),
+    );
+    final subtitle = find.byKey(
+      const ValueKey('public-meetup-explorer-subtitle'),
+    );
+    final headerDecoration = find.byKey(
+      const ValueKey('public-meetup-explorer-header-decoration'),
+    );
+
+    expect(surface, findsOneWidget);
+    final clip = tester.widget<ClipRRect>(surface);
+    expect(clip.borderRadius, sheetRadius);
+    expect(clip.clipBehavior, Clip.antiAlias);
+    expect(tester.widget<SliverPersistentHeader>(pinnedHeader).pinned, isTrue);
+    final titleText = tester.widget<Text>(
+      find.byKey(const ValueKey('public-meetup-explorer-title')),
+    );
+    expect(titleText.data, 'Explore upcoming meetups');
+    expect(titleText.maxLines, 1);
+    expect(titleText.overflow, isNull);
+    expect(tester.widget<Opacity>(subtitle).opacity, 1);
+    expect(
+      (tester.widget<DecoratedBox>(headerDecoration).decoration
+              as BoxDecoration)
+          .boxShadow,
+      isEmpty,
+    );
+
+    final scrollView = find.byKey(
+      const ValueKey('public-meetup-explorer-scroll-view'),
+    );
+    final sheetScrollable = find.descendant(
+      of: scrollView,
+      matching: find.byType(Scrollable),
+    );
+    final scrollPosition =
+        tester.state<ScrollableState>(sheetScrollable).position;
+    expect(scrollPosition.maxScrollExtent, greaterThan(300));
+
+    scrollPosition.jumpTo(300);
+    await tester.pump();
+
+    final surfaceTop = tester.getTopLeft(surface).dy;
+    final title = find.byKey(
+      const ValueKey('public-meetup-explorer-title'),
+    );
+    final close = find.byKey(
+      const ValueKey('public-meetup-explorer-close'),
+    );
+    expect(title, findsOneWidget);
+    expect(close, findsOneWidget);
+    expect(tester.getTopLeft(title).dy, greaterThanOrEqualTo(surfaceTop));
+    expect(tester.getTopLeft(title).dy, lessThan(surfaceTop + 78));
+    expect(tester.getTopLeft(close).dy, greaterThanOrEqualTo(surfaceTop));
+    expect(tester.widget<Opacity>(subtitle).opacity, lessThan(0.05));
+    expect(
+      (tester.widget<DecoratedBox>(headerDecoration).decoration
+              as BoxDecoration)
+          .boxShadow,
+      isNotEmpty,
+    );
+  });
+
+  testWidgets('public meetup explorer header supports large text', (
+    tester,
+  ) async {
+    final events = List.generate(
+      5,
+      (index) => _responsiveTestMeetup(
+        id: 'large-text-explorer-$index',
+        title: 'Large text meetup ${index + 1}',
+        startsAt: DateTime(2026, 9, 18 + index, 10),
+      ),
+    );
+
+    tester.view
+      ..physicalSize = const Size(375, 900)
+      ..devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view
+        ..resetPhysicalSize()
+        ..resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: buildTheme(),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(2),
+          ),
+          child: child!,
+        ),
+        home: OnboardingScreen(
+          onStart: () {},
+          onSignIn: () {},
+          availableEvents: events,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final seeAll = find.widgetWithText(TextButton, 'See all');
+    await tester.ensureVisible(seeAll);
+    await tester.tap(seeAll);
+    await tester.pumpAndSettle();
+
+    final header = tester.widget<SliverPersistentHeader>(
+      find.byType(SliverPersistentHeader),
+    );
+    final title = tester.widget<Text>(
+      find.byKey(const ValueKey('public-meetup-explorer-title')),
+    );
+    expect(title.data, 'Explore upcoming meetups');
+    expect(title.overflow, isNull);
+    expect(header.delegate.maxExtent, greaterThanOrEqualTo(190));
+    expect(header.delegate.minExtent, greaterThanOrEqualTo(96));
+  });
+
+  testWidgets('public meetup card sign in uses the sign in route', (
+    tester,
+  ) async {
+    var createAccountCount = 0;
+    var signInCount = 0;
+    final event = _responsiveTestMeetup(
+      id: 'public-sign-in',
+      title: 'Coffee and conversation',
+      startsAt: DateTime.now().add(const Duration(days: 3)),
+    );
+
+    await _expectNoLayoutOverflow(
+      tester,
+      width: 320,
+      child: OnboardingScreen(
+        onStart: () => createAccountCount++,
+        onSignIn: () => signInCount++,
+        availableEvents: [event],
+      ),
+    );
+
+    final preview = find.bySemanticsLabel(
+      RegExp('Coffee and conversation.*Open meetup details'),
+    );
+    await tester.ensureVisible(preview);
+    await tester.tap(preview);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Sign in'));
+    await tester.pumpAndSettle();
+
+    expect(signInCount, 1);
+    expect(createAccountCount, 0);
+  });
+
+  testWidgets('public meetup card create account uses the signup route', (
+    tester,
+  ) async {
+    var createAccountCount = 0;
+    var signInCount = 0;
+    final event = _responsiveTestMeetup(
+      id: 'public-create-account',
+      title: 'Dinner and conversation',
+      startsAt: DateTime.now().add(const Duration(days: 4)),
+    );
+
+    await _expectNoLayoutOverflow(
+      tester,
+      width: 320,
+      child: OnboardingScreen(
+        onStart: () => createAccountCount++,
+        onSignIn: () => signInCount++,
+        availableEvents: [event],
+      ),
+    );
+
+    final preview = find.bySemanticsLabel(
+      RegExp('Dinner and conversation.*Open meetup details'),
+    );
+    await tester.ensureVisible(preview);
+    await tester.tap(preview);
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.widgetWithText(ElevatedButton, 'Create account'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(createAccountCount, 1);
+    expect(signInCount, 0);
+  });
+
+  testWidgets('public preview keeps its complete date and time on 320px', (
+    tester,
+  ) async {
+    final event = _responsiveTestMeetup(
+      id: 'narrow-date-time',
+      title: 'Lunch near the old town',
+      startsAt: DateTime(2026, 9, 23, 12),
+    );
+
+    await _expectNoLayoutOverflow(
+      tester,
+      width: 320,
+      child: OnboardingScreen(
+        onStart: () {},
+        onSignIn: () {},
+        availableEvents: [event],
+      ),
+    );
+
+    expect(find.text(event.detailDateLabel), findsOneWidget);
+    expect(find.text(event.detailTimeLabel), findsOneWidget);
+    final dateText = tester.widget<Text>(find.text(event.detailDateLabel));
+    final timeText = tester.widget<Text>(find.text(event.detailTimeLabel));
+    expect(dateText.overflow, isNull);
+    expect(timeText.overflow, isNull);
   });
 
   testWidgets('meetups distinguishes a load failure from no availability', (
@@ -283,14 +652,15 @@ Future<void> _expectNoLayoutOverflow(
   WidgetTester tester, {
   required double width,
   required Widget child,
+  double? height,
   TextScaler textScaler = TextScaler.noScaling,
 }) async {
   final previousOnError = FlutterError.onError;
   final flutterErrors = <FlutterErrorDetails>[];
-  final height = width < 700 ? 900.0 : 960.0;
+  final resolvedHeight = height ?? (width < 700 ? 900.0 : 960.0);
 
   tester.view
-    ..physicalSize = Size(width, height)
+    ..physicalSize = Size(width, resolvedHeight)
     ..devicePixelRatio = 1.0;
   addTearDown(() {
     tester.view
@@ -306,7 +676,7 @@ Future<void> _expectNoLayoutOverflow(
         theme: buildTheme(),
         home: MediaQuery(
           data: MediaQueryData(
-            size: Size(width, height),
+            size: Size(width, resolvedHeight),
             disableAnimations: true,
             textScaler: textScaler,
           ),

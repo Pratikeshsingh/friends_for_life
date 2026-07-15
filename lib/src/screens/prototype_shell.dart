@@ -1631,7 +1631,8 @@ class _ReservationConfirmationSheet extends StatelessWidget {
                         Text(
                           hasAddress
                               ? 'Address ready now'
-                              : 'Address at 10:00 the day before',
+                              : 'Address available in VriendTime on '
+                                  '${event.addressReleaseDateTimeLabel}',
                           style: theme.textTheme.titleMedium?.copyWith(
                             color: const Color(0xFF062B55),
                           ),
@@ -1640,7 +1641,8 @@ class _ReservationConfirmationSheet extends StatelessWidget {
                         Text(
                           hasAddress
                               ? event.locationDetailLabel
-                              : 'We’ll send the exact public venue in a notification. If 10:00 has already passed, it will appear as soon as the server confirms it.',
+                              : 'Open VriendTime after that time to see the '
+                                  'exact public venue.',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: const Color(0xFF526771),
                             fontWeight:
@@ -1651,7 +1653,8 @@ class _ReservationConfirmationSheet extends StatelessWidget {
                         Text(
                           hasAddress
                               ? 'It’s also saved in your VriendTime notifications.'
-                              : 'You don’t need to check back manually.',
+                              : 'It will also be saved in your VriendTime '
+                                  'notifications.',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: const Color(0xFF687A80),
                           ),

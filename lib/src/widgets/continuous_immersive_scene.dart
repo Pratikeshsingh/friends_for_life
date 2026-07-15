@@ -22,8 +22,13 @@ class ContinuousImmersiveScene extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    final extent = width < 700 ? compactExtent : regularExtent;
+    final viewport = MediaQuery.sizeOf(context);
+    final configuredExtent =
+        viewport.width < 700 ? compactExtent : regularExtent;
+    // Never let the artwork visibly stop inside a tall phone or browser
+    // viewport. The final opaque fade can now land at or below the screen edge.
+    final extent =
+        configuredExtent < viewport.height ? viewport.height : configuredExtent;
 
     return Stack(
       fit: StackFit.expand,
@@ -70,7 +75,9 @@ class ContinuousImmersiveScene extends StatelessWidget {
                   Color(0x20FFFCF7),
                   Color(0x48FFFCF7),
                   Color(0xA8FFFCF7),
-                  Color(0xFFFFFCF7),
+                  // Keep a quiet trace of the scene through the bottom edge so
+                  // long pages never appear to run out of artwork.
+                  Color(0xECFFFCF7),
                 ],
                 stops: [0, 0.38, 0.78, 1],
               ),
