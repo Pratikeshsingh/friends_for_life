@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import 'brand_logo.dart';
@@ -64,19 +66,37 @@ class _NotificationBellButton extends StatelessWidget {
             clipBehavior: Clip.none,
             children: [
               Positioned.fill(
-                child: Material(
-                  color: Colors.white.withValues(alpha: 0.92),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: const BorderSide(color: Color(0xFFDDE7E3)),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(17),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x1F062B55),
+                        blurRadius: 18,
+                        offset: Offset(0, 7),
+                      ),
+                    ],
                   ),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: onTap,
-                    child: const ExcludeSemantics(
-                      child: Icon(
-                        Icons.notifications_none_rounded,
-                        color: Color(0xFF062B55),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(17),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                      child: Material(
+                        color: const Color(0xD9FFFCF8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(17),
+                          side: const BorderSide(color: Color(0xBFFFFFFF)),
+                        ),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(17),
+                          onTap: onTap,
+                          child: const ExcludeSemantics(
+                            child: Icon(
+                              Icons.notifications_none_rounded,
+                              color: Color(0xFF062B55),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),

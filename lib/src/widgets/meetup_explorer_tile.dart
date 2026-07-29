@@ -38,6 +38,9 @@ class MeetupExplorerTile extends StatelessWidget {
           fontSize: compact ? 18 : 24,
           height: 1.08,
         );
+        final availability =
+            selected ? 'Reserved' : event.browseAvailabilityLabel;
+        final availabilityColor = _availabilityColor(event, selected: selected);
         final artwork = ClipRRect(
           borderRadius: BorderRadius.circular(imageRadius),
           child: SizedBox(
@@ -99,10 +102,18 @@ class MeetupExplorerTile extends StatelessWidget {
                     ),
                   ),
                 ),
+                Positioned(
+                  top: 7,
+                  right: 7,
+                  child: _ArtworkCostMarker(
+                    key: ValueKey('$keyPrefix-cost-${event.id}'),
+                    compact: compact,
+                  ),
+                ),
                 if (selected)
                   Positioned(
                     top: 7,
-                    right: 7,
+                    left: 7,
                     child: Container(
                       width: 28,
                       height: 28,
@@ -175,32 +186,37 @@ class MeetupExplorerTile extends StatelessWidget {
               style: theme.textTheme.bodyMedium,
             ),
           ),
-          if (!selected &&
-              event.isAlmostFull &&
-              event.isOpenForReservation) ...[
-            const SizedBox(height: 10),
-            Text(
-              'Nearly full',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: const Color(0xFF8B5A15),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-          if (unavailable) ...[
-            const SizedBox(height: 10),
-            Text(
-              event.reservationUnavailableLabel,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: const Color(0xFFD85F4D),
-              ),
-            ),
-          ],
         ];
         final details = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: event.relativeDayLabel,
+                    style: const TextStyle(color: Color(0xFF138B8A)),
+                  ),
+                  const TextSpan(
+                    text: ' · ',
+                    style: TextStyle(color: Color(0xFF8A999D)),
+                  ),
+                  TextSpan(
+                    text: availability,
+                    style: TextStyle(color: availabilityColor),
+                  ),
+                ],
+              ),
+              key: ValueKey('$keyPrefix-summary-${event.id}'),
+              maxLines: 2,
+              overflow: TextOverflow.fade,
+              style: theme.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                height: 1.15,
+              ),
+            ),
+            SizedBox(height: compact ? 6 : 8),
             Text(
               event.title,
               maxLines: 2,
@@ -211,20 +227,12 @@ class MeetupExplorerTile extends StatelessWidget {
             ...infoLines,
           ],
         );
-        final availability = selected
-            ? 'Reserved'
-            : event.isOpenForReservation
-                ? event.isAlmostFull
-                    ? 'Nearly full'
-                    : 'Available to reserve'
-                : event.reservationUnavailableLabel;
-
         return Semantics(
           button: true,
           enabled: enabled,
           selected: selected,
           label:
-              '${event.title}. ${event.activityLabel}. ${_monthDayLabel(event)} at ${event.detailTimeLabel}. ${event.city}. $availability.',
+              '${event.title}. ${event.relativeDayLabel}. ${event.activityLabel}. ${_monthDayLabel(event)} at ${event.detailTimeLabel}. ${event.city}. $availability. $meetupCostSemantics',
           hint: enabled
               ? selected
                   ? 'Open reserved meetup details'
@@ -282,6 +290,52 @@ class MeetupExplorerTile extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+Color _availabilityColor(MeetupEvent event, {required bool selected}) {
+  if (selected) return const Color(0xFF0B7474);
+  if (event.spotsLeft == 1 || event.spotsLeft == 2) {
+    return const Color(0xFF9A6518);
+  }
+  if (!event.isOpenForReservation) return const Color(0xFFC55243);
+  return const Color(0xFF527079);
+}
+
+class _ArtworkCostMarker extends StatelessWidget {
+  const _ArtworkCostMarker({super.key, required this.compact});
+
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = compact ? 28.0 : 32.0;
+
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: const Color(0xF2FFFCF8),
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0xCFFFFFFF)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x26062B55),
+            blurRadius: 9,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Text(
+        '€',
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: const Color(0xFF355D64),
+              fontWeight: FontWeight.w800,
+              height: 1,
+            ),
+      ),
     );
   }
 }

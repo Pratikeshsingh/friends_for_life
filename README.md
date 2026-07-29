@@ -55,6 +55,23 @@ Then run [supabase/release_hardening.sql](supabase/release_hardening.sql). It
 adds the release-safe catalog view/RPCs/policies used by the app for
 reservation safety, address privacy, attendance writes, and storage limits.
 
+## Account deletion function
+
+Profile → Account → Delete account calls the authenticated Supabase Edge
+Function in
+[supabase/functions/delete-account/index.ts](supabase/functions/delete-account/index.ts).
+Deploy it to each Supabase project used by the app:
+
+```bash
+supabase functions deploy delete-account --project-ref your-project-ref
+```
+
+The function verifies the signed-in user, removes their profile photos, and
+then hard-deletes their Auth user. Foreign-key cascades in the schema remove
+their profile-linked reservations, notifications, chat participation, and
+messages. Never put the Supabase service-role key in the Flutter app; the Edge
+Function receives it from Supabase's server environment.
+
 ## Auth redirects
 
 Configure these URLs in Supabase Auth before tester launch:
@@ -72,5 +89,6 @@ SPA fallback so routes resolve to `index.html`.
 - Run `flutter test`.
 - Run both SQL files in Supabase in order.
 - Confirm the `profile-photos` bucket accepts only JPG, PNG, and WebP under the configured size limit.
+- Deploy and smoke test the `delete-account` Edge Function with a disposable account.
 - Build profile/release targets with explicit Supabase `--dart-define` values.
 - Smoke test sign-up, email confirmation, password reset, reservation, cancellation, notification address reveal, profile edit, photo upload, logout, and app resume.

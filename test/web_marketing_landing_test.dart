@@ -51,6 +51,7 @@ void main() {
       RegExp('Coffee by the canal.*Open details'),
     );
     await tester.ensureVisible(meetupCard);
+    expect(find.text(meetupCostLabel), findsOneWidget);
     await tester.tap(meetupCard);
     expect(openedEventId, 'web-preview');
   });

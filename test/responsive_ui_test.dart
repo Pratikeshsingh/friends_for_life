@@ -255,8 +255,15 @@ void main() {
     );
     expect(find.widgetWithText(OutlinedButton, 'Sign in'), findsOneWidget);
 
-    await tester.ensureVisible(
+    await tester.scrollUntilVisible(
       find.text('This meetup is full. Reservations are no longer available.'),
+      280,
+      scrollable: find.descendant(
+        of: find.byKey(
+          const ValueKey('public-meetup-explorer-scroll-view'),
+        ),
+        matching: find.byType(Scrollable),
+      ),
     );
     await tester.pumpAndSettle();
     expect(
@@ -445,7 +452,11 @@ void main() {
     await tester.ensureVisible(preview);
     await tester.tap(preview);
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Sign in'));
+    expect(find.text(meetupCostLabel), findsOneWidget);
+    final signInButton = find.widgetWithText(OutlinedButton, 'Sign in');
+    await tester.ensureVisible(signInButton);
+    await tester.pump();
+    await tester.tap(signInButton);
     await tester.pumpAndSettle();
 
     expect(signInCount, 1);
@@ -479,9 +490,11 @@ void main() {
     await tester.ensureVisible(preview);
     await tester.tap(preview);
     await tester.pumpAndSettle();
-    await tester.tap(
-      find.widgetWithText(ElevatedButton, 'Create account'),
-    );
+    final createAccountButton =
+        find.widgetWithText(ElevatedButton, 'Create account');
+    await tester.ensureVisible(createAccountButton);
+    await tester.pump();
+    await tester.tap(createAccountButton);
     await tester.pumpAndSettle();
 
     expect(createAccountCount, 1);
@@ -509,6 +522,7 @@ void main() {
 
     expect(find.text(event.detailDateLabel), findsOneWidget);
     expect(find.text(event.detailTimeLabel), findsOneWidget);
+    expect(find.text('€ Food & drinks'), findsOneWidget);
     final dateText = tester.widget<Text>(find.text(event.detailDateLabel));
     final timeText = tester.widget<Text>(find.text(event.detailTimeLabel));
     expect(dateText.overflow, isNull);
@@ -637,6 +651,8 @@ void main() {
     await tester.pump();
     await tester.tap(eventTitle);
     await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Cost'), findsOneWidget);
+    expect(find.text(meetupCostLabel), findsOneWidget);
     final reserveButton = find.text('Reserve meetup').last;
     await tester.dragFrom(const Offset(200, 820), const Offset(0, -900));
     await tester.pump(const Duration(milliseconds: 250));

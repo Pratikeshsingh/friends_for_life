@@ -2,6 +2,17 @@ enum EventSlot { daytime, evening }
 
 const Duration meetupCancellationCutoff = Duration(hours: 12);
 
+/// Universal cost policy shown anywhere someone is deciding whether to join.
+/// Keep the compact label short enough for narrow meetup cards, and use the
+/// full explanation where there is room to remove any ambiguity about fees.
+const String meetupCostLabel = 'Pay only for what you order';
+const String meetupCostSemantics =
+    'No VriendTime fee. You pay only for what you order at the venue.';
+const String meetupCostExplanation =
+    'VriendTime is currently free to use. There is no membership, booking, '
+    'or meetup fee. At the venue, you only pay for the food and drinks you '
+    'choose to order.';
+
 /// The exact venue is released at 10:00 Europe/Amsterdam on the calendar day
 /// before a meetup. These helpers mirror that server-side rule without using
 /// the device timezone, so the label stays stable for people travelling.
@@ -27,6 +38,30 @@ String formatMeetupAddressReleaseDateTime(DateTime eventStartsAt) {
 String buildMeetupAddressReleaseSentence(DateTime eventStartsAt) {
   return 'The exact address will be available in VriendTime on '
       '${formatMeetupAddressReleaseDateTime(eventStartsAt)}.';
+}
+
+/// Describes the meetup day from Amsterdam's calendar, rather than from the
+/// device timezone or by rounding a duration to 24-hour blocks.
+String formatMeetupRelativeDay(DateTime eventStartsAt, {DateTime? now}) {
+  final eventInAmsterdam = _amsterdamWallClock(eventStartsAt);
+  final nowInAmsterdam = _amsterdamWallClock(now ?? DateTime.now());
+  final eventDay = DateTime.utc(
+    eventInAmsterdam.year,
+    eventInAmsterdam.month,
+    eventInAmsterdam.day,
+  );
+  final today = DateTime.utc(
+    nowInAmsterdam.year,
+    nowInAmsterdam.month,
+    nowInAmsterdam.day,
+  );
+  final dayDifference = eventDay.difference(today).inDays;
+
+  if (dayDifference == 0) return 'Today';
+  if (dayDifference == 1) return 'Tomorrow';
+  if (dayDifference == -1) return 'Yesterday';
+  if (dayDifference > 1) return 'In $dayDifference days';
+  return '${dayDifference.abs()} days ago';
 }
 
 class MeetupEvent {
@@ -169,11 +204,10 @@ class MeetupEvent {
       buildMeetupAddressReleaseSentence(startsAt);
 
   String get statusLabel {
-    if (status == 'closed') return 'Reservations closed';
-    if (status == 'cancelled') return 'Cancelled';
-    if (isFull) return 'Full';
-    return isAlmostFull ? 'Nearly full' : 'Available';
+    return browseAvailabilityLabel;
   }
+
+  String get relativeDayLabel => formatMeetupRelativeDay(startsAt);
 
   String get locationSummary => 'Near $areaLabel, $city';
 
@@ -232,6 +266,18 @@ class MeetupEvent {
   bool get isAlmostFull => isFull || spotsLeft <= 2;
 
   bool get isOpenForReservation => status == 'open' && !isFull && !hasStarted;
+
+  /// A deliberately reassuring capacity label for browse surfaces. Exact
+  /// numbers only appear when scarcity is useful, never when a meetup is
+  /// mostly empty.
+  String get browseAvailabilityLabel {
+    if (status == 'cancelled') return 'Cancelled';
+    if (status == 'closed' || hasStarted) return 'Reservations closed';
+    if (isFull) return 'Full';
+    if (spotsLeft == 1) return '1 spot left';
+    if (spotsLeft == 2) return '2 spots left';
+    return 'Spots available';
+  }
 
   String get reservationUnavailableLabel {
     if (status == 'cancelled') return 'This meetup has been cancelled.';

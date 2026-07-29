@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../core/account_deletion_service.dart';
 import '../core/city_service.dart';
 import '../core/event_catalog.dart';
 import '../core/event_service.dart';
@@ -12,6 +13,7 @@ import '../core/interest_service.dart';
 import '../core/notification_service.dart';
 import '../core/profile_photo_service.dart';
 import '../core/responsive.dart';
+import '../widgets/floating_glass_navigation.dart';
 import '../widgets/motion.dart';
 import 'auth_flow_screen.dart';
 import 'event_detail_screen.dart';
@@ -492,6 +494,9 @@ class _PrototypeShellState extends State<PrototypeShell>
               _scheduleProfileWarmup();
             },
             onSignOut: _signOut,
+            onDeleteAccount: () => AccountDeletionService(
+              Supabase.instance.client,
+            ).deleteCurrentAccount(),
             isSigningOut: _isSigningOut,
             unreadNotificationCount: unreadNotificationCount,
             onOpenNotifications: () => _openNotificationsSheet(notifications),
@@ -594,69 +599,38 @@ class _PrototypeShellState extends State<PrototypeShell>
           final width = constraints.maxWidth;
           final compactNavigation = width < 600;
           final horizontal =
-              compactNavigation ? 0.0 : responsiveHorizontalPadding(width);
+              compactNavigation ? 12.0 : responsiveHorizontalPadding(width);
           final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-          const navHeight = 76.0;
-          const navTopBreathingRoom = 4.0;
-          final navBottomGap = compactNavigation ? 0.0 : 12.0;
-          final borderRadius = compactNavigation
-              ? const BorderRadius.vertical(top: Radius.circular(22))
-              : BorderRadius.circular(24);
-          final navigationSurface =
-              Theme.of(context).navigationBarTheme.backgroundColor ??
-                  const Color(0xFFFFFCF7);
+          const navHeight = 72.0;
+          const shadowRoom = 6.0;
+          final navBottomGap = compactNavigation ? 6.0 : 12.0;
 
           return SizedBox(
-            height:
-                navHeight + navTopBreathingRoom + navBottomGap + bottomInset,
+            height: navHeight + shadowRoom + navBottomGap + bottomInset,
             child: Padding(
               padding: EdgeInsets.fromLTRB(
                 horizontal,
-                0,
+                shadowRoom,
                 horizontal,
-                navBottomGap,
+                navBottomGap + bottomInset,
               ),
               child: Align(
                 alignment: Alignment.bottomCenter,
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 720),
-                  child: ClipRRect(
-                    borderRadius: borderRadius,
-                    child: ColoredBox(
-                      color: navigationSurface,
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          top: navTopBreathingRoom,
-                          bottom: bottomInset,
-                        ),
-                        child: NavigationBar(
-                          height: navHeight,
-                          selectedIndex: activeIndex,
-                          onDestinationSelected: (index) => setState(() {
-                            _selectedIndex = index;
-                            _visitedTabIndexes.add(index);
-                            if (index == 1) {
-                              _focusedEventId = null;
-                              _eventsScrollToTopVersion++;
-                            }
-                          }),
-                          destinations: const [
-                            NavigationDestination(
-                                icon: Icon(Icons.home_outlined),
-                                selectedIcon: Icon(Icons.home),
-                                label: 'Home'),
-                            NavigationDestination(
-                                icon: Icon(Icons.event_outlined),
-                                selectedIcon: Icon(Icons.event),
-                                label: 'Meetups'),
-                            NavigationDestination(
-                                icon: Icon(Icons.person_outline),
-                                selectedIcon: Icon(Icons.person),
-                                label: 'Profile'),
-                          ],
-                        ),
-                      ),
-                    ),
+                  constraints: BoxConstraints(
+                    maxWidth: compactNavigation ? 460 : 720,
+                  ),
+                  child: FloatingGlassNavigation(
+                    height: navHeight,
+                    selectedIndex: activeIndex,
+                    onDestinationSelected: (index) => setState(() {
+                      _selectedIndex = index;
+                      _visitedTabIndexes.add(index);
+                      if (index == 1) {
+                        _focusedEventId = null;
+                        _eventsScrollToTopVersion++;
+                      }
+                    }),
                   ),
                 ),
               ),
@@ -1594,6 +1568,10 @@ class _ReservationConfirmationSheet extends StatelessWidget {
                 _ConfirmationPill(
                   icon: Icons.schedule_outlined,
                   label: event.detailTimeLabel,
+                ),
+                const _ConfirmationPill(
+                  icon: Icons.euro_rounded,
+                  label: meetupCostLabel,
                 ),
               ],
             ),

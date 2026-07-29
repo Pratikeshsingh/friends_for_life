@@ -45,6 +45,8 @@
       --launch-teal: #36b8a5;
       --launch-teal-soft: #e7f4f2;
       --launch-outline: #dde7e3;
+      --launch-cycle: 1.6s;
+      --launch-gather-ease: cubic-bezier(0.45, 0, 0.2, 1);
     }
 
     html,
@@ -165,6 +167,9 @@
       border-radius: 999px;
       background: var(--launch-teal-soft);
       content: "";
+      animation: launch-table-welcome var(--launch-cycle)
+        var(--launch-gather-ease) infinite;
+      will-change: transform, opacity;
     }
 
     .launch-person {
@@ -175,24 +180,31 @@
       border: 5px solid var(--launch-canvas);
       border-radius: 50%;
       box-shadow: 0 5px 12px rgba(8, 41, 74, 0.1);
+      will-change: transform;
     }
 
     .launch-person-one {
       top: 0;
       left: 58px;
       background: var(--launch-teal);
+      animation: launch-person-one-gather var(--launch-cycle)
+        var(--launch-gather-ease) infinite;
     }
 
     .launch-person-two {
       right: 4px;
       bottom: 3px;
       background: #ff7759;
+      animation: launch-person-two-gather var(--launch-cycle)
+        var(--launch-gather-ease) infinite;
     }
 
     .launch-person-three {
       bottom: 3px;
       left: 4px;
       background: var(--launch-navy);
+      animation: launch-person-three-gather var(--launch-cycle)
+        var(--launch-gather-ease) infinite;
     }
 
     .launch-title {
@@ -230,7 +242,7 @@
       border-radius: inherit;
       background: var(--launch-teal);
       content: "";
-      animation: launch-progress 1.25s ease-in-out infinite;
+      animation: launch-progress var(--launch-cycle) ease-in-out infinite;
     }
 
     .sr-only {
@@ -270,6 +282,56 @@
       }
     }
 
+    @keyframes launch-person-one-gather {
+      0%,
+      12%,
+      100% {
+        transform: translate3d(0, -5px, 0);
+      }
+      44%,
+      68% {
+        transform: translate3d(0, 1px, 0);
+      }
+    }
+
+    @keyframes launch-person-two-gather {
+      0%,
+      12%,
+      100% {
+        transform: translate3d(5px, 4px, 0);
+      }
+      44%,
+      68% {
+        transform: translate3d(-2px, -1px, 0);
+      }
+    }
+
+    @keyframes launch-person-three-gather {
+      0%,
+      12%,
+      100% {
+        transform: translate3d(-5px, 4px, 0);
+      }
+      44%,
+      68% {
+        transform: translate3d(2px, -1px, 0);
+      }
+    }
+
+    @keyframes launch-table-welcome {
+      0%,
+      24%,
+      100% {
+        opacity: 0.55;
+        transform: translate(-50%, -50%) scaleX(0.82);
+      }
+      44%,
+      68% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scaleX(1.06);
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       #app-loading {
         transition: none;
@@ -278,6 +340,19 @@
       .launch-progress::after {
         left: 28%;
         animation: none;
+      }
+
+      .launch-person {
+        animation: none;
+        transform: none;
+        will-change: auto;
+      }
+
+      .launch-table::after {
+        animation: none;
+        opacity: 1;
+        transform: translate(-50%, -50%);
+        will-change: auto;
       }
     }
   </style>

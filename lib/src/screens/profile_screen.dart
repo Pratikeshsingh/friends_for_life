@@ -7,7 +7,9 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../core/account_deletion_service.dart';
 import '../core/city_service.dart';
+import '../core/event_catalog.dart';
 import '../core/interest_service.dart';
 import '../core/profile_photo_service.dart';
 import '../core/responsive.dart';
@@ -18,6 +20,7 @@ import '../widgets/meetup_media.dart';
 import '../widgets/motion.dart';
 import '../widgets/option_picker_sheet.dart';
 import '../widgets/section_card.dart';
+import 'legal_document_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -25,17 +28,21 @@ class ProfileScreen extends StatefulWidget {
     required this.user,
     this.onUserUpdated,
     required this.onSignOut,
+    required this.onDeleteAccount,
     required this.isSigningOut,
     required this.unreadNotificationCount,
     required this.onOpenNotifications,
+    this.supabaseClient,
   });
 
   final User user;
   final ValueChanged<User>? onUserUpdated;
   final VoidCallback onSignOut;
+  final Future<void> Function() onDeleteAccount;
   final bool isSigningOut;
   final int unreadNotificationCount;
   final VoidCallback onOpenNotifications;
+  final SupabaseClient? supabaseClient;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -50,10 +57,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _profilePhotoPath;
   bool _profilePhotoFailedToRender = false;
   bool _isRecoveringProfilePhotoUrl = false;
+  bool _isDeletingAccount = false;
   final ScrollController _scrollController = ScrollController();
   List<String> _cityOptions = const <String>[];
   List<String> _interestOptions = InterestService.defaultInterestOptions;
   int _profilePhotoLoadVersion = 0;
+  SupabaseClient get _supabase =>
+      widget.supabaseClient ?? Supabase.instance.client;
 
   @override
   void initState() {
@@ -75,16 +85,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadCityOptions() async {
-    final options =
-        await CityService(Supabase.instance.client).fetchCityOptions();
+    final options = await CityService(_supabase).fetchCityOptions();
     if (!mounted) return;
     if (listEquals(_cityOptions, options)) return;
     setState(() => _cityOptions = options);
   }
 
   Future<void> _loadInterestOptions() async {
-    final options =
-        await InterestService(Supabase.instance.client).fetchInterestOptions();
+    final options = await InterestService(_supabase).fetchInterestOptions();
     if (!mounted) return;
     if (listEquals(_interestOptions, options)) return;
     setState(() => _interestOptions = options);
@@ -239,7 +247,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           motionIndex: 5,
                                           email: email,
                                           isSigningOut: widget.isSigningOut,
+                                          isDeletingAccount: _isDeletingAccount,
                                           onSignOut: widget.onSignOut,
+                                          onDeleteAccount:
+                                              _confirmAccountDeletion,
                                         ),
                                         const SizedBox(height: 18),
                                         _ProfileHelpCard(
@@ -248,6 +259,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                               _openWhatsAppSupport,
                                           onOpenSafetyPage: _openSafetyPage,
                                           onOpenFaqPage: _openFaqPage,
+                                          onOpenTerms: () => _openLegalDocument(
+                                            LegalDocumentType.terms,
+                                          ),
+                                          onOpenPrivacy: () =>
+                                              _openLegalDocument(
+                                            LegalDocumentType.privacy,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -313,7 +331,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 motionIndex: 5,
                                 email: email,
                                 isSigningOut: widget.isSigningOut,
+                                isDeletingAccount: _isDeletingAccount,
                                 onSignOut: widget.onSignOut,
+                                onDeleteAccount: _confirmAccountDeletion,
                               ),
                               const SizedBox(height: 18),
                               _ProfileHelpCard(
@@ -321,6 +341,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 onOpenWhatsAppSupport: _openWhatsAppSupport,
                                 onOpenSafetyPage: _openSafetyPage,
                                 onOpenFaqPage: _openFaqPage,
+                                onOpenTerms: () => _openLegalDocument(
+                                  LegalDocumentType.terms,
+                                ),
+                                onOpenPrivacy: () => _openLegalDocument(
+                                  LegalDocumentType.privacy,
+                                ),
                               ),
                             ],
                           ],
@@ -534,6 +560,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _openLegalDocument(LegalDocumentType type) {
+    return Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => LegalDocumentScreen(type: type),
+      ),
+    );
+  }
+
+  Future<void> _confirmAccountDeletion() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(
+          Icons.delete_forever_outlined,
+          color: Color(0xFFB33A3A),
+        ),
+        title: const Text('Delete your account?'),
+        content: const Text(
+          'This permanently deletes your profile, photos, meetup reservations, messages, and notifications. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Keep account'),
+          ),
+          FilledButton(
+            key: const ValueKey('confirm-delete-account'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFB33A3A),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete permanently'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+    setState(() => _isDeletingAccount = true);
+
+    try {
+      await widget.onDeleteAccount();
+    } on AccountDeletionException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'We could not delete your account. Check your connection and try again.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isDeletingAccount = false);
+    }
+  }
+
   Future<void> _changeProfilePhoto() async {
     FilePickerResult? result;
     try {
@@ -598,7 +687,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           (_user.userMetadata?['profile_photo_path'] as String?) ??
               _profilePhotoPath;
       final photoPath = await ProfilePhotoService.uploadPhoto(
-        supabase: Supabase.instance.client,
+        supabase: _supabase,
         userId: _user.id,
         bytes: file.bytes!,
         fileName: file.name,
@@ -647,11 +736,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     };
 
     try {
-      final response = await Supabase.instance.client.auth.updateUser(
+      final response = await _supabase.auth.updateUser(
         UserAttributes(data: mergedMetadata),
       );
 
-      await Supabase.instance.client.from('profiles').upsert({
+      await _supabase.from('profiles').upsert({
         'id': _user.id,
         'email': _user.email,
         'first_name': mergedMetadata['first_name'],
@@ -718,7 +807,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     var photoPath = _user.userMetadata?['profile_photo_path'] as String?;
     if ((photoPath == null || photoPath.isEmpty) && _user.id.isNotEmpty) {
       try {
-        final response = await Supabase.instance.client
+        final response = await _supabase
             .from('profiles')
             .select('profile_photo_path')
             .eq('id', _user.id)
@@ -748,7 +837,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final signedUrl = await ProfilePhotoService.createSignedPhotoUrl(
-        supabase: Supabase.instance.client,
+        supabase: _supabase,
         path: photoPath,
       );
       if (!mounted || loadVersion != _profilePhotoLoadVersion) return;
@@ -763,7 +852,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (_) {
       try {
         final bytes = await ProfilePhotoService.downloadPhoto(
-          supabase: Supabase.instance.client,
+          supabase: _supabase,
           path: photoPath,
         );
         if (!mounted || loadVersion != _profilePhotoLoadVersion) return;
@@ -1064,7 +1153,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _isRecoveringProfilePhotoUrl = true;
     try {
       final signedUrl = await ProfilePhotoService.createSignedPhotoUrl(
-        supabase: Supabase.instance.client,
+        supabase: _supabase,
         path: photoPath,
         forceRefresh: true,
       );
@@ -1492,13 +1581,17 @@ class _ProfileAccountCard extends StatelessWidget {
     required this.motionIndex,
     required this.email,
     required this.isSigningOut,
+    required this.isDeletingAccount,
     required this.onSignOut,
+    required this.onDeleteAccount,
   });
 
   final int motionIndex;
   final String email;
   final bool isSigningOut;
+  final bool isDeletingAccount;
   final VoidCallback onSignOut;
+  final VoidCallback onDeleteAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -1518,13 +1611,37 @@ class _ProfileAccountCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: isSigningOut ? null : onSignOut,
+              onPressed: isSigningOut || isDeletingAccount ? null : onSignOut,
               icon: const Icon(Icons.logout_rounded, size: 18),
               label: Text(isSigningOut ? 'Signing out...' : 'Sign out'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF062B55),
                 foregroundColor: Colors.white,
                 disabledBackgroundColor: const Color(0xFF9CA9AE),
+                minimumSize: const Size(double.infinity, 52),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              key: const ValueKey('delete-account'),
+              onPressed:
+                  isSigningOut || isDeletingAccount ? null : onDeleteAccount,
+              icon: isDeletingAccount
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.delete_outline_rounded, size: 18),
+              label: Text(
+                isDeletingAccount ? 'Deleting account...' : 'Delete account',
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF9C2F2F),
+                side: const BorderSide(color: Color(0xFFD8A1A1)),
                 minimumSize: const Size(double.infinity, 52),
               ),
             ),
@@ -1541,12 +1658,16 @@ class _ProfileHelpCard extends StatelessWidget {
     required this.onOpenWhatsAppSupport,
     required this.onOpenSafetyPage,
     required this.onOpenFaqPage,
+    required this.onOpenTerms,
+    required this.onOpenPrivacy,
   });
 
   final int motionIndex;
   final VoidCallback onOpenWhatsAppSupport;
   final VoidCallback onOpenSafetyPage;
   final VoidCallback onOpenFaqPage;
+  final VoidCallback onOpenTerms;
+  final VoidCallback onOpenPrivacy;
 
   @override
   Widget build(BuildContext context) {
@@ -1581,6 +1702,16 @@ class _ProfileHelpCard extends StatelessWidget {
             label: 'FAQs',
             value: 'Common questions about meetups',
             onTap: onOpenFaqPage,
+          ),
+          _NavigationTile(
+            label: 'Terms & Conditions',
+            value: 'Rules for using VriendTime',
+            onTap: onOpenTerms,
+          ),
+          _NavigationTile(
+            label: 'Privacy Policy',
+            value: 'How VriendTime handles your data',
+            onTap: onOpenPrivacy,
           ),
         ],
       ),
@@ -1724,6 +1855,11 @@ class _FaqPage extends StatelessWidget {
       title: 'FAQs',
       intro: 'Quick answers about meetups, timing, and expectations.',
       children: const [
+        _HelpAnswerCard(
+          icon: Icons.euro_rounded,
+          title: 'Does a meetup cost anything?',
+          body: meetupCostExplanation,
+        ),
         _HelpAnswerCard(
           icon: Icons.location_on_outlined,
           title: 'When do I get the exact location?',

@@ -583,7 +583,7 @@ class _HowItWorksSection extends StatelessWidget {
                       icon: Icons.restaurant_outlined,
                       title: 'Meet at the table',
                       body:
-                          'Confirmed guests can find the exact venue in VriendTime before the meetup. Show up, order what you like, and start talking.',
+                          'Confirmed guests can find the exact venue in VriendTime before the meetup. VriendTime currently has no fee; at the venue, pay only for what you order.',
                     ),
                   ),
                 ],
@@ -1178,7 +1178,7 @@ class _WebMeetupCard extends StatelessWidget {
     return Semantics(
       button: true,
       label:
-          '${event.title}, ${event.dateLabel}, ${event.city}, $availability. Open details.',
+          '${event.title}, ${event.dateLabel}, ${event.city}, $availability. $meetupCostSemantics Open details.',
       child: MotionPressable(
         hoverScale: 1.01,
         child: Material(
@@ -1224,6 +1224,17 @@ class _WebMeetupCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
+                            '${event.relativeDayLabel} · $availability',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: event.isAlmostFull &&
+                                      event.isOpenForReservation
+                                  ? const Color(0xFF9A6518)
+                                  : _teal,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 7),
+                          Text(
                             event.title,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -1247,6 +1258,11 @@ class _WebMeetupCard extends StatelessWidget {
                           _MeetupMeta(
                             icon: Icons.groups_2_outlined,
                             label: event.groupSizeLabel,
+                          ),
+                          const SizedBox(height: 8),
+                          const _MeetupMeta(
+                            icon: Icons.euro_rounded,
+                            label: meetupCostLabel,
                           ),
                           const SizedBox(height: 18),
                           Row(
@@ -1322,14 +1338,22 @@ class _AvailabilityPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final urgent = label == '1 spot left' || label == '2 spots left';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: unavailable ? const Color(0xFFF9E5E0) : const Color(0xFFF0FBF8),
+        color: unavailable
+            ? const Color(0xFFF9E5E0)
+            : urgent
+                ? const Color(0xFFFFEBC7)
+                : const Color(0xFFF0FBF8),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color:
-              unavailable ? const Color(0xFFF0C8BE) : const Color(0xFFBFE6DE),
+          color: unavailable
+              ? const Color(0xFFF0C8BE)
+              : urgent
+                  ? const Color(0xFFE6C27C)
+                  : const Color(0xFFBFE6DE),
         ),
       ),
       child: Text(
@@ -1337,7 +1361,9 @@ class _AvailabilityPill extends StatelessWidget {
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: unavailable
                   ? const Color(0xFFA44D3E)
-                  : const Color(0xFF08736F),
+                  : urgent
+                      ? const Color(0xFF8B5A15)
+                      : const Color(0xFF08736F),
               fontWeight: FontWeight.w800,
             ),
       ),
@@ -1793,9 +1819,5 @@ class _PageWidth extends StatelessWidget {
 }
 
 String _availabilityLabel(MeetupEvent event) {
-  if (event.status == 'cancelled') return 'Cancelled';
-  if (event.status == 'closed' || event.hasStarted) return 'Closed';
-  if (event.isFull) return 'Full';
-  if (event.isAlmostFull) return 'Nearly full';
-  return 'Available';
+  return event.browseAvailabilityLabel;
 }

@@ -18,6 +18,7 @@ import '../widgets/motion.dart';
 import '../widgets/option_picker_sheet.dart';
 import '../widgets/section_card.dart';
 import '../widgets/selection_field.dart';
+import 'legal_document_screen.dart';
 
 enum _AuthStage { access, details, recommendations, complete }
 
@@ -64,6 +65,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isSubmitting = false;
+  bool _hasAcceptedLegal = false;
   String? _statusMessage;
 
   String? _selectedCity;
@@ -124,7 +126,8 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
     return _firstNameController.text.trim().isNotEmpty &&
         _looksLikeEmail(_emailController.text) &&
         _passwordController.text.trim().length >= 6 &&
-        _passwordController.text == _confirmPasswordController.text;
+        _passwordController.text == _confirmPasswordController.text &&
+        _hasAcceptedLegal;
   }
 
   String? get _emailValidationMessage {
@@ -615,6 +618,21 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
                 const SizedBox(height: 8),
                 _InlineValidation(message: _confirmPasswordValidationMessage!),
               ],
+              const SizedBox(height: 14),
+              _LegalConsentField(
+                value: _hasAcceptedLegal,
+                onChanged: _isSubmitting
+                    ? null
+                    : (value) {
+                        setState(() {
+                          _hasAcceptedLegal = value;
+                          _statusMessage = null;
+                        });
+                      },
+                onOpenTerms: () => _openLegalDocument(LegalDocumentType.terms),
+                onOpenPrivacy: () =>
+                    _openLegalDocument(LegalDocumentType.privacy),
+              ),
             ],
             const SizedBox(height: 16),
             if (_statusMessage != null) ...[
@@ -1057,8 +1075,15 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
       _setStatus('Your passwords do not match yet.');
       return;
     }
+    if (!_hasAcceptedLegal) {
+      _setStatus(
+        'Agree to the Terms & Conditions and acknowledge the Privacy Policy to create an account.',
+      );
+      return;
+    }
 
     await _runAuthAction(() async {
+      final acceptedAt = DateTime.now().toUtc().toIso8601String();
       final response = await _supabase.auth.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -1066,6 +1091,10 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
         data: {
           'first_name': _firstNameController.text.trim(),
           'last_name': _lastNameController.text.trim(),
+          'terms_accepted_at': acceptedAt,
+          'terms_version': LegalDocuments.termsVersion,
+          'privacy_acknowledged_at': acceptedAt,
+          'privacy_version': LegalDocuments.privacyVersion,
         },
       );
 
@@ -1088,6 +1117,14 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
       setState(() => _statusMessage = null);
       _setStage(_AuthStage.details);
     });
+  }
+
+  Future<void> _openLegalDocument(LegalDocumentType type) {
+    return Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => LegalDocumentScreen(type: type),
+      ),
+    );
   }
 
   void _onEmailChanged() {
@@ -2101,16 +2138,16 @@ _MeetupAvailability _availabilityForEvent(
   }
 
   if (event.isAlmostFull) {
-    return const _MeetupAvailability(
-      label: 'Nearly full',
+    return _MeetupAvailability(
+      label: event.browseAvailabilityLabel,
       icon: Icons.local_fire_department_outlined,
-      foregroundColor: Color(0xFF8B5A15),
-      backgroundColor: Color(0xFFFFEBC7),
+      foregroundColor: const Color(0xFF8B5A15),
+      backgroundColor: const Color(0xFFFFEBC7),
     );
   }
 
   return const _MeetupAvailability(
-    label: 'Available',
+    label: 'Spots available',
     icon: Icons.event_seat_outlined,
     foregroundColor: Color(0xFF0B7474),
     backgroundColor: Color(0xFFE2F3EF),
@@ -2359,6 +2396,12 @@ class _RecommendationPreviewSheet extends StatelessWidget {
                   icon: Icons.group_outlined,
                   label: 'Group size',
                   value: event.groupSizeLabel,
+                ),
+                const SizedBox(height: 16),
+                const _SheetDetailRow(
+                  icon: Icons.euro_rounded,
+                  label: 'Cost',
+                  value: meetupCostLabel,
                 ),
                 const SizedBox(height: 22),
                 SizedBox(
@@ -2746,6 +2789,94 @@ class _PrivacyDetailRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _LegalConsentField extends StatelessWidget {
+  const _LegalConsentField({
+    required this.value,
+    required this.onChanged,
+    required this.onOpenTerms,
+    required this.onOpenPrivacy,
+  });
+
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  final VoidCallback onOpenTerms;
+  final VoidCallback onOpenPrivacy;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Semantics(
+      container: true,
+      label:
+          'Agreement to the Terms and Conditions and acknowledgement of the Privacy Policy',
+      child: Container(
+        key: const ValueKey('legal-consent-field'),
+        padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F8F6),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: value ? const Color(0xFF8BCBC1) : const Color(0xFFD5E5E2),
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Checkbox(
+              key: const ValueKey('legal-consent-checkbox'),
+              value: value,
+              onChanged: onChanged == null
+                  ? null
+                  : (nextValue) => onChanged!(nextValue ?? false),
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      'I agree to the ',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    TextButton(
+                      key: const ValueKey('open-terms'),
+                      onPressed: onOpenTerms,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        minimumSize: const Size(0, 40),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text('Terms & Conditions'),
+                    ),
+                    Text(
+                      ' and acknowledge that I have read the ',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    TextButton(
+                      key: const ValueKey('open-privacy-policy'),
+                      onPressed: onOpenPrivacy,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        minimumSize: const Size(0, 40),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text('Privacy Policy'),
+                    ),
+                    Text('.', style: theme.textTheme.bodyMedium),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

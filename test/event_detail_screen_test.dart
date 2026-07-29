@@ -91,6 +91,16 @@ void main() {
     };
 
     expect(find.byType(MeetupExplorerTile), findsOneWidget);
+    expect(find.text(meetupCostLabel), findsNothing);
+    expect(
+      find.byKey(ValueKey('explore-meetup-cost-${available.id}')),
+      findsOneWidget,
+    );
+    final summary = tester.widget<Text>(
+      find.byKey(ValueKey('explore-meetup-summary-${available.id}')),
+    );
+    expect(summary.textSpan!.toPlainText(), contains('Spots available'));
+    expect(summary.textSpan!.toPlainText(), startsWith('In '));
 
     for (final entry in importantLabels.entries) {
       final text = tester.widget<Text>(find.byKey(ValueKey(entry.key)));

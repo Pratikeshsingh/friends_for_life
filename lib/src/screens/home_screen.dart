@@ -262,7 +262,6 @@ class _NextMeetupReminder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isToday = _isSameCalendarDay(event.startsAt, DateTime.now());
     final locationLabel = hasRevealedLocation
         ? (revealedLocationLabel ?? event.locationDetailLabel)
         : '${event.areaLabel}, ${event.city}';
@@ -301,13 +300,9 @@ class _NextMeetupReminder extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _InsightChip(
-                    label: isToday
-                        ? hasRevealedLocation
-                            ? 'Today · Address ready'
-                            : 'Today · Seat confirmed'
-                        : hasRevealedLocation
-                            ? 'Address ready'
-                            : 'Seat confirmed',
+                    label: hasRevealedLocation
+                        ? '${event.relativeDayLabel} · Address ready'
+                        : '${event.relativeDayLabel} · Seat confirmed',
                     dark: false,
                     onGradient: false,
                   ),

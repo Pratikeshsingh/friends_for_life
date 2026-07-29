@@ -67,6 +67,27 @@ void main() {
       );
     });
 
+    test('only exposes exact remaining spots when one or two remain', () {
+      final futureStart = DateTime.now().add(const Duration(days: 10));
+
+      expect(
+        _meetup(startsAt: futureStart, seatsFilled: 0).browseAvailabilityLabel,
+        'Spots available',
+      );
+      expect(
+        _meetup(startsAt: futureStart, seatsFilled: 4).browseAvailabilityLabel,
+        '2 spots left',
+      );
+      expect(
+        _meetup(startsAt: futureStart, seatsFilled: 5).browseAvailabilityLabel,
+        '1 spot left',
+      );
+      expect(
+        _meetup(startsAt: futureStart, seatsFilled: 6).browseAvailabilityLabel,
+        'Full',
+      );
+    });
+
     test('exact venue presence is the server-authorized reveal signal', () {
       final venue = RevealedMeetupVenue.fromRow({
         'event_id': 'test-meetup',
@@ -84,6 +105,30 @@ void main() {
       expect(venue.releasedAt.toUtc(), DateTime.utc(2026, 7, 10, 8));
       expect(event.shouldRevealExactAddress, isTrue);
       expect(event.locationDetailLabel, 'Cafe Noord, Laat 1');
+    });
+  });
+
+  group('relative meetup dates', () {
+    test('uses friendly labels for today, tomorrow, and later dates', () {
+      final now = DateTime.utc(2026, 7, 15, 8);
+
+      expect(formatMeetupRelativeDay(DateTime.utc(2026, 7, 15, 18), now: now),
+          'Today');
+      expect(formatMeetupRelativeDay(DateTime.utc(2026, 7, 16, 18), now: now),
+          'Tomorrow');
+      expect(formatMeetupRelativeDay(DateTime.utc(2026, 7, 25, 18), now: now),
+          'In 10 days');
+    });
+
+    test('compares Amsterdam calendar dates near UTC midnight', () {
+      // 21:30 UTC is 23:30 in Amsterdam; 22:30 UTC is already the next day.
+      expect(
+        formatMeetupRelativeDay(
+          DateTime.utc(2026, 7, 15, 22, 30),
+          now: DateTime.utc(2026, 7, 15, 21, 30),
+        ),
+        'Tomorrow',
+      );
     });
   });
 

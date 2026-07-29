@@ -622,7 +622,7 @@ class _PublicMeetupCard extends StatelessWidget {
     return Semantics(
       button: true,
       label:
-          '${event.title}, ${event.dateLabel}, ${event.city}, $availability. Open meetup details.',
+          '${event.title}, ${event.dateLabel}, ${event.city}, $availability. $meetupCostSemantics Open meetup details.',
       child: MotionPressable(
         child: Material(
           color: Colors.transparent,
@@ -656,6 +656,30 @@ class _PublicMeetupCard extends StatelessWidget {
                             child: _AvailabilityBadge(
                               label: availability,
                               unavailable: !event.isOpenForReservation,
+                            ),
+                          ),
+                          Positioned(
+                            right: 9,
+                            bottom: 9,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xF2FFFCF8),
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(
+                                  color: const Color(0xFFD7E5E1),
+                                ),
+                              ),
+                              child: Text(
+                                '€ Food & drinks',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: const Color(0xFF355D64),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -764,15 +788,23 @@ class _AvailabilityBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final urgent = label == '1 spot left' || label == '2 spots left';
     return Container(
       constraints: const BoxConstraints(maxWidth: 142),
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
       decoration: BoxDecoration(
-        color: unavailable ? const Color(0xFFF9E5E0) : const Color(0xFFF0FBF8),
+        color: unavailable
+            ? const Color(0xFFF9E5E0)
+            : urgent
+                ? const Color(0xFFFFEBC7)
+                : const Color(0xFFF0FBF8),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color:
-              unavailable ? const Color(0xFFF0C8BE) : const Color(0xFFBFE6DE),
+          color: unavailable
+              ? const Color(0xFFF0C8BE)
+              : urgent
+                  ? const Color(0xFFE6C27C)
+                  : const Color(0xFFBFE6DE),
         ),
       ),
       child: FittedBox(
@@ -783,7 +815,9 @@ class _AvailabilityBadge extends StatelessWidget {
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: unavailable
                     ? const Color(0xFFA44D3E)
-                    : const Color(0xFF08736F),
+                    : urgent
+                        ? const Color(0xFF8B5A15)
+                        : const Color(0xFF08736F),
                 fontWeight: FontWeight.w800,
               ),
         ),
@@ -1122,7 +1156,8 @@ class _PublicMeetupDetailCard extends StatelessWidget {
                   children: [
                     _DetailPill(
                       icon: Icons.calendar_today_outlined,
-                      label: event.detailDateLabel,
+                      label:
+                          '${event.relativeDayLabel} · ${event.detailDateLabel}',
                     ),
                     _DetailPill(
                       icon: Icons.schedule_outlined,
@@ -1135,6 +1170,10 @@ class _PublicMeetupDetailCard extends StatelessWidget {
                     _DetailPill(
                       icon: Icons.groups_2_outlined,
                       label: event.groupSizeLabel,
+                    ),
+                    const _DetailPill(
+                      icon: Icons.euro_rounded,
+                      label: meetupCostLabel,
                     ),
                   ],
                 ),
@@ -1301,9 +1340,5 @@ class _DetailPill extends StatelessWidget {
 }
 
 String _publicAvailabilityLabel(MeetupEvent event) {
-  if (event.status == 'cancelled') return 'Cancelled';
-  if (event.status == 'closed' || event.hasStarted) return 'Closed';
-  if (event.isFull) return 'Full';
-  if (event.isAlmostFull) return 'Nearly full';
-  return 'Available';
+  return event.browseAvailabilityLabel;
 }

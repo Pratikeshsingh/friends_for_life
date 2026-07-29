@@ -623,8 +623,8 @@ class _CurrentMeetupHero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _HeroTag(
-            label: 'Upcoming',
+          _HeroTag(
+            label: 'Upcoming · ${event.relativeDayLabel}',
             light: true,
           ),
           const SizedBox(height: 18),
@@ -958,6 +958,7 @@ class _MeetupPreviewSheet extends StatelessWidget {
                   children: [
                     _MetaChip(
                         label: '${event.activityLabel} • ${event.vibeLabel}'),
+                    _MetaChip(label: event.browseAvailabilityLabel),
                     _MetaChip(label: event.groupSizeLabel),
                   ],
                 ),
@@ -978,6 +979,12 @@ class _MeetupPreviewSheet extends StatelessWidget {
                   icon: Icons.groups_2_outlined,
                   title: 'Group size',
                   body: event.groupSizeLabel,
+                ),
+                const SizedBox(height: 14),
+                const _DetailRow(
+                  icon: Icons.euro_rounded,
+                  title: 'Cost',
+                  body: meetupCostLabel,
                 ),
                 const SizedBox(height: 14),
                 _DetailRow(

@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vriendtime/src/core/event_catalog.dart';
 import 'package:vriendtime/src/core/theme.dart';
 import 'package:vriendtime/src/screens/auth_flow_screen.dart';
+import 'package:vriendtime/src/screens/legal_document_screen.dart';
 import 'package:vriendtime/src/widgets/meetup_explorer_tile.dart';
 
 void main() {
@@ -84,6 +85,78 @@ void main() {
     final formTop =
         tester.getTopLeft(find.byKey(const ValueKey('auth-access-form'))).dy;
     expect(formTop - introBottom, inInclusiveRange(17, 19));
+  });
+
+  testWidgets('sign-up requires legal acknowledgement and opens both documents',
+      (tester) async {
+    final client = _testClient();
+
+    await _pumpAuthFlow(
+      tester,
+      width: 375,
+      child: AuthFlowScreen(
+        supabaseClient: client,
+        initialEvents: const [],
+        initialCityOptions: const ['Alkmaar'],
+      ),
+    );
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'First name'),
+      'Alex',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Email'),
+      'alex@example.com',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Password'),
+      'secret12',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Confirm password'),
+      'secret12',
+    );
+    await tester.pump();
+
+    var createAccount = tester.widget<ElevatedButton>(
+      find.widgetWithText(ElevatedButton, 'Create account'),
+    );
+    expect(createAccount.onPressed, isNull);
+    expect(
+        find.byKey(const ValueKey('legal-consent-checkbox')), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const ValueKey('open-terms')));
+    await tester.tap(find.byKey(const ValueKey('open-terms')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LegalDocumentScreen), findsOneWidget);
+    expect(find.text('Terms & Conditions'), findsWidgets);
+    expect(find.text('Effective 15 July 2026'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('open-privacy-policy')),
+    );
+    await tester.tap(find.byKey(const ValueKey('open-privacy-policy')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LegalDocumentScreen), findsOneWidget);
+    expect(find.text('Privacy Policy'), findsWidgets);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('legal-consent-checkbox')),
+    );
+    await tester.tap(find.byKey(const ValueKey('legal-consent-checkbox')));
+    await tester.pump();
+
+    createAccount = tester.widget<ElevatedButton>(
+      find.widgetWithText(ElevatedButton, 'Create account'),
+    );
+    expect(createAccount.onPressed, isNotNull);
   });
 
   testWidgets('details show all fields with a clear required-field convention',
@@ -253,12 +326,12 @@ void main() {
       slot: EventSlot.evening,
       city: 'Alkmaar',
       areaLabel: 'centre',
-      startsAt: DateTime(2026, 7, 26, 18),
-      endsAt: DateTime(2026, 7, 26, 20, 30),
+      startsAt: DateTime(2035, 7, 26, 18),
+      endsAt: DateTime(2035, 7, 26, 20, 30),
       activityLabel: 'Dinner',
       vibeLabel: 'Relaxed',
       policyLabel: '4+ to go',
-      seatsFilled: 2,
+      seatsFilled: 4,
       seatsTotal: 6,
       tags: const ['Dinner'],
       languages: const ['English'],
@@ -283,6 +356,11 @@ void main() {
 
     expect(find.text('26 July'), findsOneWidget);
     expect(find.text(event.detailTimeLabel), findsOneWidget);
+    expect(find.text(meetupCostLabel), findsNothing);
+    final costMarker =
+        find.byKey(ValueKey('onboarding-meetup-cost-${event.id}'));
+    expect(costMarker, findsOneWidget);
+    expect(tester.getSize(costMarker), const Size(28, 28));
     expect(find.byType(MeetupExplorerTile), findsOneWidget);
     expect(
       find.byKey(ValueKey('onboarding-meetup-date-${event.id}')),
@@ -292,6 +370,11 @@ void main() {
       find.byKey(ValueKey('onboarding-meetup-time-${event.id}')),
       findsOneWidget,
     );
+    final summary = tester.widget<Text>(
+      find.byKey(ValueKey('onboarding-meetup-summary-${event.id}')),
+    );
+    expect(summary.textSpan!.toPlainText(), contains('2 spots left'));
+    expect(summary.textSpan!.toPlainText(), startsWith('In '));
     expect(find.text('Choose meetup'), findsNothing);
 
     final skip = find.byKey(const ValueKey('skip-onboarding'));
@@ -304,6 +387,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('Reserve meetup'), findsOneWidget);
+    expect(find.text('Cost'), findsOneWidget);
+    expect(find.text(meetupCostLabel), findsOneWidget);
   });
 }
 
