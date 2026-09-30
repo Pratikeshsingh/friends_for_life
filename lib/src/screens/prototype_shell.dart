@@ -1979,7 +1979,7 @@ class _UnconfirmedBanner extends StatelessWidget {
             builder: (context, constraints) {
               final resendButton = ElevatedButton(
                 onPressed: isResending ? null : onResend,
-                child: Text(isResending ? 'Sending...' : 'Send again'),
+                child: Text(isResending ? 'Sending it over…' : 'Send again'),
               );
               final refreshButton = OutlinedButton(
                 onPressed: isRefreshing ? null : onRefresh,
@@ -2170,7 +2170,7 @@ class _NotificationsEmptyState extends StatelessWidget {
                   _NotificationsEmptyIllustration(compact: compact),
                   SizedBox(height: compact ? 14 : 18),
                   Text(
-                    'No notifications yet',
+                    'All quiet for now',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontSize: compact ? 23 : null,

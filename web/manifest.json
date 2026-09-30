@@ -1,11 +1,13 @@
 {
     "name": "VriendTime",
     "short_name": "VriendTime",
+    "id": "/",
+    "scope": "./",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#F8F5EF",
     "theme_color": "#062B55",
-    "description": "Small, planned meetups for meeting people nearby.",
+    "description": "Meet a small group nearby, once a week for six weeks.",
     "prefer_related_applications": false,
     "icons": [
         {

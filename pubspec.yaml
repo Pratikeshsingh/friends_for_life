@@ -1,7 +1,7 @@
 name: vriendtime
-version: 0.1.0+1
+version: 1.0.0+2
 publish_to: 'none'
-description: Premium friendship meetup prototype for curated small-group events.
+description: "Friendship Circles: familiar faces and weekly plans, close to home."
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -13,6 +13,7 @@ dependencies:
   file_picker: ^10.1.9
   supabase_flutter: ^2.10.2
   url_launcher: ^6.3.2
+  shared_preferences: ^2.5.4
 
 dev_dependencies:
   flutter_test:

@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/city_service.dart';
+import '../core/destructive.dart';
 import '../core/event_catalog.dart';
 import '../core/event_service.dart';
 import '../core/auth_redirects.dart';
@@ -31,6 +33,8 @@ class AuthFlowScreen extends StatefulWidget {
     this.onUserUpdated,
     this.onClose,
     this.startInSignIn = false,
+    this.circleMode = false,
+    this.presentedAsModal = false,
     this.supabaseClient,
     this.initialEvents,
     this.initialCityOptions,
@@ -40,6 +44,11 @@ class AuthFlowScreen extends StatefulWidget {
   final ValueChanged<User>? onUserUpdated;
   final VoidCallback? onClose;
   final bool startInSignIn;
+  final bool circleMode;
+
+  /// Shown inside a dialog rather than as a page, so the leading control
+  /// closes the dialog instead of navigating back.
+  final bool presentedAsModal;
   final SupabaseClient? supabaseClient;
   final List<MeetupEvent>? initialEvents;
   final List<String>? initialCityOptions;
@@ -102,6 +111,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
   bool get _canNavigateBack =>
       widget.onClose != null || _stage != _AuthStage.access;
   bool get _showsOnboardingProgress =>
+      !widget.circleMode &&
       _stage != _AuthStage.complete &&
       !(_stage == _AuthStage.access && _accountMode == _AccountMode.signIn);
   String get _stageHeaderAsset => switch (_stage) {
@@ -340,6 +350,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
                               showSkip: _stage == _AuthStage.recommendations,
                               onBack: _handleTopBack,
                               onSkip: _saveAndFinishLater,
+                              isModal: widget.presentedAsModal,
                             ),
                           ),
                           const SizedBox(height: 18),
@@ -649,7 +660,9 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
                         : _signIn,
                 child: Text(
                   _isSubmitting
-                      ? (isSignUp ? 'Creating account...' : 'Signing in...')
+                      ? (isSignUp
+                          ? 'Pulling up a chair for you…'
+                          : 'Welcoming you back…')
                       : (isSignUp ? 'Create account' : 'Sign in'),
                 ),
               ),
@@ -750,7 +763,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
                   ? null
                   : _saveDetailsAndContinue,
               child: Text(
-                _isSubmitting ? 'Saving details...' : 'Continue to meetups',
+                _isSubmitting ? 'Setting your place…' : 'Continue to meetups',
               ),
             ),
           ),
@@ -1115,7 +1128,11 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
       if (!mounted) return;
 
       setState(() => _statusMessage = null);
-      _setStage(_AuthStage.details);
+      if (widget.circleMode) {
+        widget.onClose?.call();
+      } else {
+        _setStage(_AuthStage.details);
+      }
     });
   }
 
@@ -1251,7 +1268,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
       return;
     }
 
-    await _runAuthAction(() async {
+    final succeeded = await _runAuthAction(() async {
       final response = await _supabase.auth.signInWithPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -1262,6 +1279,18 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
         widget.onUserUpdated?.call(signedInUser);
       }
     });
+
+    // On web, submitting puts this AutofillGroup's DOM <form> to sleep parked
+    // off-screen, and the next focus reuses it there — so after a failed
+    // attempt the password field looks focused but the input actually taking
+    // keystrokes is at -9999px, and edits are silently lost. (Switching to
+    // sign-up and back used to be the only escape, because that rebuilds the
+    // fields under new autofill ids.) Tearing the context down returns a
+    // fresh, correctly placed form on the next tap. shouldSave: false so the
+    // browser is never offered the password that just failed.
+    if (!succeeded && mounted && kIsWeb) {
+      TextInput.finishAutofillContext(shouldSave: false);
+    }
   }
 
   Future<void> _sendPasswordResetEmail() async {
@@ -1349,19 +1378,22 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
     });
   }
 
-  Future<void> _runAuthAction(Future<void> Function() action) async {
+  Future<bool> _runAuthAction(Future<void> Function() action) async {
     setState(() {
       _isSubmitting = true;
       _statusMessage = null;
     });
 
+    var succeeded = true;
     try {
       await action();
     } on AuthException catch (error) {
-      if (!mounted) return;
+      succeeded = false;
+      if (!mounted) return false;
       _setStatus(_friendlyAuthMessage(error));
     } catch (_) {
-      if (!mounted) return;
+      succeeded = false;
+      if (!mounted) return false;
       _setStatus(
           'We could not finish setup. Check your connection and try again.');
     } finally {
@@ -1369,6 +1401,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
         setState(() => _isSubmitting = false);
       }
     }
+    return succeeded;
   }
 
   Future<User?> _saveOnboardingMetadata(
@@ -1761,10 +1794,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFD85F4D),
-                      side: const BorderSide(color: Color(0xFFDDE7E3)),
-                    ),
+                    style: destructiveOutlinedStyle,
                     onPressed: () => Navigator.of(context).pop(true),
                     child: const Text('Cancel reservation'),
                   ),
@@ -1914,12 +1944,17 @@ class _OnboardingTopBar extends StatelessWidget {
     required this.showSkip,
     required this.onBack,
     required this.onSkip,
+    this.isModal = false,
   });
 
   final bool canNavigateBack;
   final bool showSkip;
   final VoidCallback onBack;
   final VoidCallback onSkip;
+
+  /// In a dialog the leading control becomes a close affordance on the
+  /// right, where people look for it, rather than a back arrow.
+  final bool isModal;
 
   @override
   Widget build(BuildContext context) {
@@ -1932,7 +1967,7 @@ class _OnboardingTopBar extends StatelessWidget {
           SizedBox(
             width: 52,
             height: 52,
-            child: canNavigateBack
+            child: canNavigateBack && !isModal
                 ? IconButton(
                     onPressed: onBack,
                     icon: const Icon(Icons.arrow_back_rounded),
@@ -1955,30 +1990,41 @@ class _OnboardingTopBar extends StatelessWidget {
           SizedBox(
             width: showSkip ? 88 : 52,
             height: 52,
-            child: showSkip
-                ? Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      key: const ValueKey('skip-onboarding'),
-                      onPressed: onSkip,
-                      style: TextButton.styleFrom(
-                        backgroundColor: Colors.white.withValues(alpha: 0.94),
-                        side: const BorderSide(color: Color(0xFFD5E5E2)),
-                        shape: const StadiumBorder(),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 8,
-                        ),
-                        minimumSize: const Size(72, 44),
-                        foregroundColor: const Color(0xFF062B55),
-                        textStyle: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      child: const Text('Skip'),
+            child: isModal
+                ? IconButton(
+                    onPressed: onBack,
+                    icon: const Icon(Icons.close_rounded),
+                    tooltip: 'Close',
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.92),
+                      foregroundColor: const Color(0xFF062B55),
                     ),
                   )
-                : const SizedBox.shrink(),
+                : showSkip
+                    ? Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          key: const ValueKey('skip-onboarding'),
+                          onPressed: onSkip,
+                          style: TextButton.styleFrom(
+                            backgroundColor:
+                                Colors.white.withValues(alpha: 0.94),
+                            side: const BorderSide(color: Color(0xFFD5E5E2)),
+                            shape: const StadiumBorder(),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
+                            minimumSize: const Size(72, 44),
+                            foregroundColor: const Color(0xFF062B55),
+                            textStyle: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          child: const Text('Skip'),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
           ),
         ],
       ),
@@ -2056,8 +2102,8 @@ class _StageIntro extends StatelessWidget {
     };
     final body = switch (stage) {
       _AuthStage.access => accountMode == _AccountMode.signIn
-          ? 'Sign in to see your next meetup.'
-          : 'Save your details and meetup choices in one secure place.',
+          ? 'Sign in to see what’s next.'
+          : 'A few details. A new beginning with VriendTime.',
       _AuthStage.details => 'Your age and city help us show the right meetups.',
       _AuthStage.recommendations => 'Pick up to three meetups—one on each day.',
       _AuthStage.complete => '',
@@ -2867,9 +2913,8 @@ class _LegalConsentField extends StatelessWidget {
                         minimumSize: const Size(0, 40),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      child: const Text('Privacy Policy'),
+                      child: const Text('Privacy Policy.'),
                     ),
-                    Text('.', style: theme.textTheme.bodyMedium),
                   ],
                 ),
               ),

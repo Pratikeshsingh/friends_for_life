@@ -1,0 +1,9 @@
+# Netlify builds the Flutter web app on every push to main.
+# Link this repository in Netlify: Site configuration > Build & deploy > Link repository.
+[build]
+  command = "bash scripts/netlify-build.sh"
+  publish = "build/web"
+
+[build.environment]
+  # Keep in step with the Flutter version used locally.
+  FLUTTER_VERSION = "3.44.0"

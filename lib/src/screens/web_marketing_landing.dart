@@ -980,7 +980,7 @@ class _MeetupLoadingPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       liveRegion: true,
-      label: 'Loading upcoming meetups',
+      label: 'Checking what’s on in Alkmaar',
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 72),

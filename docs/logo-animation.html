@@ -1,0 +1,35 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>VriendTime logo motion</title><style>
+    :root { color-scheme: light; --canvas: #fffaf4; --navy: #062b55; --teal: #29b8aa; --coral: #ff7759; }
+    html,body { height:100%; margin:0; background:var(--canvas); }
+    body { overflow:hidden; }
+    #app-loading { position:fixed; z-index:9999; inset:0; display:grid; place-items:center;
+      box-sizing:border-box; padding:28px; color:var(--navy); text-align:center;
+      background:radial-gradient(ellipse at 45% 38%,#eaf5ee88,transparent 50%),radial-gradient(ellipse at 65% 65%,#ffe7d766,transparent 45%),var(--canvas);
+      transition:opacity 300ms ease,visibility 300ms; }
+    #app-loading.is-ready { opacity:0; visibility:hidden; pointer-events:none; }
+    .launch-content { width:min(100%,380px); display:flex; flex-direction:column; align-items:center; }
+    .launch-scene { width:280px; max-width:100%; height:280px; margin-bottom:20px; overflow:visible; }
+    .logo-person { animation:assemble-top 4s cubic-bezier(.4,0,.2,1) infinite; }
+    .logo-left { animation-name:assemble-left; }
+    .logo-right { animation-name:assemble-right; }
+    .logo-center { animation:assemble-center 4s ease-in-out infinite; }
+    .launch-title { margin:0; font:700 clamp(32px,8vw,40px)/1.1 Georgia,'Times New Roman',serif; letter-spacing:-1px; }
+    .launch-copy { margin:14px 0 0; color:#66727c; font:14px/1.6 system-ui,-apple-system,sans-serif; }
+    .launch-status { display:flex; align-items:center; gap:9px; margin-top:34px; color:#138b8a; font:600 11px/1.5 system-ui,sans-serif; letter-spacing:.5px; }
+    .status-dot { width:5px; height:5px; background:var(--teal); border-radius:50%; animation:breathe 2s ease-in-out infinite; }
+    .javascript-required { position:fixed; inset:0; z-index:10000; display:grid; place-items:center; padding:24px; margin:0; background:var(--canvas); color:var(--navy); font:16px/1.5 system-ui,sans-serif; text-align:center; }
+    @keyframes assemble-top { 0%,100% { transform:translateY(-300px); } 32%,72% { transform:translateY(0); } }
+    @keyframes assemble-left { 0%,4%,100% { transform:translateX(-330px); } 36%,72% { transform:translateX(0); } }
+    @keyframes assemble-right { 0%,8%,100% { transform:translateX(330px); } 40%,72% { transform:translateX(0); } }
+    @keyframes assemble-center { 0%,24%,100% { opacity:0; } 42%,72% { opacity:1; } 90% { opacity:0; } }
+    @keyframes breathe { 0%,100% { opacity:.35; } 50% { opacity:1; } }
+    @media(prefers-reduced-motion:reduce) { .logo-person,.logo-center,.status-dot { animation:none; } #app-loading { transition:none; } }
+  </style></head><body>  <div id="app-loading">
+    <main class="launch-content" aria-labelledby="launch-title">
+      <svg class="launch-scene" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="-147 -252 1548 1548"><g class="logo-person logo-top"><circle cx="627" cy="261" r="69" fill="#F56853"/><path d="M408 492 C425 394 457 340 532 314 C546 309 555 311 563 320 C598 357 655 357 690 320 C698 311 707 309 721 314 C796 340 829 394 846 492 C809 417 714 381 627 381 C540 381 445 417 408 492 Z" fill="#F56853"/></g><g class="logo-person logo-left"><circle cx="351" cy="403" r="64" fill="#145247"/><path d="M302 488 C308 463 323 473 340 485 C386 516 434 524 480 544 C533 568 553 642 614 795 C620 811 601 812 580 806 C419 771 297 623 300 510 C300 501 301 494 302 488 Z" fill="#145247"/></g><g class="logo-person logo-right"><circle cx="903" cy="403" r="64" fill="#145247"/><path d="M952 488 C946 463 931 473 914 485 C868 516 820 524 774 544 C721 568 701 642 640 795 C634 811 653 812 674 806 C835 771 957 623 954 510 C954 501 953 494 952 488 Z" fill="#145247"/></g><g class="logo-center"><path d="M444 478 C539 391 714 391 809 478 C720 497 669 571 627 688 C585 571 533 497 444 478 Z" fill="#F7EBD3"/></g></svg>
+      <h1 class="launch-title" id="launch-title">VriendTime</h1>
+      <p class="launch-copy">A little time. A real connection.</p>
+      <div class="launch-status" role="status" aria-live="polite"><span class="status-dot" aria-hidden="true"></span>Opening VriendTime&hellip;</div>
+    </main>
+  </div>
+</body></html>

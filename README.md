@@ -19,9 +19,8 @@ The app is currently wired to this Supabase project URL by default:
 
 - `https://sageyiqyvzgoayehahyq.supabase.co`
 
-For local debug builds, the app can use the bundled defaults. Profile and
-release builds require explicit `--dart-define` values so staging/test builds
-cannot accidentally point at the wrong backend.
+All build modes use the bundled defaults. Override them with `--dart-define`
+when building against a different Supabase project, such as staging or test.
 
 ```bash
 flutter run -d chrome \
@@ -29,7 +28,7 @@ flutter run -d chrome \
   --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_your_key
 ```
 
-Example release build:
+Example release build using a different Supabase project:
 
 ```bash
 flutter build web --release \
@@ -90,5 +89,12 @@ SPA fallback so routes resolve to `index.html`.
 - Run both SQL files in Supabase in order.
 - Confirm the `profile-photos` bucket accepts only JPG, PNG, and WebP under the configured size limit.
 - Deploy and smoke test the `delete-account` Edge Function with a disposable account.
-- Build profile/release targets with explicit Supabase `--dart-define` values.
+- For staging/test builds, pass that environment's Supabase values with
+  `--dart-define`.
 - Smoke test sign-up, email confirmation, password reset, reservation, cancellation, notification address reveal, profile edit, photo upload, logout, and app resume.
+
+## Friendship Circles release
+
+The default app is the six-week Friendship Circles experience with real accounts and manual payment agreements. See [release notes and deployment instructions](docs/release-1.0.md). Run `scripts/check-release.sh` to analyze, test and build the web app.
+
+The public build never enables example members. An isolated internal demo is available only when explicitly compiled with `--dart-define=CIRCLES_ENABLE_PREVIEW=true`.

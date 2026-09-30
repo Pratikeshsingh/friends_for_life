@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/calendar_service.dart';
+import '../core/destructive.dart';
 import '../core/event_catalog.dart';
 import '../core/responsive.dart';
 import '../widgets/app_shell_header.dart';
@@ -182,10 +183,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFD85F4D),
-                      side: const BorderSide(color: Color(0xFFDDE7E3)),
-                    ),
+                    style: destructiveOutlinedStyle,
                     onPressed: () => Navigator.of(context).pop(true),
                     child: const Text('Cancel my reservation'),
                   ),
@@ -1011,7 +1009,7 @@ class _MeetupPreviewSheet extends StatelessWidget {
                       !event.isOpenForReservation
                           ? event.statusLabel
                           : (isUpdatingSelection
-                              ? 'Updating...'
+                              ? 'Saving your seat…'
                               : 'Reserve meetup'),
                     ),
                   ),
@@ -1365,12 +1363,10 @@ class _ReservedMeetupSheet extends StatelessWidget {
                             }
                           : null,
                       icon: const Icon(Icons.event_busy_outlined),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFD85F4D),
-                      ),
+                      style: destructiveOutlinedStyle,
                       label: Text(
                         isUpdatingSelection
-                            ? 'Updating reservation...'
+                            ? 'Freeing up your seat…'
                             : 'Cancel my reservation',
                       ),
                     ),

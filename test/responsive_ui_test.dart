@@ -656,6 +656,8 @@ void main() {
     final reserveButton = find.text('Reserve meetup').last;
     await tester.dragFrom(const Offset(200, 820), const Offset(0, -900));
     await tester.pump(const Duration(milliseconds: 250));
+    await tester.ensureVisible(reserveButton);
+    await tester.pump(const Duration(milliseconds: 250));
     await tester.tap(reserveButton);
     await tester.pump(const Duration(milliseconds: 500));
 

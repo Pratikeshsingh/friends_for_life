@@ -1,0 +1,3 @@
+/oldapp  /oldapp/  301
+/oldapp/*  /oldapp/index.html  200
+/*  /index.html  200

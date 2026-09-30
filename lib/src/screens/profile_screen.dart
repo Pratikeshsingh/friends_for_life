@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/account_deletion_service.dart';
 import '../core/city_service.dart';
+import '../core/destructive.dart';
 import '../core/event_catalog.dart';
 import '../core/interest_service.dart';
 import '../core/profile_photo_service.dart';
@@ -33,8 +34,10 @@ class ProfileScreen extends StatefulWidget {
     required this.unreadNotificationCount,
     required this.onOpenNotifications,
     this.supabaseClient,
+    this.circleMode = false,
   });
 
+  final bool circleMode;
   final User user;
   final ValueChanged<User>? onUserUpdated;
   final VoidCallback onSignOut;
@@ -69,9 +72,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _user = widget.user;
-    _loadProfilePhoto();
-    _loadCityOptions();
-    _loadInterestOptions();
+    if (!widget.circleMode) {
+      _loadProfilePhoto();
+      _loadCityOptions();
+      _loadInterestOptions();
+    }
   }
 
   @override
@@ -124,6 +129,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
       (_user.userMetadata?['date_of_birth'] as String?)?.trim(),
     );
     final gender = (_user.userMetadata?['gender'] as String?)?.trim();
+
+    if (widget.circleMode) {
+      return ListView(padding: const EdgeInsets.all(24), children: [
+        _ProfileAccountCard(
+            motionIndex: 0,
+            email: email,
+            isSigningOut: widget.isSigningOut,
+            isDeletingAccount: _isDeletingAccount,
+            onSignOut: widget.onSignOut,
+            onDeleteAccount: _confirmAccountDeletion),
+        const SizedBox(height: 18),
+        ListTile(
+            leading: const Icon(Icons.cake_outlined),
+            title: const Text('Date of birth'),
+            subtitle: Text(dateOfBirth),
+            trailing: const Icon(Icons.edit_outlined),
+            onTap: _isSaving ? null : _pickBirthDate),
+        const SizedBox(height: 18),
+        _ProfileHelpCard(
+            motionIndex: 1,
+            onOpenWhatsAppSupport: _openWhatsAppSupport,
+            onOpenSafetyPage: _openSafetyPage,
+            onOpenFaqPage: _openFaqPage,
+            onOpenTerms: () => _openLegalDocument(LegalDocumentType.terms),
+            onOpenPrivacy: () => _openLegalDocument(LegalDocumentType.privacy)),
+      ]);
+    }
 
     return ContinuousImmersiveScene(
       assetName: GeneratedImageAssets.profileContinuousScene,
@@ -364,9 +396,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               right: 16,
               child: Semantics(
                 liveRegion: true,
-                label: 'Saving profile changes',
+                label: 'Tidying up your profile',
                 child: ExcludeSemantics(
-                  child: Chip(label: Text('Saving changes...')),
+                  child: Chip(label: Text('Tidying up your profile…')),
                 ),
               ),
             ),
@@ -547,7 +579,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _openFaqPage() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => const _FaqPage(),
+        builder: (_) => _FaqPage(circleMode: widget.circleMode),
       ),
     );
   }
@@ -575,7 +607,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(
           Icons.delete_forever_outlined,
-          color: Color(0xFFB33A3A),
+          color: destructiveRed,
         ),
         title: const Text('Delete your account?'),
         content: const Text(
@@ -589,10 +621,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           FilledButton(
             key: const ValueKey('confirm-delete-account'),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFB33A3A),
-              foregroundColor: Colors.white,
-            ),
+            style: destructiveFilledStyle,
             child: const Text('Delete permanently'),
           ),
         ],
@@ -743,26 +772,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await _supabase.from('profiles').upsert({
         'id': _user.id,
         'email': _user.email,
-        'first_name': mergedMetadata['first_name'],
-        'phone': mergedMetadata['phone'],
-        'address': mergedMetadata['address'],
-        'city': mergedMetadata['city'],
-        'date_of_birth': mergedMetadata['date_of_birth'],
-        'gender': mergedMetadata['gender'],
-        'language': mergedMetadata['language'],
-        'availability': mergedMetadata['availability'],
-        'energy': mergedMetadata['energy'],
-        'group_preference': mergedMetadata['group_preference'],
-        'conversation_goals': mergedMetadata['conversation_goals'],
-        'dietary_notes': mergedMetadata['dietary_notes'],
-        'interests': mergedMetadata['interests'] ?? const <String>[],
-        'selected_event_ids':
-            mergedMetadata['selected_event_ids'] ?? const <String>[],
-        'profile_photo_path': mergedMetadata['profile_photo_path'],
-        'profile_photo_name': mergedMetadata['profile_photo_name'],
-        'secondary_photo_path': mergedMetadata['secondary_photo_path'],
-        'secondary_photo_name': mergedMetadata['secondary_photo_name'],
-        'has_profile_photo': mergedMetadata['has_profile_photo'] ?? false,
+        for (final key in const [
+          'first_name',
+          'phone',
+          'address',
+          'city',
+          'date_of_birth',
+          'gender',
+          'language',
+          'availability',
+          'energy',
+          'group_preference',
+          'conversation_goals',
+          'dietary_notes',
+          'interests',
+          'selected_event_ids',
+          'profile_photo_path',
+          'profile_photo_name',
+          'secondary_photo_path',
+          'secondary_photo_name',
+          'has_profile_photo'
+        ])
+          if (updates.containsKey(key)) key: updates[key],
       }, onConflict: 'id');
 
       if (!mounted) return;
@@ -1847,39 +1878,64 @@ class _ProfileCardHeader extends StatelessWidget {
 }
 
 class _FaqPage extends StatelessWidget {
-  const _FaqPage();
+  const _FaqPage({this.circleMode = false});
+  final bool circleMode;
 
   @override
   Widget build(BuildContext context) {
     return _HelpArticlePage(
       title: 'FAQs',
       intro: 'Quick answers about meetups, timing, and expectations.',
-      children: const [
-        _HelpAnswerCard(
-          icon: Icons.euro_rounded,
-          title: 'Does a meetup cost anything?',
-          body: meetupCostExplanation,
-        ),
-        _HelpAnswerCard(
-          icon: Icons.location_on_outlined,
-          title: 'When do I get the exact location?',
-          body: 'The area is shown before you reserve. The exact venue appears '
-              'in your VriendTime notifications at 10:00 on the date shown '
-              'in your reservation.',
-        ),
-        _HelpAnswerCard(
-          icon: Icons.event_repeat_outlined,
-          title: 'Can I change or cancel my meetup?',
-          body:
-              'You can cancel until 12 hours before the meetup starts. Changes depend on another suitable meetup still being open, so they are not guaranteed.',
-        ),
-        _HelpAnswerCard(
-          icon: Icons.groups_2_outlined,
-          title: 'What is expected at the table?',
-          body:
-              'Come as you are and be kind. Keeping the meetup phone-free gives everyone more room to connect.',
-        ),
-      ],
+      children: circleMode
+          ? const [
+              _HelpAnswerCard(
+                  icon: Icons.euro_rounded,
+                  title: 'What does a Founding Circle cost?',
+                  body:
+                      '€19 one-off for the full six-week programme. Food, drinks and activities are separate. This is not a subscription.'),
+              _HelpAnswerCard(
+                  icon: Icons.groups_2_outlined,
+                  title: 'Will I meet the same people?',
+                  body:
+                      'Yes. About six people meet once a week for six weeks. We organise the first plans, then your Circle gradually takes the lead.'),
+              _HelpAnswerCard(
+                  icon: Icons.favorite_border_rounded,
+                  title: 'What if the Circle does not feel right?',
+                  body:
+                      'Request a refund from your Circle within 48 hours after the first meetup ends. Your request and private check-ins are never shared with other members.'),
+              _HelpAnswerCard(
+                  icon: Icons.event_repeat_outlined,
+                  title: 'What happens after week six?',
+                  body:
+                      'Keep your group messages and arrange more meetups. No further programme payment is required.'),
+            ]
+          : const [
+              _HelpAnswerCard(
+                icon: Icons.euro_rounded,
+                title: 'Does a meetup cost anything?',
+                body: meetupCostExplanation,
+              ),
+              _HelpAnswerCard(
+                icon: Icons.location_on_outlined,
+                title: 'When do I get the exact location?',
+                body:
+                    'The area is shown before you reserve. The exact venue appears '
+                    'in your VriendTime notifications at 10:00 on the date shown '
+                    'in your reservation.',
+              ),
+              _HelpAnswerCard(
+                icon: Icons.event_repeat_outlined,
+                title: 'Can I change or cancel my meetup?',
+                body:
+                    'You can cancel until 12 hours before the meetup starts. Changes depend on another suitable meetup still being open, so they are not guaranteed.',
+              ),
+              _HelpAnswerCard(
+                icon: Icons.groups_2_outlined,
+                title: 'What is expected at the table?',
+                body:
+                    'Come as you are and be kind. Keeping the meetup phone-free gives everyone more room to connect.',
+              ),
+            ],
     );
   }
 }

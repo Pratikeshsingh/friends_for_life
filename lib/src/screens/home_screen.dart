@@ -665,7 +665,7 @@ class _NextMeetupLoadingCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _InsightChip(label: 'Loading your meetup'),
+            const _InsightChip(label: 'Pulling up your meetup'),
             const SizedBox(height: 16),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -690,7 +690,7 @@ class _NextMeetupLoadingCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Loading your meetup',
+                        'Pulling up your meetup',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 4),

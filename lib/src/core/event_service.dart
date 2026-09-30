@@ -6,6 +6,11 @@ class EventService {
   const EventService(this._supabase);
 
   final SupabaseClient _supabase;
+  // The postgrest query builder can, in rare cases, leave a request's Future
+  // unresolved even after its underlying HTTP response has already arrived.
+  // A hard timeout guarantees callers always land on the existing error/stale
+  // -cache fallback instead of an activity feed stuck loading forever.
+  static const _requestTimeout = Duration(seconds: 12);
   static const _eventCacheTtl = Duration(seconds: 45);
   static const _reservationCacheTtl = Duration(seconds: 12);
   static const _attendedCacheTtl = Duration(minutes: 2);
@@ -88,7 +93,7 @@ languages
         final events = await _fetchCatalogEvents(
           startsAtFilter: (query) => query.gte('starts_at', nowIso),
           ascending: true,
-        );
+        ).timeout(_requestTimeout);
         _openEventsLoadFailed = false;
         _openEventsCache = _ListCacheEntry(events);
         return events;
@@ -125,7 +130,7 @@ languages
           startsAtFilter: (query) => query.lt('starts_at', nowIso),
           ascending: false,
           limit: limit,
-        );
+        ).timeout(_requestTimeout);
         _pastEventsCache[limit] = _ListCacheEntry(events);
         return events;
       } catch (_) {
@@ -159,7 +164,8 @@ languages
           .from('event_attendees')
           .select('event_id')
           .eq('profile_id', profileId)
-          .eq('status', 'joined');
+          .eq('status', 'joined')
+          .timeout(_requestTimeout);
 
       return (rows as List<dynamic>)
           .map((row) => row['event_id'].toString())
@@ -208,7 +214,9 @@ languages
 
   Future<bool> _fetchHasAttendedMeetup(String profileId) async {
     try {
-      final result = await _supabase.rpc<bool>('has_attended_meetup');
+      final result = await _supabase.rpc<bool>('has_attended_meetup').timeout(
+            _requestTimeout,
+          );
       return result;
     } on PostgrestException catch (error) {
       if (!_isMissingRpc(error, 'has_attended_meetup')) {
@@ -226,7 +234,8 @@ languages
           .lt('starts_at', nowIso)
           .eq('event_attendees.profile_id', profileId)
           .eq('event_attendees.status', 'joined')
-          .limit(1);
+          .limit(1)
+          .timeout(_requestTimeout);
 
       return (rows as List<dynamic>).isNotEmpty;
     } catch (_) {

@@ -8,8 +8,10 @@ class FloatingGlassNavigation extends StatelessWidget {
     required this.height,
     required this.selectedIndex,
     required this.onDestinationSelected,
+    this.circleMode = false,
   });
 
+  final bool circleMode;
   final double height;
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
@@ -71,16 +73,20 @@ class FloatingGlassNavigation extends StatelessWidget {
                   ),
                   selectedIndex: selectedIndex,
                   onDestinationSelected: onDestinationSelected,
-                  destinations: const [
+                  destinations: [
                     NavigationDestination(
                       icon: Icon(Icons.home_outlined),
                       selectedIcon: Icon(Icons.home_rounded),
-                      label: 'Home',
+                      label: circleMode ? 'My Circle' : 'Home',
                     ),
                     NavigationDestination(
-                      icon: Icon(Icons.event_outlined),
-                      selectedIcon: Icon(Icons.event_rounded),
-                      label: 'Meetups',
+                      icon: Icon(circleMode
+                          ? Icons.chat_bubble_outline_rounded
+                          : Icons.event_outlined),
+                      selectedIcon: Icon(circleMode
+                          ? Icons.chat_bubble_rounded
+                          : Icons.event_rounded),
+                      label: circleMode ? 'Messages' : 'Meetups',
                     ),
                     NavigationDestination(
                       icon: Icon(Icons.person_outline),

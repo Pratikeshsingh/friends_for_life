@@ -18,14 +18,28 @@ class ProfilePhotoService {
     required String fileName,
     required String slot,
   }) async {
-    final extension = _safeExtension(fileName);
+    if (isTooLarge(bytes) || !hasSupportedImageSignature(bytes)) {
+      throw ArgumentError('Choose a JPG, PNG or WebP up to $maxUploadLabel.');
+    }
+    final isPng = bytes[0] == 0x89;
+    final isJpeg = bytes[0] == 0xFF;
+    final extension = isPng
+        ? '.png'
+        : isJpeg
+            ? '.jpg'
+            : '.webp';
+    final contentType = isPng
+        ? 'image/png'
+        : isJpeg
+            ? 'image/jpeg'
+            : 'image/webp';
     final path =
         '$userId/$slot-${DateTime.now().millisecondsSinceEpoch}$extension';
 
     await supabase.storage.from(bucketName).uploadBinary(
           path,
           bytes,
-          fileOptions: const FileOptions(upsert: true),
+          fileOptions: FileOptions(upsert: false, contentType: contentType),
         );
 
     return path;
@@ -74,17 +88,6 @@ class ProfilePhotoService {
   static void invalidateSignedPhotoUrl(String? path) {
     if (path == null || path.isEmpty) return;
     _signedUrlCache.remove(path);
-  }
-
-  static String _safeExtension(String fileName) {
-    final dotIndex = fileName.lastIndexOf('.');
-    if (dotIndex == -1) {
-      return '';
-    }
-
-    final extension = fileName.substring(dotIndex).toLowerCase();
-    final validPattern = RegExp(r'^\.[a-z0-9]+$');
-    return validPattern.hasMatch(extension) ? extension : '';
   }
 
   static bool isBucketMissing(Object error) {

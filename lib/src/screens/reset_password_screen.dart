@@ -187,7 +187,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                   onPressed: _isSubmitting ? null : _submit,
                                   child: Text(
                                     _isSubmitting
-                                        ? 'Updating...'
+                                        ? 'Securing your account…'
                                         : 'Update password',
                                   ),
                                 ),

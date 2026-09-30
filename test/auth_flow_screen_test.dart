@@ -34,7 +34,7 @@ void main() {
       findsNothing,
     );
     final introBottom =
-        tester.getBottomLeft(find.text('Sign in to see your next meetup.')).dy;
+        tester.getBottomLeft(find.text('Sign in to see what’s next.')).dy;
     final formTop =
         tester.getTopLeft(find.byKey(const ValueKey('auth-access-form'))).dy;
     expect(formTop - introBottom, inInclusiveRange(17, 19));
@@ -78,7 +78,7 @@ void main() {
     final introBottom = tester
         .getBottomLeft(
           find.text(
-            'Save your details and meetup choices in one secure place.',
+            'A few details. A new beginning with VriendTime.',
           ),
         )
         .dy;
@@ -132,7 +132,7 @@ void main() {
 
     expect(find.byType(LegalDocumentScreen), findsOneWidget);
     expect(find.text('Terms & Conditions'), findsWidgets);
-    expect(find.text('Effective 15 July 2026'), findsOneWidget);
+    expect(find.text('Effective 18 September 2026'), findsOneWidget);
 
     await tester.pageBack();
     await tester.pumpAndSettle();

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 enum LegalDocumentType { terms, privacy }
 
 abstract final class LegalDocuments {
-  static const termsVersion = '2026-07-15-v2';
-  static const privacyVersion = '2026-07-15-v2';
+  static const termsVersion = '2026-09-18-v3';
+  static const privacyVersion = '2026-09-18-v3';
 
   static LegalDocument documentFor(LegalDocumentType type) {
     return switch (type) {
@@ -15,14 +15,14 @@ abstract final class LegalDocuments {
 
   static const _terms = LegalDocument(
     title: 'Terms & Conditions',
-    effectiveDate: '15 July 2026',
+    effectiveDate: '18 September 2026',
     introduction:
         'These Terms & Conditions govern your use of VriendTime. By creating an account, you agree to these terms.',
     sections: [
       LegalSection(
         heading: '1. About VriendTime',
         paragraphs: [
-          'VriendTime helps adults discover and reserve places at small-group social meetups. VriendTime may provide meetup information, reminders, group communication, and links that help you add an event to your calendar.',
+          'VriendTime helps adults join a small Friendship Circle that meets weekly for six weeks, and discover local social meetups. VriendTime may provide meetup information, reminders, group communication, and links that help you add an event to your calendar.',
           'VriendTime is a facilitator. Unless we expressly say otherwise, venues and other attendees are independent third parties and are not our employees or agents.',
         ],
       ),
@@ -34,8 +34,11 @@ abstract final class LegalDocuments {
         ],
       ),
       LegalSection(
-        heading: '3. Meetups and reservations',
+        heading: '3. Friendship Circles, payments and meetups',
         paragraphs: [
+          'The founding Circle programme costs €19 once for six weeks. Food, drinks, travel, and activity purchases are separate. There is no subscription or further programme fee after graduation. Your group and schedule are shown before you accept the invitation.',
+          'Accepting an invitation requires an explicit agreement to pay €19. The organiser contacts you using your account email to arrange payment separately. Accepting does not collect money. Your place and group chat open when the organiser confirms receipt.',
+          'You can cancel your programme agreement in the app within 14 days of accepting for a full refund of any programme fee paid. You can also request a full programme-fee refund within 48 hours after the first meetup ends if the Circle does not feel right. If VriendTime cancels your Circle, received programme fees are refunded. Refunds are arranged manually; these promises do not limit mandatory consumer rights. Contact the organiser for other cancellation or payment concerns.',
           'Meetup availability, capacity, venue, timing, and other details may change. A reservation is not transferable unless VriendTime agrees. Exact venue information may be shared shortly before a meetup and must not be used to disrupt the venue or compromise another member’s safety.',
           'The cancellation deadline displayed in the app applies to your reservation. If a meetup is cancelled or materially changed, we will try to notify affected members using the contact details associated with their accounts.',
           'Any price or payment information shown for a meetup will be presented before you reserve. Venue purchases and services supplied directly by a third party may be governed by that third party’s own terms.',
@@ -98,7 +101,7 @@ abstract final class LegalDocuments {
 
   static const _privacy = LegalDocument(
     title: 'Privacy Policy',
-    effectiveDate: '15 July 2026',
+    effectiveDate: '18 September 2026',
     introduction:
         'This policy explains how VriendTime collects, uses, shares, and protects personal data when you use the app and related services.',
     sections: [
@@ -113,6 +116,8 @@ abstract final class LegalDocuments {
         paragraphs: [
           'Account data: email address, password authentication records, first and last name, account identifiers, and account timestamps.',
           'Profile and preference data: city, date of birth, gender, language, phone number, address, availability, energy and group preferences, conversation goals, dietary notes, interests, and profile photos. Optional fields are identified in the app.',
+          'Circle data: birthday-based age, matching goals, optional life context, availability, interests, your six-week commitment, membership, RSVPs, private meetup check-ins and optional connection choices, programme outcomes, and the optional 90-day follow-up. Organisers use matching answers to form groups. Other members cannot see your private check-ins or payment agreements.',
+          'Payment data: the €19 agreement and its version and timestamp, contact email, and organiser confirmations of payment or refund. Bank and card details are not collected through the app. Payment records and the contact email needed to resolve refunds may be retained after account deletion for accounting and dispute purposes.',
           'Meetup data: meetup selections, reservations, cancellations, attendance status, calendar actions you initiate, and notifications associated with your meetups.',
           'Communication and safety data: messages sent through available group or support features, reports, support enquiries, and information needed to investigate safety or policy concerns.',
           'Technical data: information necessary for authentication, security, diagnostics, and operation of the app, such as session data, device or browser information, IP address, and error information generated by our service providers.',
@@ -129,6 +134,7 @@ abstract final class LegalDocuments {
       LegalSection(
         heading: '4. What other members can see',
         paragraphs: [
+          'New Circle applications require a primary profile photo for recognition. A profile photo is not identity verification. That photo is available to your assigned Circle and authorised matching organisers, not the public activity feed.',
           'Information is shared with other members only where needed for social and meetup features. Depending on the feature, this may include your first name, profile photo, short introduction, interests, and messages you send to a meetup group.',
           'Your email address, date of birth, phone number, home address, dietary notes, and private account details are not intended to appear on your public member profile. Avoid placing private information in free-text fields or messages that other members can view.',
         ],
@@ -158,7 +164,7 @@ abstract final class LegalDocuments {
         heading: '8. Your choices and rights',
         paragraphs: [
           'You can review or update many profile fields in the app. Depending on applicable law, you may request access, correction, deletion, restriction, portability, or object to certain processing. You may withdraw consent without affecting earlier lawful processing.',
-          'Use Contact us in the Profile section to make a request. We may need to verify your identity. You also have the right to complain to the Dutch Data Protection Authority (Autoriteit Persoonsgegevens) or the supervisory authority where you live or work.',
+          'You can download your own account and Circle data from your Circle profile. Use Contact us in the Profile section to make other requests. We may need to verify your identity. You also have the right to complain to the Dutch Data Protection Authority (Autoriteit Persoonsgegevens) or the supervisory authority where you live or work.',
         ],
       ),
       LegalSection(

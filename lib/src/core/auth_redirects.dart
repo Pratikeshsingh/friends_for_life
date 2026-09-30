@@ -1,7 +1,14 @@
+import 'package:flutter/foundation.dart';
+
 class AuthRedirects {
-  static const emailRedirectTo = 'vriendtime://auth/callback';
-  static const passwordResetRedirectTo =
-      'https://vriendtime.com/#/reset-password';
+  static String get emailRedirectTo => kIsWeb
+      ? Uri.base.replace(path: '/', query: '', fragment: '').toString()
+      : 'vriendtime://auth/callback';
+  static String get passwordResetRedirectTo => kIsWeb
+      ? Uri.base
+          .replace(path: '/', query: '', fragment: '/reset-password')
+          .toString()
+      : 'https://vriendtime.com/#/reset-password';
   static const passwordResetRoute = '/reset-password';
   static const webAppUrl = 'https://vriendtime.com/';
 

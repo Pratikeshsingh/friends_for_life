@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/auth_redirects.dart';
 import 'core/responsive.dart';
 import 'core/theme.dart';
-import 'screens/prototype_shell.dart';
+import 'circles/circle_shell.dart';
 import 'screens/reset_password_screen.dart';
 
 class VriendTimeApp extends StatefulWidget {
@@ -55,7 +55,7 @@ class _VriendTimeAppState extends State<VriendTimeApp> {
               authEvent: authEvent,
             );
           }
-          return PrototypeShell(session: session);
+          return CircleShell(session: session);
         },
       ),
     );
