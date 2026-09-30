@@ -252,7 +252,7 @@ languages
         'target_event_id': eventId,
       });
       _invalidateAfterReservationChange(profileId);
-      return _buildReservationResult(eventId);
+      return await _buildReservationResult(eventId);
     } on PostgrestException catch (error) {
       if (!_isMissingRpc(error, 'reserve_event')) {
         rethrow;
