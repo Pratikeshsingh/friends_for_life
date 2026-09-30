@@ -5,7 +5,8 @@ import 'dart:ui' as ui;
 import '../core/profile_photo_service.dart';
 import 'circle_profile.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -150,7 +151,6 @@ class _CircleShellState extends State<CircleShell> {
           if (scroll.hasClients) scroll.jumpTo(0);
         }
         if ([
-          'draft',
           'check_in',
           'outcome',
           'schedule',
@@ -163,7 +163,6 @@ class _CircleShellState extends State<CircleShell> {
           showCircleToast(
               context,
               switch (action) {
-                'draft' => 'Your answers are saved.',
                 'refresh_commitment' => 'Availability confirmed.',
                 'exclude' => 'Noted. This stays between you and us.',
                 'email_notifications' => data['enabled'] == true
@@ -289,7 +288,7 @@ class _CircleShellState extends State<CircleShell> {
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700))),
                           PopupMenuButton<String>(
-                              tooltip: 'Explore preview stages',
+                              tooltip: t('Explore preview stages'),
                               onSelected: (v) => safeAct(
                                   v == 'reset' ? 'reset' : 'preview',
                                   {'stage': v}),
@@ -312,7 +311,13 @@ class _CircleShellState extends State<CircleShell> {
                                           fontSize: 12,
                                           fontWeight: FontWeight.w800))))
                         ])),
-                  Padding(
+                  Container(
+                      // Solid, so the scene's lamp never sits behind the
+                      // icons and content never looks cut off under it.
+                      decoration: const BoxDecoration(
+                          color: Color(0xF2FFFAF4),
+                          border: Border(
+                              bottom: BorderSide(color: Color(0x14062B55)))),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 22, vertical: 12),
                       child: Row(children: [
@@ -322,11 +327,11 @@ class _CircleShellState extends State<CircleShell> {
                         if (state?['is_admin'] == true)
                           IconButton(
                               onPressed: openAdmin,
-                              tooltip: 'Circle organiser',
+                              tooltip: t('Circle organiser'),
                               icon: const Icon(Icons.tune_rounded)),
                         IconButton(
                             onPressed: () => _notifications(context),
-                            tooltip: 'Notifications',
+                            tooltip: t('Notifications'),
                             icon: Badge(
                                 isLabelVisible:
                                     (state?['unread_notifications'] as num? ??
@@ -347,7 +352,7 @@ class _CircleShellState extends State<CircleShell> {
                                 });
                                 if (repo != null) load();
                               },
-                              tooltip: 'Exit preview',
+                              tooltip: t('Exit preview'),
                               icon: const Icon(Icons.close))
                       ])),
                   Expanded(
@@ -379,8 +384,8 @@ class _CircleShellState extends State<CircleShell> {
                                   controller: scroll,
                                   physics:
                                       const AlwaysScrollableScrollPhysics(),
-                                  padding: const EdgeInsets.fromLTRB(
-                                      22, 16, 22, 130),
+                                  padding: EdgeInsets.fromLTRB(
+                                      22, 16, 22, chatOpen ? 220 : 130),
                                   child: Center(
                                       child: ConstrainedBox(
                                           constraints: const BoxConstraints(
@@ -396,15 +401,84 @@ class _CircleShellState extends State<CircleShell> {
                         constraints: const BoxConstraints(maxWidth: 600),
                         child: Padding(
                             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                            child: FloatingGlassNavigation(
-                                height: 70,
-                                circleMode: true,
-                                selectedIndex: tab,
-                                onDestinationSelected: (v) {
-                                  setState(() => tab = v);
-                                  if (scroll.hasClients) scroll.jumpTo(0);
-                                }))))));
+                            child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (chatOpen) _composer(context),
+                                  FloatingGlassNavigation(
+                                      height: 70,
+                                      circleMode: true,
+                                      showMessages: hasChat,
+                                      homeLabel: hasChat ? null : 'Home',
+                                      selectedIndex: tab,
+                                      onDestinationSelected: (v) {
+                                        setState(() => tab = v);
+                                        if (v == 1) {
+                                          _scrollToLatest();
+                                        } else if (scroll.hasClients) {
+                                          scroll.jumpTo(0);
+                                        }
+                                      }),
+                                ]))))));
   }
+
+  /// The group chat exists once someone has joined a Circle.
+  bool get hasChat => ['active', 'completed'].contains(state?['stage']);
+  bool get chatOpen => tab == 1 && hasChat;
+
+  void _scrollToLatest() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (scroll.hasClients) scroll.jumpTo(scroll.position.maxScrollExtent);
+    });
+  }
+
+  Future<void> _send() async {
+    final text = message.text.trim();
+    if (text.isEmpty || busy) return;
+    try {
+      await act('message', {'body': text});
+      message.clear();
+      _scrollToLatest();
+    } catch (_) {}
+  }
+
+  /// Pinned above the bottom menu, so it never scrolls away from the
+  /// conversation.
+  Widget _composer(BuildContext context) => Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+          color: Colors.white,
+          elevation: 3,
+          shadowColor: const Color(0x33062B55),
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 6, 4),
+              child: Row(children: [
+                Expanded(
+                    child: TextField(
+                        controller: message,
+                        minLines: 1,
+                        maxLines: 4,
+                        maxLength: 2000,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _send(),
+                        decoration: InputDecoration(
+                            hintText: t('Message your Circle…'),
+                            counterText: '',
+                            filled: false,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none))),
+                IconButton.filled(
+                    style: IconButton.styleFrom(
+                        backgroundColor: circleNavy,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: const Color(0x33062B55),
+                        disabledForegroundColor: Colors.white),
+                    tooltip: t('Send'),
+                    onPressed: busy ? null : _send,
+                    icon: const Icon(Icons.send_rounded)),
+              ]))));
 
   void _openApplication(int step) => setState(() {
         editing = true;
@@ -414,7 +488,7 @@ class _CircleShellState extends State<CircleShell> {
       });
 
   Widget _body(BuildContext context) {
-    if (tab == 1) return _messages(context);
+    if (tab == 1 && hasChat) return _messages(context);
     if (tab == 2) return _profile(context);
     if (editing || (state!['stage'] == 'apply' && !applicationParked)) {
       // A focused edit is one answer being changed from the profile or home
@@ -428,27 +502,33 @@ class _CircleShellState extends State<CircleShell> {
           busy: busy,
           initialStep: editing ? editStep : 0,
           focusedEdit: focused,
-          onDone: () => setState(() {
-                editing = false;
-                editStep = 0;
-                // Closing a focused edit is not enough on its own: an
-                // application still in the 'apply' stage matches the second
-                // clause of the condition above, so the full four-step form
-                // would re-open at step 0 the instant this one closed —
-                // which reads as "saving my availability restarted my
-                // onboarding". Park it so they land on the home card.
-                if (state?['stage'] == 'apply') applicationParked = true;
-              }),
+          onDone: () {
+            showCircleToast(context, 'Saved.');
+            setState(() {
+              editing = false;
+              editStep = 0;
+              // Closing a focused edit is not enough on its own: an
+              // application still in the 'apply' stage matches the second
+              // clause of the condition above, so the full four-step form
+              // would re-open at step 0 the instant this one closed —
+              // which reads as "saving my availability restarted my
+              // onboarding". Park it so they land on the home card.
+              if (state?['stage'] == 'apply') applicationParked = true;
+            });
+          },
           onPhoto: repo!.isDemo ? null : _pickPhoto,
           onSave: (d) => act('draft', d),
           onSubmit: (d) => act('apply', d),
           // Leaving the form needs somewhere to land; for an unsubmitted
           // application that is the home tab's "continue" card.
-          onSaveForLater: () => setState(() {
-                editing = false;
-                editStep = 0;
-                applicationParked = true;
-              }));
+          onSaveForLater: () {
+            setState(() {
+              editing = false;
+              editStep = 0;
+              applicationParked = true;
+            });
+            showCircleToast(context, 'Saved. Pick up where you left off.');
+          });
     }
     return CircleHome(
         state: state!,
@@ -456,93 +536,95 @@ class _CircleShellState extends State<CircleShell> {
         busy: busy,
         act: safeAct,
         onEdit: _openApplication,
-        onMessages: () => setState(() => tab = 1));
+        onMessages: () {
+          setState(() => tab = 1);
+          _scrollToLatest();
+        });
+  }
+
+  String _messageTime(String? raw) {
+    final at = DateTime.tryParse(raw ?? '')?.toLocal();
+    if (at == null) return '';
+    final hm =
+        '${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}';
+    final now = DateTime.now();
+    final sameDay =
+        at.year == now.year && at.month == now.month && at.day == now.day;
+    return sameDay ? hm : '${circleDate(at.toIso8601String())} · $hm';
   }
 
   Widget _messages(BuildContext context) {
-    final enabled = ['active', 'completed'].contains(state!['stage']);
+    final messages = rows(state!['messages']);
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const CircleHeading('A little hello goes a long way.',
           eyebrow: 'Circle messages',
           subtitle:
-              'The place for plans, small updates, and “see you Thursday”.'),
-      if (!enabled)
-        const CirclePanel(children: [
-          Icon(Icons.chat_bubble_outline_rounded, color: circleTeal, size: 32),
-          SizedBox(height: 14),
-          Text(
-              'Your group conversation opens when you join your Circle. We’ll keep your place here.')
-        ])
-      else ...[
-        for (final m in rows(state!['messages']))
-          Align(
-              alignment: m['own'] == true
-                  ? Alignment.centerRight
-                  : Alignment.centerLeft,
-              child: Container(
-                  constraints: const BoxConstraints(maxWidth: 600),
-                  margin: const EdgeInsets.only(bottom: 14),
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                      color: m['own'] == true
-                          ? const Color(0xFFDFF1EA)
-                          : const Color(0xFFFFFCF7),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFDDE7E3))),
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(m['name'] as String? ?? 'Circle member',
-                            style: const TextStyle(
-                                color: circleTeal,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800)),
-                        const SizedBox(height: 6),
-                        SelectableText(m['body'] as String),
-                        if (m['created_at'] != null)
-                          Padding(
-                              padding: const EdgeInsets.only(top: 6),
-                              child: Text(
-                                  circleDate(m['created_at'].toString()),
-                                  style:
-                                      Theme.of(context).textTheme.labelSmall)),
-                        if (m['own'] != true && m['id'] != null)
-                          TextButton(
-                              onPressed: busy
-                                  ? null
-                                  : () => _report(messageId: m['id'] as String),
-                              child: const Text('Report message'))
-                      ]))),
-        if (rows(state!['messages']).isEmpty)
-          const Text('Be the first to say hello.'),
-        const SizedBox(height: 10),
-        CirclePanel(children: [
-          TextField(
-              controller: message,
-              minLines: 1,
-              maxLines: 4,
-              maxLength: 2000,
-              decoration: const InputDecoration(
-                  hintText: 'Say hello, suggest a plan…',
-                  labelText: 'Message your Circle')),
-          const SizedBox(height: 12),
-          ElevatedButton(
-              onPressed: busy
-                  ? null
-                  : () async {
-                      if (message.text.trim().isEmpty) return;
-                      try {
-                        await act('message', {'body': message.text.trim()});
-                        message.clear();
-                      } catch (_) {}
-                    },
-              child: const Text('Send message'))
-        ]),
-        const SizedBox(height: 12),
-        const Text(
-            'Your Circle can read this conversation. Organisers can review reported messages. Be kind, and ask before sharing someone’s personal details.')
-      ]
+              'Plans, small updates and “see you Thursday”. Only your Circle can read this. Be kind, and ask before sharing someone’s details.'),
+      if (messages.isEmpty)
+        const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Text('No messages yet. Be the first to say hello.')),
+      for (final m in messages) _bubble(context, m),
     ]);
+  }
+
+  Widget _bubble(BuildContext context, Json m) {
+    final own = m['own'] == true;
+    final time = _messageTime(m['created_at']?.toString());
+    return Align(
+        alignment: own ? Alignment.centerRight : Alignment.centerLeft,
+        child: Container(
+            constraints: const BoxConstraints(maxWidth: 520),
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+            decoration: BoxDecoration(
+                color: own ? const Color(0xFFDFF1EA) : Colors.white,
+                borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(18),
+                    topRight: const Radius.circular(18),
+                    bottomLeft: Radius.circular(own ? 18 : 4),
+                    bottomRight: Radius.circular(own ? 4 : 18)),
+                border: Border.all(color: const Color(0xFFDDE7E3))),
+            child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Flexible(
+                      child: Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (!own)
+                                  Text(m['name'] as String? ?? 'Circle member',
+                                      style: const TextStyle(
+                                          color: circleTeal,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w800)),
+                                SelectableText(m['body'] as String? ?? ''),
+                                if (time.isNotEmpty)
+                                  Padding(
+                                      padding: const EdgeInsets.only(top: 4),
+                                      child: Text(time,
+                                          style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Color(0xFF66727C)))),
+                              ]))),
+                  if (!own && m['id'] != null)
+                    PopupMenuButton<String>(
+                        tooltip: t('Message options'),
+                        padding: EdgeInsets.zero,
+                        iconSize: 18,
+                        icon: const Icon(Icons.more_horiz_rounded,
+                            color: Color(0xFF66727C)),
+                        onSelected: (_) =>
+                            _report(messageId: m['id'] as String),
+                        itemBuilder: (_) => const [
+                              PopupMenuItem(
+                                  value: 'report',
+                                  child: Text('Report this message'))
+                            ]),
+                ])));
   }
 
   Widget _profile(BuildContext context) => CircleProfile(
@@ -580,6 +662,11 @@ class _CircleShellState extends State<CircleShell> {
             ? null
             : _editPublicProfile,
         onAdmin: state!['is_admin'] == true ? openAdmin : null,
+        onWithdraw: state!['stage'] == 'waiting'
+            ? () async {
+                if (await confirmWithdraw(context)) await safeAct('withdraw');
+              }
+            : null,
         onHelp: _openSupportChat,
         onTerms: () => _openLegal(LegalDocumentType.terms),
         onPrivacy: () => _openLegal(LegalDocumentType.privacy),
@@ -610,15 +697,17 @@ class _CircleShellState extends State<CircleShell> {
                 TextField(
                     controller: name,
                     maxLength: 60,
-                    decoration: const InputDecoration(labelText: 'First name')),
+                    decoration: InputDecoration(labelText: t('First name'))),
                 const SizedBox(height: 16),
                 TextField(
                     controller: intro,
                     maxLength: 160,
                     minLines: 2,
                     maxLines: 3,
-                    decoration: const InputDecoration(
-                        labelText: 'My kind of afternoon…')),
+                    decoration: InputDecoration(
+                        labelText: t('A line about you (optional)'),
+                        hintText:
+                            t('e.g. A long walk, a good coffee, no rush.'))),
               ])),
               actions: [
                 TextButton(
@@ -781,8 +870,7 @@ class _CircleShellState extends State<CircleShell> {
                     minLines: 3,
                     maxLines: 6,
                     maxLength: 2000,
-                    decoration:
-                        const InputDecoration(labelText: 'Your concern')),
+                    decoration: InputDecoration(labelText: t('Your concern'))),
               ])),
               actions: [
                 TextButton(

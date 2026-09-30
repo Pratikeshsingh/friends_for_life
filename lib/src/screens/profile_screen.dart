@@ -2,7 +2,8 @@ import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -159,7 +160,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return ContinuousImmersiveScene(
       assetName: GeneratedImageAssets.profileContinuousScene,
-      semanticLabel: 'A calm cafe corner with an open chair',
+      semanticLabel: t('A calm cafe corner with an open chair'),
       compactExtent: 650,
       regularExtent: 720,
       alignment: Alignment.topRight,
@@ -396,7 +397,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               right: 16,
               child: Semantics(
                 liveRegion: true,
-                label: 'Tidying up your profile',
+                label: t('Tidying up your profile'),
                 child: ExcludeSemantics(
                   child: Chip(label: Text('Tidying up your profile…')),
                 ),
@@ -489,7 +490,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return _TextEditorSheet(
           title: 'Edit name',
           description: 'This is the name people at your meetup will see.',
-          hintText: 'Your first name',
+          hintText: t('Your first name'),
           initialValue: initialValue,
           maxLines: 1,
           minLines: 1,
@@ -513,7 +514,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           title: hasBio ? 'Edit intro' : 'Add intro',
           description:
               'Share one easy conversation starter for when you arrive.',
-          hintText: 'Always up for a good conversation',
+          hintText: t('Always up for a good conversation'),
           initialValue: initialValue,
           maxLines: 5,
           minLines: 5,
@@ -1081,7 +1082,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               fit: BoxFit.contain,
                               width: double.infinity,
                               filterQuality: FilterQuality.medium,
-                              semanticLabel: 'Profile photo preview',
+                              semanticLabel: t('Profile photo preview'),
                               errorBuilder: (_, __, ___) =>
                                   const _PhotoPreviewFallback(),
                             )
@@ -1090,7 +1091,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               fit: BoxFit.contain,
                               width: double.infinity,
                               filterQuality: FilterQuality.medium,
-                              semanticLabel: 'Profile photo preview',
+                              semanticLabel: t('Profile photo preview'),
                               errorBuilder: (_, __, ___) =>
                                   const _PhotoPreviewFallback(),
                             ),
@@ -1412,28 +1413,28 @@ class _ProfileDetailsCard extends StatelessWidget {
           const SizedBox(height: 12),
           _EditableProfileRow(
             icon: Icons.badge_outlined,
-            label: 'Name',
+            label: t('Name'),
             value: firstName,
             onTap: isSaving ? null : onEditName,
           ),
           const SizedBox(height: 8),
           _EditableProfileRow(
             icon: Icons.chat_bubble_outline_rounded,
-            label: 'Intro',
+            label: t('Intro'),
             value: bio.trim().isEmpty ? 'Add intro' : bio.trim(),
             onTap: isSaving ? null : onEditBio,
           ),
           const SizedBox(height: 8),
           _EditableProfileRow(
             icon: Icons.cake_outlined,
-            label: 'Date of birth · Private',
+            label: t('Date of birth · Private'),
             value: dateOfBirth,
             onTap: isSaving ? null : onEditBirthDate,
           ),
           const SizedBox(height: 8),
           _EditableProfileRow(
             icon: Icons.person_outline,
-            label: 'Gender · Private',
+            label: t('Gender · Private'),
             value: gender ?? 'Not added',
             onTap: isSaving ? null : onEditGender,
           ),
@@ -1547,7 +1548,7 @@ class _ProfileInterestsCard extends StatelessWidget {
                     .toList()
                 : [
                     _ProfileInterestChip(
-                      label: 'Add interests',
+                      label: t('Add interests'),
                       icon: Icons.add_rounded,
                       onTap: isSaving ? null : onEdit,
                     ),
@@ -1590,14 +1591,14 @@ class _ProfilePreferencesCard extends StatelessWidget {
           const SizedBox(height: 18),
           _EditableProfileRow(
             icon: Icons.location_on_outlined,
-            label: 'City',
+            label: t('City'),
             value: city?.isNotEmpty == true ? city! : 'Choose your city',
             onTap: isSaving ? null : onPickCity,
           ),
           const SizedBox(height: 10),
           _EditableProfileRow(
             icon: Icons.language_rounded,
-            label: 'Language',
+            label: t('Language'),
             value: language,
             onTap: isSaving ? null : onPickLanguage,
           ),
@@ -1634,7 +1635,7 @@ class _ProfileAccountCard extends StatelessWidget {
           Text('Account', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 16),
           _AccountDetailRow(
-            label: 'Email',
+            label: t('Email'),
             value: email,
             icon: Icons.mail_outline,
           ),
@@ -1719,28 +1720,28 @@ class _ProfileHelpCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _NavigationTile(
-            label: 'Contact us',
+            label: t('Contact us'),
             value: 'Chat with our team on WhatsApp',
             semanticHint: 'Opens WhatsApp',
             onTap: onOpenWhatsAppSupport,
           ),
           _NavigationTile(
-            label: 'Safety',
+            label: t('Safety'),
             value: 'Guidance for feeling comfortable and getting help',
             onTap: onOpenSafetyPage,
           ),
           _NavigationTile(
-            label: 'FAQs',
+            label: t('FAQs'),
             value: 'Common questions about meetups',
             onTap: onOpenFaqPage,
           ),
           _NavigationTile(
-            label: 'Terms & Conditions',
+            label: t('Terms & Conditions'),
             value: 'Rules for using VriendTime',
             onTap: onOpenTerms,
           ),
           _NavigationTile(
-            label: 'Privacy Policy',
+            label: t('Privacy Policy'),
             value: 'How VriendTime handles your data',
             onTap: onOpenPrivacy,
           ),
@@ -1770,7 +1771,7 @@ class _EditableProfileRow extends StatelessWidget {
     return Semantics(
       button: true,
       enabled: enabled,
-      label: '$label. $value',
+      label: t('$label. $value'),
       hint: enabled ? 'Edit $label' : 'Profile changes are being saved',
       child: ExcludeSemantics(
         child: InkWell(
@@ -1865,7 +1866,7 @@ class _ProfileCardHeader extends StatelessWidget {
           IconButton(
             onPressed: onTap,
             icon: const Icon(Icons.edit_outlined, size: 18),
-            tooltip: 'Edit ${title.toLowerCase()}',
+            tooltip: t('Edit ${title.toLowerCase()}'),
             style: IconButton.styleFrom(
               backgroundColor: accentColor,
               foregroundColor: const Color(0xFF062B55),
@@ -1897,7 +1898,7 @@ class _FaqPage extends StatelessWidget {
                   icon: Icons.groups_2_outlined,
                   title: 'Will I meet the same people?',
                   body:
-                      'Yes. About six people meet once a week for six weeks. We organise the first plans, then your Circle gradually takes the lead.'),
+                      'Yes. Five or six people meet once a week for six weeks. We plan the first three weeks, then your Circle takes the lead.'),
               _HelpAnswerCard(
                   icon: Icons.favorite_border_rounded,
                   title: 'What if the Circle does not feel right?',
@@ -2022,7 +2023,7 @@ class _HelpArticlePage extends StatelessWidget {
                             IconButton(
                               onPressed: () => Navigator.of(context).pop(),
                               icon: const Icon(Icons.arrow_back_rounded),
-                              tooltip: 'Back to profile',
+                              tooltip: t('Back to profile'),
                               style: IconButton.styleFrom(
                                 backgroundColor: Colors.white.withValues(
                                   alpha: 0.92,
@@ -2139,7 +2140,7 @@ class _NavigationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: '$label. $value',
+      label: t('$label. $value'),
       hint: semanticHint ?? 'Open $label',
       child: ExcludeSemantics(
         child: InkWell(

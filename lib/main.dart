@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'src/app.dart';
+import 'src/core/i18n.dart' show loadSavedLanguage;
 import 'src/core/supabase_config.dart';
 import 'src/startup_error_app.dart';
 
@@ -34,6 +35,7 @@ Future<void> main() async {
 
 Future<void> _startApp() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await loadSavedLanguage();
 
   final configurationError = SupabaseConfig.configurationErrorMessage;
   if (configurationError != null) {

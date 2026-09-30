@@ -189,19 +189,19 @@ void main() {
       await pumpWaiting(
           tester, DateTime.now().subtract(const Duration(days: 2)).toIso8601String());
       expect(find.text('Confirmed this week'), findsOneWidget);
-      expect(find.text('These times still work'), findsNothing);
+      expect(find.text('Yes, these times still work'), findsNothing);
     });
 
     testWidgets('comes back once the confirmation is stale', (tester) async {
       await pumpWaiting(tester,
           DateTime.now().subtract(const Duration(days: 30)).toIso8601String());
-      expect(find.text('These times still work'), findsOneWidget);
+      expect(find.text('Yes, these times still work'), findsOneWidget);
       expect(find.text('Confirmed this week'), findsNothing);
     });
 
     testWidgets('is offered when nothing was ever confirmed', (tester) async {
       await pumpWaiting(tester, null);
-      expect(find.text('These times still work'), findsOneWidget);
+      expect(find.text('Yes, these times still work'), findsOneWidget);
     });
   });
 

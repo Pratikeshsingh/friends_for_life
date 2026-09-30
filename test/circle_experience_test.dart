@@ -139,8 +139,8 @@ void main() {
     await tester.tap(find.text('Messages'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Hi Circle!');
-    await tester.ensureVisible(find.text('Send message'));
-    await tester.tap(find.text('Send message'));
+    // The composer is pinned above the menu, with an icon send button.
+    await tester.tap(find.byTooltip('Send'));
     await tester.pumpAndSettle();
     expect(find.text('Hi Circle!'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());

@@ -1,6 +1,7 @@
 import 'dart:ui' show ImageFilter;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/profile_photo_service.dart';
 import '../widgets/section_card.dart';
@@ -102,7 +103,7 @@ class CircleHeading extends StatelessWidget {
   Widget build(BuildContext context) =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         if (eyebrow != null) ...[
-          Text(eyebrow!.toUpperCase(),
+          Text(t(eyebrow!).toUpperCase(),
               style: const TextStyle(
                   fontSize: 11,
                   letterSpacing: 2,
@@ -222,7 +223,7 @@ class _CircleMemberAvatarState extends State<CircleMemberAvatar> {
             height: widget.radius * 2,
             fit: BoxFit.cover,
             gaplessPlayback: true,
-            semanticLabel: '${widget.name}’s profile photo',
+            semanticLabel: t('${widget.name}’s profile photo'),
             errorBuilder: (_, error, stack) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _recover());
       return fallback;

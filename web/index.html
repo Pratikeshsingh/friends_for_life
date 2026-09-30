@@ -21,7 +21,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#062B55">
   <meta name="color-scheme" content="light">
-  <meta name="description" content="Meet 5 people. See them for 6 weeks. Give friendship a real chance with VriendTime Friendship Circles in Alkmaar.">
+  <meta name="description" content="Five or six people, six weekly meetups, €19 for all six weeks. Give friendship a real chance with VriendTime Friendship Circles in Alkmaar.">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -86,12 +86,29 @@
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
   <script>
+    // Launch screen language: the language picked in the app (stored by
+    // shared_preferences as flutter.app_language), else the browser's.
+    window.vtDutch = (function () {
+      try {
+        var saved = localStorage.getItem('flutter.app_language');
+        if (saved) return saved.indexOf('nl') !== -1;
+      } catch (e) {}
+      return (navigator.language || '').toLowerCase().indexOf('nl') === 0;
+    })();
+    if (window.vtDutch) {
+      document.documentElement.lang = 'nl';
+      document.querySelector('.launch-copy').textContent = 'Een beetje tijd. Een echte klik.';
+      document.querySelector('.visually-hidden').textContent = 'VriendTime openen\u2026';
+      document.querySelector('.status-text').textContent = 'VriendTime openen\u2026';
+    }
     // Rotate warm, honest status lines while Flutter boots. Screen readers keep the stable label.
     window.vtStopStatus = (function () {
       var text = document.querySelector('.status-text');
       var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (!text || reduce) return function () {};
-      var phrases = ['Putting the kettle on\u2026', 'Pulling up chairs\u2026', 'Checking who\u2019s around\u2026', 'Finding a table in Alkmaar\u2026', 'Saving you a seat\u2026'];
+      var phrases = window.vtDutch
+        ? ['Water opzetten\u2026', 'Stoelen bijschuiven\u2026', 'Kijken wie er is\u2026', 'Een tafel zoeken in Alkmaar\u2026', 'Een plekje voor je vrijhouden\u2026']
+        : ['Putting the kettle on\u2026', 'Pulling up chairs\u2026', 'Checking who\u2019s around\u2026', 'Finding a table in Alkmaar\u2026', 'Saving you a seat\u2026'];
       var i = 0;
       text.textContent = phrases[0];
       var timer = window.setInterval(function () {
@@ -130,9 +147,11 @@
       var status = document.querySelector('.launch-status');
       if (status && document.getElementById('app-loading')) {
         window.vtStopStatus();
-        status.textContent = 'Taking longer than usual. Check your connection, then ';
+        status.textContent = window.vtDutch
+          ? 'Dit duurt langer dan normaal. Controleer je verbinding en '
+          : 'Taking longer than usual. Check your connection, then ';
         var retry = document.createElement('button');
-        retry.textContent = 'try again';
+        retry.textContent = window.vtDutch ? 'probeer het opnieuw' : 'try again';
         retry.onclick = function () { location.reload(); };
         status.appendChild(retry);
       }

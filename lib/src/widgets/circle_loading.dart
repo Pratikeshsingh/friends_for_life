@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
 import 'brand_mark_painter.dart';
 
 /// Warm, honest status lines that rotate while the Circle loads.

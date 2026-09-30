@@ -1,89 +1,23 @@
-import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../core/event_catalog.dart';
-import '../core/event_service.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/meetup_media.dart';
 import '../widgets/motion.dart';
 import '../screens/legal_document_screen.dart';
-import 'circle_repository.dart' show circleDate;
 import 'circle_widgets.dart';
 import 'circle_journey.dart';
 
 /// Public discovery. No sample members or preview state enters this screen.
 class CircleLanding extends StatefulWidget {
   const CircleLanding(
-      {super.key,
-      required this.onApply,
-      required this.onSignIn,
-      this.loadActivities});
+      {super.key, required this.onApply, required this.onSignIn});
   final VoidCallback onApply, onSignIn;
-  final Future<List<MeetupEvent>> Function()? loadActivities;
   @override
   State<CircleLanding> createState() => _CircleLandingState();
 }
 
 class _CircleLandingState extends State<CircleLanding> {
-  final howKey = GlobalKey(), activitiesKey = GlobalKey();
-  List<MeetupEvent> activities = [];
-  bool loading = true, failed = false;
-  @override
-  void initState() {
-    super.initState();
-    load();
-  }
-
-  Future<void> load() async {
-    setState(() {
-      loading = true;
-      failed = false;
-    });
-
-    if (widget.loadActivities != null) {
-      try {
-        final events = await widget.loadActivities!();
-        if (mounted) setState(() => activities = _forAlkmaar(events));
-      } catch (_) {
-        if (mounted) setState(() => failed = true);
-      } finally {
-        if (mounted) setState(() => loading = false);
-      }
-      return;
-    }
-
-    // Upcoming events are the primary content and render as soon as they
-    // arrive. Past events are only a best-effort top-up for a quiet week and
-    // must never hold the section hostage if that second request is slow.
-    final service = EventService(Supabase.instance.client);
-    List<MeetupEvent> upcoming;
-    try {
-      upcoming = await service.fetchOpenEvents(forceRefresh: true);
-      if (EventService.openEventsLoadFailed) {
-        throw StateError('Activity feed unavailable');
-      }
-    } catch (_) {
-      if (mounted) setState(() => failed = true);
-      return;
-    } finally {
-      if (mounted) setState(() => loading = false);
-    }
-    if (!mounted) return;
-    setState(() => activities = _forAlkmaar(upcoming));
-    if (upcoming.length >= 3) return;
-
-    final past = await service.fetchPastEvents(limit: 3, forceRefresh: true);
-    if (mounted) {
-      setState(() => activities = _forAlkmaar([...upcoming, ...past]));
-    }
-  }
-
-  List<MeetupEvent> _forAlkmaar(List<MeetupEvent> events) {
-    final byId = <String, MeetupEvent>{};
-    for (final event in events) {
-      if (event.city.toLowerCase() == 'alkmaar') byId[event.id] = event;
-    }
-    return byId.values.take(3).toList();
-  }
+  final howKey = GlobalKey(), faqKey = GlobalKey();
 
   void scrollTo(GlobalKey key) {
     final c = key.currentContext;
@@ -117,44 +51,52 @@ class _CircleLandingState extends State<CircleLanding> {
                 const SizedBox(height: 24),
                 const CircleJourney(),
               ])),
-          _section(context, activitiesKey, _liveActivities(context)),
+          _section(context, null, _nextSteps(context, compact)),
           _section(
               context,
               null,
-              CirclePanel(tint: true, children: [
-                const CirclePill('THE ALKMAAR FOUNDING PILOT'),
-                const SizedBox(height: 22),
-                Text('Six weeks.\nA real shot at friends.',
-                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        fontSize: compact ? 27 : null, height: 1.08)),
-                const SizedBox(height: 18),
-                const Text('Founding Circle — €19',
-                    style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: circleNavy)),
-                const SizedBox(height: 10),
-                const Text(
-                    'One programme. No subscription. Food, drinks and activities extra.'),
-                const SizedBox(height: 18),
-                const Text(
-                    'If the Circle doesn’t feel right after Meetup #1, request a refund within 48 hours.',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700, color: circleNavy)),
-                const SizedBox(height: 24),
-                ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 360),
-                    child: ElevatedButton(
-                        onPressed: widget.onApply,
-                        child: const Text('Apply for a spot'))),
-                const SizedBox(height: 8),
-                TextButton(
-                    onPressed: widget.onSignIn,
-                    child: const Text('Already a member? Sign in')),
-              ])),
+              Center(
+                  child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 720),
+                      child: CirclePanel(tint: true, children: [
+                        const CirclePill('THE ALKMAAR FOUNDING PILOT'),
+                        const SizedBox(height: 22),
+                        Text('Six weeks.\nA real shot at friends.',
+                            style: Theme.of(context)
+                                .textTheme
+                                .displayMedium
+                                ?.copyWith(
+                                    fontSize: compact ? 27 : null,
+                                    height: 1.08)),
+                        const SizedBox(height: 18),
+                        const Text('Founding Circle · €19',
+                            style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                color: circleNavy)),
+                        const SizedBox(height: 10),
+                        const Text(
+                            'One payment for all six weeks. No subscription. You pay the venue for what you eat and drink.'),
+                        const SizedBox(height: 18),
+                        const Text(
+                            'If the Circle doesn’t feel right after the first meetup, ask for a refund within 48 hours.',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: circleNavy)),
+                        const SizedBox(height: 24),
+                        ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 360),
+                            child: ElevatedButton(
+                                onPressed: widget.onApply,
+                                child: const Text('Apply for a spot'))),
+                        const SizedBox(height: 8),
+                        TextButton(
+                            onPressed: widget.onSignIn,
+                            child: const Text('Already applied? Sign in')),
+                      ])))),
           _section(
               context,
-              null,
+              faqKey,
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('A few things worth knowing',
                     style: Theme.of(context).textTheme.headlineMedium),
@@ -166,6 +108,11 @@ class _CircleLandingState extends State<CircleLanding> {
                         'Adults 18+ around Alkmaar. Our first groups focus on ages 25–45 and meet in English or Dutch.'),
                 const Divider(height: 1),
                 const _FaqTile(
+                    question: 'How big is a Circle?',
+                    answer:
+                        'Five or six people. Everyone shares a language and has the same regular time free, so the same faces come back every week.'),
+                const Divider(height: 1),
+                const _FaqTile(
                     question: 'How are people matched?',
                     answer:
                         'Our team starts with a shared language and time, then considers your interests and what you’re looking for.'),
@@ -173,7 +120,7 @@ class _CircleLandingState extends State<CircleLanding> {
                 const _FaqTile(
                     question: 'Is this a subscription?',
                     answer:
-                        'No — €19 once for all six weeks. Food, drinks and activities are separate, and there’s nothing more to pay after that.'),
+                        'No. You pay €19 once for all six weeks, and nothing more after that. Food, drinks and activity tickets are paid at the venue.'),
                 const Divider(height: 1),
                 const _FaqTile(
                     question: 'Where do you meet?',
@@ -186,23 +133,14 @@ class _CircleLandingState extends State<CircleLanding> {
                         'The Circle stays together — your group chat and meetup planning stay open, so you can keep making your own plans.'),
                 const Divider(height: 1),
                 const SizedBox(height: 28),
-                Wrap(
-                    spacing: 20,
-                    runSpacing: 12,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      const BrandLockup(
-                          logoSize: 34, foregroundColor: circleNavy),
-                      TextButton(
-                          onPressed: () => _legal(LegalDocumentType.terms),
-                          child: const Text('Terms')),
-                      TextButton(
-                          onPressed: () => _legal(LegalDocumentType.privacy),
-                          child: const Text('Privacy')),
-                      TextButton(
-                          onPressed: widget.onSignIn,
-                          child: const Text('Sign in'))
-                    ]),
+                const BrandLockup(logoSize: 34, foregroundColor: circleNavy),
+                const SizedBox(height: 12),
+                Wrap(spacing: 24, runSpacing: 4, children: [
+                  _footerLink('Terms', () => _legal(LegalDocumentType.terms)),
+                  _footerLink(
+                      'Privacy', () => _legal(LegalDocumentType.privacy)),
+                  _footerLink('Sign in', widget.onSignIn),
+                ]),
                 const SizedBox(height: 18),
                 const Text('VriendTime · Friendship Circles · Alkmaar',
                     style: TextStyle(fontSize: 12)),
@@ -271,18 +209,24 @@ class _CircleLandingState extends State<CircleLanding> {
                                               child:
                                                   const Text('How it works')),
                                           TextButton(
-                                              onPressed: () =>
-                                                  scrollTo(activitiesKey),
-                                              child: const Text('Activities')),
+                                              onPressed: () => scrollTo(faqKey),
+                                              child: const Text('Questions')),
                                           const SizedBox(width: 4),
                                           TextButton(
                                               onPressed: widget.onSignIn,
-                                              child: const Text('Sign in'))
+                                              child: const Text('Sign in')),
+                                          const SizedBox(width: 6),
+                                          const LanguageToggle(compact: true)
                                         ]))
                                   else
-                                    TextButton(
-                                        onPressed: widget.onSignIn,
-                                        child: const Text('Sign in'))
+                                    Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          TextButton(
+                                              onPressed: widget.onSignIn,
+                                              child: const Text('Sign in')),
+                                          const LanguageToggle(compact: true),
+                                        ])
                                 ])),
                             SizedBox(height: compact ? 40 : 78),
                             ConstrainedBox(
@@ -306,7 +250,7 @@ class _CircleLandingState extends State<CircleLanding> {
                                                   height: 1.08)),
                                       const SizedBox(height: 18),
                                       const Text(
-                                          'Six people. Six weekly meetups. €19 total.',
+                                          'Five or six people. Six weekly meetups. €19 for all six weeks.',
                                           style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.w700,
@@ -353,8 +297,8 @@ class _CircleLandingState extends State<CircleLanding> {
                                           width: double.infinity,
                                           fit: BoxFit.cover,
                                           alignment: Alignment.bottomCenter,
-                                          semanticLabel:
-                                              'A table set for company, with a view over an Alkmaar canal'))),
+                                          semanticLabel: t(
+                                              'A table set for company, with a view over an Alkmaar canal')))),
                             SizedBox(height: compact ? 30 : 84),
                           ])))),
         ]));
@@ -382,85 +326,68 @@ class _CircleLandingState extends State<CircleLanding> {
                         EdgeInsets.only(right: i == cards.length - 1 ? 0 : 18),
                     child: cards[i]))
         ]);
-  Widget _liveActivities(BuildContext context) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const CircleHeading('Around the VriendTime table.',
-            eyebrow: 'Meetups in Alkmaar',
-            subtitle:
-                'Public VriendTime meetups. Your Circle makes its own plans.'),
-        if (loading)
-          const Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
-              child: LinearProgressIndicator(
-                  minHeight: 3,
-                  semanticsLabel: 'Finding meetups around Alkmaar'))
-        else if (failed)
-          CirclePanel(children: [
-            const Text('Activities couldn’t be loaded right now.'),
-            TextButton(onPressed: load, child: const Text('Try again'))
-          ])
-        else if (activities.isEmpty)
-          const CirclePanel(children: [
-            Icon(Icons.calendar_month_outlined, color: circleTeal, size: 32),
-            SizedBox(height: 14),
-            Text('The next introductions are taking shape.',
-                style:
-                    TextStyle(fontWeight: FontWeight.w700, color: circleNavy)),
-            SizedBox(height: 8),
-            Text(
-                'Nothing public is listed right now — Circle plans are made separately, once your group is set.')
-          ])
-        else
-          LayoutBuilder(
-              builder: (context, c) => _columns(
-                  [for (final e in activities) _event(context, e)],
-                  c.maxWidth)),
+
+  /// What happens after "Apply", so nobody wonders whether they just paid
+  /// for something or when they will hear back.
+  Widget _nextSteps(BuildContext context, bool compact) {
+    const steps = [
+      (
+        Icons.edit_note_rounded,
+        'Apply',
+        'Four short steps, about three minutes. No payment yet.'
+      ),
+      (
+        Icons.diversity_3_rounded,
+        'We find your group',
+        'Five or six people who share a language and a regular free time. This usually takes one to three weeks.'
+      ),
+      (
+        Icons.celebration_rounded,
+        'Say yes',
+        'See your group and all six dates first. Only then accept for €19.'
+      ),
+    ];
+    Widget step(int i) {
+      final (icon, title, body) = steps[i];
+      return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+                color: const Color(0xFFEAF7F5),
+                borderRadius: BorderRadius.circular(14)),
+            child: Icon(icon, color: circleTeal)),
+        const SizedBox(width: 14),
+        Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('${i + 1}. $title',
+              style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: circleNavy)),
+          const SizedBox(height: 4),
+          Text(body, style: const TextStyle(height: 1.5)),
+        ])),
       ]);
-  Widget _event(BuildContext context, MeetupEvent e) {
-    final past = e.startsAt.isBefore(DateTime.now());
-    return CirclePanel(children: [
-      MeetupArtwork(event: e, height: 170, radius: 16),
-      const SizedBox(height: 16),
-      CirclePill(past
-          ? 'RECENT MEETUP'
-          : e.status == 'full'
-              ? 'FULL'
-              : 'UPCOMING'),
-      const SizedBox(height: 12),
-      Text(e.title, style: Theme.of(context).textTheme.headlineSmall),
-      const SizedBox(height: 8),
-      Text('${circleDate(e.startsAt.toIso8601String())} · ${e.city}'),
-      const SizedBox(height: 6),
-      Text(e.activityLabel),
-      const SizedBox(height: 10),
-      TextButton(
-          onPressed: () => showDialog<void>(
-              context: context,
-              builder: (c) => AlertDialog(
-                      title: Text(e.title),
-                      content: SingleChildScrollView(
-                          child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                            Text(
-                                '${circleDate(e.startsAt.toIso8601String())} · ${e.city}'),
-                            const SizedBox(height: 12),
-                            Text(e.subtitle),
-                            const SizedBox(height: 12),
-                            Text(e.areaLabel),
-                            const SizedBox(height: 18),
-                            const Text(
-                                'A public VriendTime meetup. Your Circle has its own separate schedule.')
-                          ])),
-                      actions: [
-                        TextButton(
-                            onPressed: () => Navigator.pop(c),
-                            child: const Text('Close'))
-                      ])),
-          child: const Text('About this activity'))
+    }
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const CircleHeading('What happens after you apply.',
+          eyebrow: 'Three steps'),
+      LayoutBuilder(
+          builder: (context, c) =>
+              _columns([for (var i = 0; i < 3; i++) step(i)], c.maxWidth)),
     ]);
   }
+
+  Widget _footerLink(String label, VoidCallback onTap) => TextButton(
+      style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          minimumSize: const Size(0, 44),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+      onPressed: onTap,
+      child: Text(label));
 
   void _legal(LegalDocumentType type) => Navigator.push(context,
       MaterialPageRoute<void>(builder: (_) => LegalDocumentScreen(type: type)));

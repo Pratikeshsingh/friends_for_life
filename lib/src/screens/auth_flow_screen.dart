@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -373,6 +374,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
                                   key: ValueKey('intro-$_stage'),
                                   stage: _stage,
                                   accountMode: _accountMode,
+                                  circleMode: widget.circleMode,
                                 ),
                               ),
                             ),
@@ -498,9 +500,9 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
                     textInputAction: TextInputAction.next,
                     textCapitalization: TextCapitalization.words,
                     autofillHints: const [AutofillHints.givenName],
-                    decoration: const InputDecoration(
-                      labelText: 'First name',
-                      hintText: 'Alex',
+                    decoration: InputDecoration(
+                      labelText: t('First name'),
+                      hintText: t('e.g. Sanne'),
                     ),
                   );
                   final lastNameField = TextField(
@@ -509,11 +511,15 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
                     textInputAction: TextInputAction.next,
                     textCapitalization: TextCapitalization.words,
                     autofillHints: const [AutofillHints.familyName],
-                    decoration: const InputDecoration(
-                      labelText: 'Last name',
-                      hintText: 'Jansen',
+                    decoration: InputDecoration(
+                      labelText: t('Last name'),
+                      hintText: t('e.g. de Vries'),
                     ),
                   );
+
+                  // Circles only ever use a first name, so there is no
+                  // reason to ask for a surname.
+                  if (widget.circleMode) return firstNameField;
 
                   if (compact) {
                     return Column(
@@ -543,9 +549,9 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
               autofillHints: const [AutofillHints.email],
               autocorrect: false,
               enableSuggestions: false,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                hintText: 'you@example.com',
+              decoration: InputDecoration(
+                labelText: t('Email'),
+                hintText: t('e.g. you@example.com'),
               ),
             ),
             if (_emailValidationMessage != null) ...[
@@ -569,13 +575,13 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
                 }
               },
               decoration: InputDecoration(
-                labelText: 'Password',
+                labelText: t('Password'),
                 hintText:
                     isSignUp ? 'Create a password' : 'Enter your password',
                 suffixIcon: IconButton(
                   onPressed: () =>
                       setState(() => _obscurePassword = !_obscurePassword),
-                  tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                  tooltip: t(_obscurePassword ? 'Show password' : 'Hide password'),
                   icon: Icon(_obscurePassword
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined),
@@ -611,8 +617,8 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
                   }
                 },
                 decoration: InputDecoration(
-                  labelText: 'Confirm password',
-                  hintText: 'Same password again',
+                  labelText: t('Confirm password'),
+                  hintText: t('Same password again'),
                   suffixIcon: IconButton(
                     onPressed: () => setState(() =>
                         _obscureConfirmPassword = !_obscureConfirmPassword),
@@ -698,7 +704,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
           SelectionField(
             key: const ValueKey('details-birth-date-field'),
             icon: Icons.cake_outlined,
-            label: 'Date of birth *',
+            label: t('Date of birth *'),
             value: _selectedBirthDate == null
                 ? null
                 : _formatBirthDate(_selectedBirthDate!),
@@ -716,7 +722,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
           SelectionField(
             key: const ValueKey('city-selection-field'),
             icon: Icons.location_city_outlined,
-            label: 'City *',
+            label: t('City *'),
             value: _selectedCity,
             placeholder: 'Choose your city',
             onTap: _pickCity,
@@ -725,7 +731,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
           SelectionField(
             key: const ValueKey('details-gender-field'),
             icon: Icons.person_outline,
-            label: 'Gender',
+            label: t('Gender'),
             value: _selectedGender,
             placeholder: 'Choose if you want',
             onTap: _pickGender,
@@ -737,8 +743,8 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
             keyboardType: TextInputType.phone,
             textInputAction: TextInputAction.done,
             autofillHints: const [AutofillHints.telephoneNumber],
-            decoration: const InputDecoration(
-              labelText: 'Phone number',
+            decoration: InputDecoration(
+              labelText: t('Phone number'),
               hintText: '+31 6 12345678',
               prefixIcon: Icon(Icons.phone_outlined),
             ),
@@ -1971,7 +1977,7 @@ class _OnboardingTopBar extends StatelessWidget {
                 ? IconButton(
                     onPressed: onBack,
                     icon: const Icon(Icons.arrow_back_rounded),
-                    tooltip: 'Back',
+                    tooltip: t('Back'),
                     style: IconButton.styleFrom(
                       backgroundColor: Colors.white.withValues(alpha: 0.92),
                       foregroundColor: const Color(0xFF062B55),
@@ -1994,7 +2000,7 @@ class _OnboardingTopBar extends StatelessWidget {
                 ? IconButton(
                     onPressed: onBack,
                     icon: const Icon(Icons.close_rounded),
-                    tooltip: 'Close',
+                    tooltip: t('Close'),
                     style: IconButton.styleFrom(
                       backgroundColor: Colors.white.withValues(alpha: 0.92),
                       foregroundColor: const Color(0xFF062B55),
@@ -2080,10 +2086,12 @@ class _StageIntro extends StatelessWidget {
     super.key,
     required this.stage,
     required this.accountMode,
+    this.circleMode = false,
   });
 
   final _AuthStage stage;
   final _AccountMode accountMode;
+  final bool circleMode;
 
   @override
   Widget build(BuildContext context) {
@@ -2103,7 +2111,9 @@ class _StageIntro extends StatelessWidget {
     final body = switch (stage) {
       _AuthStage.access => accountMode == _AccountMode.signIn
           ? 'Sign in to see what’s next.'
-          : 'A few details. A new beginning with VriendTime.',
+          : circleMode
+              ? 'Takes a minute. After this, four short questions about you, your week and your kind of company. No payment.'
+              : 'A few details. A new beginning with VriendTime.',
       _AuthStage.details => 'Your age and city help us show the right meetups.',
       _AuthStage.recommendations => 'Pick up to three meetups—one on each day.',
       _AuthStage.complete => '',
@@ -2148,8 +2158,8 @@ _MeetupAvailability _availabilityForEvent(
   required bool selected,
 }) {
   if (selected) {
-    return const _MeetupAvailability(
-      label: 'Reserved',
+    return _MeetupAvailability(
+      label: t('Reserved'),
       icon: Icons.check_circle_rounded,
       foregroundColor: Color(0xFF0B7474),
       backgroundColor: Color(0xFFDFF3EF),
@@ -2157,8 +2167,8 @@ _MeetupAvailability _availabilityForEvent(
   }
 
   if (event.status == 'cancelled') {
-    return const _MeetupAvailability(
-      label: 'Cancelled',
+    return _MeetupAvailability(
+      label: t('Cancelled'),
       icon: Icons.event_busy_outlined,
       foregroundColor: Color(0xFF8B5148),
       backgroundColor: Color(0xFFF7E5E0),
@@ -2166,8 +2176,8 @@ _MeetupAvailability _availabilityForEvent(
   }
 
   if (event.status == 'closed' || event.hasStarted) {
-    return const _MeetupAvailability(
-      label: 'Reservations closed',
+    return _MeetupAvailability(
+      label: t('Reservations closed'),
       icon: Icons.lock_clock_outlined,
       foregroundColor: Color(0xFF656B69),
       backgroundColor: Color(0xFFE8E8E4),
@@ -2175,8 +2185,8 @@ _MeetupAvailability _availabilityForEvent(
   }
 
   if (event.isFull) {
-    return const _MeetupAvailability(
-      label: 'Full',
+    return _MeetupAvailability(
+      label: t('Full'),
       icon: Icons.group_off_outlined,
       foregroundColor: Color(0xFF9A4E43),
       backgroundColor: Color(0xFFF9E3DC),
@@ -2192,8 +2202,8 @@ _MeetupAvailability _availabilityForEvent(
     );
   }
 
-  return const _MeetupAvailability(
-    label: 'Spots available',
+  return _MeetupAvailability(
+    label: t('Spots available'),
     icon: Icons.event_seat_outlined,
     foregroundColor: Color(0xFF0B7474),
     backgroundColor: Color(0xFFE2F3EF),
@@ -2420,7 +2430,7 @@ class _RecommendationPreviewSheet extends StatelessWidget {
                   runSpacing: 10,
                   children: [
                     _SheetMetaPill(
-                        label: '${event.activityLabel} • ${event.vibeLabel}'),
+                        label: t('${event.activityLabel} • ${event.vibeLabel}')),
                     _SheetMetaPill(label: event.groupSizeLabel),
                     _SheetMetaPill(label: availability.label),
                   ],
@@ -2428,25 +2438,25 @@ class _RecommendationPreviewSheet extends StatelessWidget {
                 const SizedBox(height: 18),
                 _SheetDetailRow(
                   icon: Icons.calendar_today_outlined,
-                  label: 'Date',
+                  label: t('Date'),
                   value: '${event.detailDateLabel} • ${event.detailTimeLabel}',
                 ),
                 const SizedBox(height: 16),
                 _SheetDetailRow(
                   icon: Icons.place_outlined,
-                  label: 'Area',
+                  label: t('Area'),
                   value: '${event.areaLabel}, ${event.city}',
                 ),
                 const SizedBox(height: 16),
                 _SheetDetailRow(
                   icon: Icons.group_outlined,
-                  label: 'Group size',
+                  label: t('Group size'),
                   value: event.groupSizeLabel,
                 ),
                 const SizedBox(height: 16),
-                const _SheetDetailRow(
+                _SheetDetailRow(
                   icon: Icons.euro_rounded,
-                  label: 'Cost',
+                  label: t('Cost'),
                   value: meetupCostLabel,
                 ),
                 const SizedBox(height: 22),
@@ -2623,7 +2633,7 @@ class _DetailsPrivacySummary extends StatelessWidget {
 
     return Semantics(
       container: true,
-      label: 'Your details stay private. Learn why we ask.',
+      label: t('Your details stay private. Learn why we ask.'),
       child: Row(
         children: [
           const Icon(
@@ -2667,7 +2677,7 @@ class _DetailsPrivacySheet extends StatelessWidget {
       scopesRoute: true,
       namesRoute: true,
       explicitChildNodes: true,
-      label: 'Why we ask for these details',
+      label: t('Why we ask for these details'),
       child: Material(
         color: const Color(0xFFFFFCF7),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
@@ -2712,7 +2722,7 @@ class _DetailsPrivacySheet extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    tooltip: 'Close',
+                    tooltip: t('Close'),
                     icon: const Icon(Icons.close_rounded),
                   ),
                 ],
@@ -2859,7 +2869,7 @@ class _LegalConsentField extends StatelessWidget {
     return Semantics(
       container: true,
       label:
-          'Agreement to the Terms and Conditions and acknowledgement of the Privacy Policy',
+          t('Agreement to the Terms and Conditions and acknowledgement of the Privacy Policy'),
       child: Container(
         key: const ValueKey('legal-consent-field'),
         padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),

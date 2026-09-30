@@ -1,5 +1,7 @@
 import 'dart:math' as math;
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
+import 'circle_repository.dart' show circleWeekTitles, circleWeekShort;
 import 'circle_widgets.dart';
 
 /// An illustration of the programme, never a representation of actual members.
@@ -12,25 +14,11 @@ class CircleJourney extends StatefulWidget {
 
 class _CircleJourneyState extends State<CircleJourney> {
   int week = 0;
-  static const titles = [
-    'A first hello.',
-    'Something to share.',
-    'Familiar faces.',
-    'Your kind of plan.',
-    'Make it a habit.',
-    'Keep a good thing going.'
-  ];
-  static const captions = [
-    'Coffee. Six people. One easy start.',
-    'Try an activity together.',
-    'A walk, a catch-up, less small talk.',
-    'Choose the next activity as a group.',
-    'Take turns making the plan.',
-    'Your group stays. No new programme fee.'
-  ];
+  static const titles = circleWeekTitles;
+  static const captions = circleWeekShort;
   static const icons = [
-    Icons.coffee_rounded,
-    Icons.sports_esports_rounded,
+    Icons.restaurant_rounded,
+    Icons.local_activity_rounded,
     Icons.park_rounded,
     Icons.lightbulb_outline_rounded,
     Icons.calendar_month_rounded,
@@ -56,7 +44,7 @@ class _CircleJourneyState extends State<CircleJourney> {
                       padding: const EdgeInsets.symmetric(horizontal: 3),
                       child: Semantics(
                           selected: week == i,
-                          label: 'Week ${i + 1}',
+                          label: t('Week ${i + 1}'),
                           button: true,
                           child: InkWell(
                               borderRadius: BorderRadius.circular(30),
@@ -114,8 +102,9 @@ class _CircleJourneyState extends State<CircleJourney> {
                   ])),
           const SizedBox(height: 16),
           const Text(
-              'Tap a week to explore · activities are arranged with your group',
-              style: TextStyle(color: Color(0xFFB8CDD5), fontSize: 11)),
+              'Tap a week to see the plan. We plan weeks 1 to 3. From week 4, your group plans together.',
+              style: TextStyle(
+                  color: Color(0xFFDCE9ED), fontSize: 13, height: 1.45)),
         ]),
       );
 }
@@ -132,7 +121,7 @@ class CircleStoryCard extends StatelessWidget {
     ];
     const titles = [
       'People who fit.',
-      'Same six. Every week.',
+      'Same faces. Every week.',
       'Friends beyond week six.'
     ];
     const captions = [

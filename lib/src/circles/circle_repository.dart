@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../core/i18n.dart' show isDutch;
 import '../core/profile_photo_service.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,24 +7,34 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 typedef Json = Map<String, dynamic>;
 
+/// The six weeks, told the same way everywhere: landing page, invitation,
+/// the weekly plan and the organiser panel. The database creates meetups
+/// with these same titles (see supabase/migrations/20260930_week_one_dinner.sql).
 const circleWeekTitles = [
-  'A table for six',
-  'Something a little different',
-  'Familiar faces',
-  'Your Circle, your choice',
-  'Make it your own',
-  'The beginning of something',
-];
-const circleActivities = [
-  'Dinner, the six of you',
+  'Dinner together',
   'Bowling together',
   'A walk & a warm drink',
   'Choose something together',
   'A plan of your own',
-  'One more evening together'
+  'One last get-together',
 ];
+
+/// Kept for older call sites: the meetup titles are the week titles.
+const circleActivities = circleWeekTitles;
+
+/// One short line per week, for the six-week timeline.
+const circleWeekShort = [
+  'A two-hour dinner to meet everyone.',
+  'A shared activity takes the pressure off.',
+  'A catch-up on foot, less small talk.',
+  'You pick the next activity as a group.',
+  'Someone in the Circle makes the plan.',
+  'Your group stays together. Nothing more to pay.',
+];
+
+/// The fuller description, on each week's card.
 const circleWeekNotes = [
-  'A two-hour dinner. We book the table; you pay the restaurant for what you have. Leaving early is always fine, but the first evening is the one worth staying for.',
+  'A two-hour dinner. We book the table; you pay the restaurant for what you order. Leaving early is always fine, but the first evening is the one worth staying for.',
   'A shared activity takes the pressure off conversation.',
   'Catch up as a group, or add an optional coffee with one person.',
   'Pick your next activity together.',
@@ -39,19 +50,17 @@ List<String> strings(dynamic value) =>
 String circleDate(String? raw) {
   final date = DateTime.tryParse(raw ?? '');
   if (date == null) return 'To be arranged';
+  if (isDutch) {
+    const months = [
+      'jan', 'feb', 'mrt', 'apr', 'mei', 'jun', //
+      'jul', 'aug', 'sep', 'okt', 'nov', 'dec'
+    ];
+    const days = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'];
+    return '${days[date.weekday - 1]} ${date.day} ${months[date.month - 1]}';
+  }
   const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec'
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   return '${days[date.weekday - 1]} ${date.day} ${months[date.month - 1]}';
@@ -406,7 +415,8 @@ class DemoCircleRepository implements CircleRepository {
     state['notifications'] = [
       {
         'title': 'Your Circle is ready',
-        'body': 'Six people. Six Thursdays. Your first hello is on 8 October.'
+        'body':
+            'Your group and six Thursdays are ready. The first dinner is on 8 October.'
       }
     ];
     return state;
@@ -606,18 +616,7 @@ class DemoCircleRepository implements CircleRepository {
   Future<Json> adminLoad() async {
     final state = _state;
     return {
-      'applications': List.generate(
-          6,
-          (i) => {
-                'profile_id': i == 0 ? 'you' : 'person-$i',
-                'name': ['You', 'Noor', 'Sam', 'Lena', 'Daan', 'Alex'][i],
-                'city': 'Alkmaar',
-                'age': 28 + i,
-                'languages': ['English', 'Dutch'],
-                'availability': ['Thursday evening'],
-                'interests': ['Coffee', 'Walking'],
-                'status': 'waiting'
-              }),
+      'applications': _demoApplicants(),
       'circles': state['circle'] == null
           ? []
           : [
@@ -635,4 +634,87 @@ class DemoCircleRepository implements CircleRepository {
       }
     };
   }
+}
+
+/// Example applicants for the preview organiser panel: varied enough that
+/// the availability grid, filters and group suggestions have something to
+/// show. Never sent anywhere.
+List<Json> _demoApplicants() {
+  final now = DateTime.now();
+  Json person(String id, String name, int age, List<String> languages,
+          List<String> availability, List<String> interests,
+          {List<String> activities = const [],
+          List<String> goals = const ['Local friends'],
+          int energy = 2,
+          String phone = '+31612345678',
+          int waitedDays = 7,
+          bool ready = true}) =>
+      {
+        'profile_id': id,
+        'name': name,
+        'city': 'Alkmaar',
+        'age': age,
+        'languages': languages,
+        'availability': availability,
+        'interests': interests,
+        'activities': activities,
+        'goals': goals,
+        'energy': energy,
+        'phone': phone,
+        'intro': '',
+        'status': 'waiting',
+        'ready': ready,
+        'submitted_at':
+            now.subtract(Duration(days: waitedDays)).toIso8601String(),
+      };
+  const en = ['English'], both = ['English', 'Dutch'], nl = ['Dutch'];
+  return [
+    person('you', 'You', 31, both, ['Thursday evening', 'Saturday afternoon'],
+        ['Coffee', 'Walking'],
+        activities: ['A walk'], waitedDays: 40),
+    person(
+        'person-1', 'Noor', 29, both, ['Thursday evening'], ['Coffee', 'Books'],
+        activities: ['A walk', 'Board games'], waitedDays: 38),
+    person('person-2', 'Sam', 33, en, ['Thursday evening', 'Tuesday evening'],
+        ['Walking', 'Cooking'],
+        activities: ['A walk'], waitedDays: 35),
+    person('person-3', 'Lena', 27, both, ['Thursday evening', 'Sunday morning'],
+        ['Coffee', 'Walking', 'Art'],
+        activities: ['A walk'], waitedDays: 30),
+    person('person-4', 'Daan', 35, both, ['Thursday evening'],
+        ['Cooking', 'Coffee'],
+        goals: ['Regular plans'], waitedDays: 26),
+    person('person-5', 'Alex', 30, en,
+        ['Thursday evening', 'Saturday afternoon'], ['Books', 'Walking'],
+        activities: ['Board games'], waitedDays: 21),
+    person('person-6', 'Mila', 26, nl, ['Saturday afternoon', 'Sunday morning'],
+        ['Sport', 'Music'],
+        activities: ['Sport'], goals: ['Shared hobbies'], waitedDays: 20),
+    person(
+        'person-7', 'Joris', 28, nl, ['Saturday afternoon'], ['Sport', 'Games'],
+        activities: ['Sport', 'Board games'],
+        goals: ['Shared hobbies'],
+        waitedDays: 18),
+    person('person-8', 'Fleur', 31, both,
+        ['Saturday afternoon', 'Wednesday evening'], ['Music', 'Art'],
+        goals: ['Shared hobbies'], waitedDays: 16),
+    person(
+        'person-9', 'Bram', 27, nl, ['Saturday afternoon'], ['Sport', 'Music'],
+        activities: ['Sport'], goals: ['Shared hobbies'], waitedDays: 12),
+    person('person-10', 'Priya', 34, en,
+        ['Tuesday evening', 'Thursday evening'], ['Cooking', 'Books'],
+        activities: ['Dinner'], goals: ['Regular plans'], waitedDays: 10),
+    person('person-11', 'Tom', 38, en, ['Tuesday evening'], ['Cooking', 'Film'],
+        activities: ['Dinner'], goals: ['Regular plans'], waitedDays: 8),
+    person('person-12', 'Sara', 36, en,
+        ['Tuesday evening', 'Wednesday evening'], ['Film', 'Books'],
+        activities: ['Dinner'], goals: ['Regular plans'], waitedDays: 6),
+    person('person-13', 'Eva', 24, nl, ['Sunday morning'], ['Walking'],
+        waitedDays: 5, ready: false, phone: ''),
+    person('person-14', 'Mo', 41, en, ['Monday evening'], ['Games'],
+        waitedDays: 3),
+    person(
+        'person-15', 'Kim', 29, both, ['Wednesday evening'], ['Art', 'Music'],
+        waitedDays: 1, ready: false),
+  ];
 }

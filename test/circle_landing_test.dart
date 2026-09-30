@@ -1,8 +1,6 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vriendtime/src/core/theme.dart';
-import 'package:vriendtime/src/core/event_catalog.dart';
 import 'package:vriendtime/src/circles/circle_landing.dart';
 import 'package:vriendtime/src/widgets/circle_loading.dart';
 
@@ -24,9 +22,7 @@ void main() {
               data: MediaQuery.of(context).copyWith(disableAnimations: true),
               child: child!),
           home: CircleLanding(
-              onApply: () => created++,
-              onSignIn: () => signedIn++,
-              loadActivities: () async => [])));
+              onApply: () => created++, onSignIn: () => signedIn++)));
       await tester.pumpAndSettle();
       expect(find.text('Strangers on week one.\nFriends by week six.'),
           findsOneWidget);
@@ -36,72 +32,39 @@ void main() {
       expect(created, 1);
       await tester.tap(find.text('Sign in').first);
       expect(signedIn, 1);
-      await tester
-          .ensureVisible(find.text('The next introductions are taking shape.'));
+
+      // What happens after applying is spelled out, and the old public
+      // meetups section is gone.
+      await tester.ensureVisible(find.text('What happens after you apply.'));
       await tester.pumpAndSettle();
-      expect(find.text('The next introductions are taking shape.'),
-          findsOneWidget);
+      expect(find.text('1. Apply'), findsOneWidget);
+      expect(find.text('3. Say yes'), findsOneWidget);
+      expect(find.textContaining('Around the VriendTime table'), findsNothing);
+      expect(find.text('Activities'), findsNothing);
       expect(tester.takeException(), isNull);
+
       await tester.ensureVisible(find.text('Terms'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });
   }
-  testWidgets('activities use supplied real records and show details',
+
+  testWidgets('the landing tells one story: five or six people, dinner first',
       (tester) async {
-    final event = MeetupEvent.fromRow({
-      'id': 'actual-id',
-      'title': 'Coffee by the canal',
-      'city': 'Alkmaar',
-      'starts_at':
-          DateTime.now().add(const Duration(days: 7)).toIso8601String(),
-      'subtitle': 'A relaxed afternoon',
-      'activity_type': 'Coffee',
-      'status': 'open',
-      'capacity': 6
-    });
     await tester.pumpWidget(MaterialApp(
         theme: buildTheme(),
         builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context).copyWith(disableAnimations: true),
             child: child!),
-        home: CircleLanding(
-            onApply: () {},
-            onSignIn: () {},
-            loadActivities: () async => [event])));
-    await tester.pump(const Duration(milliseconds: 600));
-    expect(find.text('Coffee by the canal'), findsOneWidget);
-    await tester.ensureVisible(find.text('About this activity'));
-    await tester.pump(const Duration(milliseconds: 600));
-    await tester.tap(find.text('About this activity'));
-    await tester.pump(const Duration(milliseconds: 600));
-    expect(find.byType(AlertDialog), findsOneWidget);
-    expect(find.text('A relaxed afternoon'), findsOneWidget);
+        home: CircleLanding(onApply: () {}, onSignIn: () {})));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Five or six people'), findsWidgets);
+    expect(find.textContaining('€19 total'), findsNothing);
+    expect(find.textContaining('Six people.'), findsNothing);
+    // Week one in the six-week timeline is the dinner.
+    expect(find.text('Dinner together'), findsOneWidget);
   });
-  testWidgets('failed feed offers retry rather than invented events',
-      (tester) async {
-    var calls = 0;
-    await tester.pumpWidget(MaterialApp(
-        theme: buildTheme(),
-        builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context).copyWith(disableAnimations: true),
-            child: child!),
-        home: CircleLanding(
-            onApply: () {},
-            onSignIn: () {},
-            loadActivities: () async {
-              if (calls++ == 0) throw StateError('offline');
-              return [];
-            })));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Try again'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Try again'));
-    await tester.pumpAndSettle();
-    expect(calls, 2);
-    expect(
-        find.text('The next introductions are taking shape.'), findsOneWidget);
-  });
+
   testWidgets('reduced-motion loading stays still and labels its purpose',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
@@ -111,23 +74,5 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.binding.hasScheduledFrame, isFalse);
     expect(find.text('Opening your Circle…'), findsOneWidget);
-  });
-  testWidgets('pending activities show loading until the request completes',
-      (tester) async {
-    final request = Completer<List<MeetupEvent>>();
-    await tester.pumpWidget(MaterialApp(
-        theme: buildTheme(),
-        builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context).copyWith(disableAnimations: true),
-            child: child!),
-        home: CircleLanding(
-            onApply: () {},
-            onSignIn: () {},
-            loadActivities: () => request.future)));
-    await tester.pump();
-    expect(find.byType(LinearProgressIndicator), findsOneWidget);
-    request.complete([]);
-    await tester.pumpAndSettle();
-    expect(find.byType(LinearProgressIndicator), findsNothing);
   });
 }

@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import '../core/i18n.dart' show t;
 
 class FloatingGlassNavigation extends StatelessWidget {
   const FloatingGlassNavigation({
@@ -9,9 +10,17 @@ class FloatingGlassNavigation extends StatelessWidget {
     required this.selectedIndex,
     required this.onDestinationSelected,
     this.circleMode = false,
+    this.showMessages = true,
+    this.homeLabel,
   });
 
   final bool circleMode;
+
+  /// Circles: the chat tab only exists once someone is in a Circle. When
+  /// hidden, [selectedIndex] and [onDestinationSelected] still use the
+  /// three-tab numbering (0 home, 2 profile), so callers need no mapping.
+  final bool showMessages;
+  final String? homeLabel;
   final double height;
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
@@ -22,7 +31,7 @@ class FloatingGlassNavigation extends StatelessWidget {
 
     return Semantics(
       container: true,
-      label: 'Main navigation',
+      label: t('Main navigation'),
       child: RepaintBoundary(
         child: DecoratedBox(
           decoration: BoxDecoration(
@@ -71,27 +80,31 @@ class FloatingGlassNavigation extends StatelessWidget {
                     borderRadius: BorderRadius.circular(22),
                     side: const BorderSide(color: Color(0xBFFFFFFF)),
                   ),
-                  selectedIndex: selectedIndex,
-                  onDestinationSelected: onDestinationSelected,
+                  selectedIndex: showMessages
+                      ? selectedIndex
+                      : (selectedIndex == 2 ? 1 : 0),
+                  onDestinationSelected: (i) => onDestinationSelected(
+                      showMessages ? i : (i == 1 ? 2 : 0)),
                   destinations: [
                     NavigationDestination(
                       icon: Icon(Icons.home_outlined),
                       selectedIcon: Icon(Icons.home_rounded),
-                      label: circleMode ? 'My Circle' : 'Home',
+                      label: t(homeLabel ?? (circleMode ? 'My Circle' : 'Home')),
                     ),
-                    NavigationDestination(
-                      icon: Icon(circleMode
-                          ? Icons.chat_bubble_outline_rounded
-                          : Icons.event_outlined),
-                      selectedIcon: Icon(circleMode
-                          ? Icons.chat_bubble_rounded
-                          : Icons.event_rounded),
-                      label: circleMode ? 'Messages' : 'Meetups',
-                    ),
+                    if (showMessages)
+                      NavigationDestination(
+                        icon: Icon(circleMode
+                            ? Icons.chat_bubble_outline_rounded
+                            : Icons.event_outlined),
+                        selectedIcon: Icon(circleMode
+                            ? Icons.chat_bubble_rounded
+                            : Icons.event_rounded),
+                        label: t(circleMode ? 'Messages' : 'Meetups'),
+                      ),
                     NavigationDestination(
                       icon: Icon(Icons.person_outline),
                       selectedIcon: Icon(Icons.person_rounded),
-                      label: 'Profile',
+                      label: t('Profile'),
                     ),
                   ],
                 ),

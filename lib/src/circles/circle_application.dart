@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
 import 'circle_repository.dart';
 import 'circle_preferences.dart';
 import 'circle_widgets.dart';
@@ -48,7 +49,7 @@ class CircleApplication extends StatefulWidget {
 }
 
 class _CircleApplicationState extends State<CircleApplication> {
-  late final TextEditingController name, intro, phone, address;
+  late final TextEditingController name, intro, phone;
   late Set<String> languages, interests, activities, goals, lifeContext;
   late Map<String, Set<String>> slots;
   final selectedDays = <String>{};
@@ -66,7 +67,6 @@ class _CircleApplicationState extends State<CircleApplication> {
     name = TextEditingController(text: d['name'] as String? ?? '');
     intro = TextEditingController(text: d['intro'] as String? ?? '');
     phone = TextEditingController(text: d['phone'] as String? ?? '');
-    address = TextEditingController(text: d['address'] as String? ?? '');
     birthday = DateTime.tryParse(d['date_of_birth']?.toString() ?? '');
     photoPath = d['photo_path'] as String?;
     photoUrl = d['photo_url'] as String?;
@@ -93,7 +93,6 @@ class _CircleApplicationState extends State<CircleApplication> {
     name.dispose();
     intro.dispose();
     phone.dispose();
-    address.dispose();
     super.dispose();
   }
 
@@ -142,7 +141,6 @@ class _CircleApplicationState extends State<CircleApplication> {
         'intro': intro.text.trim(),
         'commitment': commitment,
         'phone': normalisePhone(phone.text),
-        'address': address.text.trim(),
       };
   String? validate() {
     if (step == 0) {
@@ -233,7 +231,7 @@ class _CircleApplicationState extends State<CircleApplication> {
     final now = DateTime.now();
     final date = await showDatePicker(
         context: context,
-        helpText: 'Your date of birth',
+        helpText: t('Your date of birth'),
         // Open on the calendar, starting at the year list — typing a
         // birthday into a text field invites nonsense like "123456" and
         // means nobody sees a calendar when they tap the field.
@@ -339,7 +337,7 @@ class _CircleApplicationState extends State<CircleApplication> {
                     'Your profile'
                   ][step]} · ${step + 1} of 4',
             subtitle: [
-              'A few basics. Your birthday, number and address stay private.',
+              'A few basics. Your birthday and number stay private.',
               'A regular slot you can keep for six weeks.',
               'No right answers. Just what feels like you.',
               'This is how your Circle will get to know you.'
@@ -351,15 +349,25 @@ class _CircleApplicationState extends State<CircleApplication> {
                 enabled: !busy,
                 maxLength: 60,
                 textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                    labelText: 'First name', counterText: '')),
+                decoration: InputDecoration(
+                    labelText: t('First name'), counterText: '')),
             const SizedBox(height: 20),
-            OutlinedButton.icon(
-                onPressed: busy ? null : chooseBirthday,
-                icon: const Icon(Icons.cake_outlined),
-                label: Text(birthday == null
-                    ? 'Date of birth'
-                    : '${birthday!.day} ${MaterialLocalizations.of(context).formatMonthYear(birthday!)}')),
+            // Looks like the fields around it, opens the calendar on tap.
+            InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: busy ? null : chooseBirthday,
+                child: InputDecorator(
+                    isEmpty: birthday == null,
+                    decoration: InputDecoration(
+                        labelText: t('Date of birth'),
+                        hintText: t('Choose your birthday'),
+                        helperText:
+                            t('Circles are for adults 18+. Kept private.'),
+                        helperMaxLines: 2,
+                        suffixIcon: Icon(Icons.calendar_month_outlined)),
+                    child: Text(birthday == null
+                        ? ''
+                        : '${birthday!.day} ${MaterialLocalizations.of(context).formatMonthYear(birthday!)}'))),
             const SizedBox(height: 20),
             TextField(
                 controller: phone,
@@ -367,45 +375,22 @@ class _CircleApplicationState extends State<CircleApplication> {
                 maxLength: 20,
                 keyboardType: TextInputType.phone,
                 autofillHints: const [AutofillHints.telephoneNumber],
-                decoration: const InputDecoration(
-                    labelText: 'WhatsApp number',
-                    hintText: '06 12345678',
+                decoration: InputDecoration(
+                    labelText: t('WhatsApp number'),
+                    hintText: t('e.g. 06 12345678'),
                     helperText:
-                        'We send your payment link and meetup updates here.',
+                        t('We send your payment link and meetup updates here.'),
                     helperMaxLines: 2,
                     counterText: '')),
-            const SizedBox(height: 16),
-            TextField(
-                controller: address,
-                enabled: !busy,
-                maxLength: 200,
-                keyboardType: TextInputType.streetAddress,
-                autofillHints: const [AutofillHints.fullStreetAddress],
-                onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
-                    labelText: 'Home address (optional)',
-                    hintText: 'Street and number, or just your postcode',
-                    helperText:
-                        'Only used to plan meetups near you. Never shown to your Circle.',
-                    helperMaxLines: 2,
-                    counterText: '')),
-            if (address.text.trim().isEmpty) ...[
-              const SizedBox(height: 8),
-              const Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.info_outline,
-                        size: 16, color: Color(0xFF66727C)),
-                    SizedBox(width: 8),
-                    Expanded(
-                        child: Text(
-                            'Without an address, your meetups may be a little further from home, because we can’t plan around where you live.',
-                            style: TextStyle(
-                                fontSize: 12, color: Color(0xFF66727C)))),
-                  ]),
-            ],
             const SizedBox(height: 20),
-            const CirclePill('Alkmaar & nearby', icon: Icons.place_outlined),
+            const Row(children: [
+              Icon(Icons.place_outlined, size: 18, color: circleTeal),
+              SizedBox(width: 8),
+              Expanded(
+                  child: Text('Circles meet in Alkmaar.',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700, color: circleNavy))),
+            ]),
             const SizedBox(height: 24),
             _choices('Let’s talk in…', circleLanguages, languages),
             const SizedBox(height: 10),
@@ -568,18 +553,19 @@ class _CircleApplicationState extends State<CircleApplication> {
             const SizedBox(height: 20),
             _choices('I’d love to find…', circleGoals, goals),
             const SizedBox(height: 10),
-            const Text('Helps us match shared expectations.',
-                style: TextStyle(fontSize: 12)),
+            const Text('So your group wants the same kind of friendship.',
+                style: TextStyle(fontSize: 13, color: Color(0xFF4F5D66))),
             const SizedBox(height: 20),
             // This was hidden behind a collapsed "(optional)" disclosure,
             // which is why almost nobody filled it in — and it is one of the
             // better matching signals we have. People who arrived in the
             // city the same way tend to have the same week.
-            _choices('What brings you here?', circleContexts, lifeContext),
+            _choices('What brings you here? (optional)', circleContexts,
+                lifeContext),
             const SizedBox(height: 10),
             const Text(
-                'Private. Never shown to your Circle — we use it to put you with people in a similar moment.',
-                style: TextStyle(fontSize: 12)),
+                'Private. Never shown to your Circle. We use it to put you with people in a similar moment.',
+                style: TextStyle(fontSize: 13, color: Color(0xFF4F5D66))),
           ],
           if (step == 3) ...[
             Center(
@@ -618,18 +604,19 @@ class _CircleApplicationState extends State<CircleApplication> {
                 maxLength: 160,
                 minLines: 2,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                    labelText: 'My kind of afternoon… (optional)',
-                    hintText: 'A long walk, a good coffee, no rush.')),
+                decoration: InputDecoration(
+                    labelText: t('A line about you (optional)'),
+                    hintText: t('e.g. A long walk, a good coffee, no rush.'))),
             Wrap(spacing: 8, runSpacing: 8, children: [
               for (final interest in interests) CirclePill(interest)
             ]),
             const SizedBox(height: 16),
             const Text(
-                'Shared with your Circle: name, photo, interests and introduction. Photos help recognition, not identity verification.',
-                style: TextStyle(fontSize: 12)),
+                'Your Circle sees your first name, photo, interests and this line. The photo helps people recognise you; it isn’t an ID check.',
+                style: TextStyle(fontSize: 13, color: Color(0xFF4F5D66))),
             const SizedBox(height: 24),
             _CommitmentCard(
+                period: _chosenPeriod,
                 checked: commitment,
                 enabled: !busy,
                 onChanged: (v) => setState(() => commitment = v)),
@@ -699,6 +686,13 @@ class _CircleApplicationState extends State<CircleApplication> {
                     ])),
         ]),
       ]);
+
+  /// 'evening' when every chosen day uses the same time of day, else null.
+  String? get _chosenPeriod {
+    final periods = {for (final v in currentSlots.values) ...v};
+    return periods.length == 1 ? periods.first : null;
+  }
+
   Widget _dayButton(int i) {
     final day = circleDayKeys[i];
     final selected = selectedDays.contains(day);
@@ -717,7 +711,7 @@ class _CircleApplicationState extends State<CircleApplication> {
                 backgroundColor:
                     selected ? circleTeal : const Color(0xFFF7F5EF),
                 foregroundColor: selected ? Colors.white : circleNavy,
-                shape: const CircleBorder(),
+                shape: const StadiumBorder(),
               ),
               onPressed: busy
                   ? null
@@ -731,7 +725,7 @@ class _CircleApplicationState extends State<CircleApplication> {
                       }),
               child: Text(circleDays[i].substring(0, 3),
                   style: const TextStyle(
-                      fontSize: 10, fontWeight: FontWeight.w800)),
+                      fontSize: 12, fontWeight: FontWeight.w800)),
             ),
           ),
         ),
@@ -795,8 +789,14 @@ class _CircleApplicationState extends State<CircleApplication> {
 /// card confirms itself when ticked instead of staying inert.
 class _CommitmentCard extends StatelessWidget {
   const _CommitmentCard(
-      {required this.checked, required this.enabled, required this.onChanged});
+      {required this.checked,
+      required this.enabled,
+      required this.onChanged,
+      this.period});
   final bool checked, enabled;
+
+  /// 'morning', 'afternoon' or 'evening' when all chosen times match.
+  final String? period;
   final ValueChanged<bool> onChanged;
 
   @override
@@ -804,7 +804,7 @@ class _CommitmentCard extends StatelessWidget {
     const peach = Color(0xFFF8DDCD);
     return Semantics(
       checked: checked,
-      label: 'I can make time for one meetup a week for six weeks',
+      label: t('I can make time for one meetup a week for six weeks'),
       child: Material(
         color: checked ? const Color(0xFFE4F0EB) : peach,
         borderRadius: BorderRadius.circular(22),
@@ -849,7 +849,10 @@ class _CommitmentCard extends StatelessWidget {
                           color: circleTeal.withValues(alpha: .9))),
                 ]),
                 const SizedBox(height: 16),
-                Text('One evening a week.\nThe same six people.',
+                Text(
+                    period == null
+                        ? 'One meetup a week.\nThe same five or six people.'
+                        : 'One $period a week.\nThe same five or six people.',
                     style: Theme.of(context)
                         .textTheme
                         .headlineSmall
@@ -863,8 +866,8 @@ class _CommitmentCard extends StatelessWidget {
                     duration: const Duration(milliseconds: 160),
                     child: Icon(
                         checked
-                            ? Icons.check_circle_rounded
-                            : Icons.radio_button_unchecked_rounded,
+                            ? Icons.check_box_rounded
+                            : Icons.check_box_outline_blank_rounded,
                         key: ValueKey(checked),
                         color: checked ? circleTeal : circleNavy,
                         size: 24),
@@ -880,7 +883,7 @@ class _CommitmentCard extends StatelessWidget {
                 const Divider(height: 1, color: Color(0x22062B55)),
                 const SizedBox(height: 12),
                 const Text(
-                    '€19 once, when you accept a Circle. Food, drinks and activities are paid at the venue.',
+                    'No payment now. €19 once, only if you accept a Circle. Food, drinks and tickets are paid at the venue.',
                     style: TextStyle(fontSize: 12, height: 1.45)),
               ],
             ),

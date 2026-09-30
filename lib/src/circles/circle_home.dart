@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/destructive.dart';
 import '../core/payment_config.dart';
@@ -68,8 +69,32 @@ class CircleHome extends StatelessWidget {
       final slots = circleSlots(Map<String, dynamic>.from(app));
       final wait = circleWaitEstimate(state);
       return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const CircleHeading('Your next chapter\nis taking shape.',
-            eyebrow: 'You’re on the list'),
+        const CircleHeading('You’re on the list.',
+            eyebrow: 'Application received',
+            subtitle:
+                'We’re finding five or six people who fit you. Your invitation will appear here, and we’ll let you know.'),
+        if (state['needs_details'] == true) ...[
+          SizedBox(
+              width: double.infinity,
+              child: CirclePanel(tint: true, children: [
+                const Row(children: [
+                  Icon(Icons.error_outline_rounded, color: circleCoral),
+                  SizedBox(width: 10),
+                  Expanded(
+                      child: Text('Finish your profile to be matched',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w800, color: circleNavy))),
+                ]),
+                const SizedBox(height: 8),
+                const Text(
+                    'We can’t put you in a group until we have your WhatsApp number, birthday, photo and times.'),
+                const SizedBox(height: 12),
+                FilledButton(
+                    onPressed: () => onEdit(0),
+                    child: const Text('Finish my profile')),
+              ])),
+          const SizedBox(height: 16),
+        ],
         Container(
             decoration: BoxDecoration(
                 color: const Color(0xFFE0EEE8),
@@ -93,8 +118,7 @@ class CircleHome extends StatelessWidget {
                               radius: 26),
                           const SizedBox(width: 14),
                           Expanded(
-                              child: Text(
-                                  '${app['name'] ?? 'You'}, make room for good company.',
+                              child: Text('Your progress',
                                   style: Theme.of(context)
                                       .textTheme
                                       .headlineSmall))
@@ -125,8 +149,8 @@ class CircleHome extends StatelessWidget {
                               ])),
                         if (wait.isKnown) ...[
                           Semantics(
-                              label:
-                                  '${wait.progressLine}. ${wait.headline}. ${wait.estimate}.',
+                              label: t(
+                                  '${wait.progressLine}. ${wait.headline}. ${wait.estimate}.'),
                               child: ExcludeSemantics(
                                   child: ClipRRect(
                                       borderRadius: BorderRadius.circular(6),
@@ -144,32 +168,22 @@ class CircleHome extends StatelessWidget {
                           const SizedBox(height: 8),
                         ],
                         Text(
-                            '${wait.daysWaiting == null ? '' : '${_waitedFor(wait.daysWaiting!)} '}Your invitation appears here. No payment is due yet.',
-                            style: const TextStyle(fontSize: 12)),
+                            '${wait.daysWaiting == null ? '' : '${_waitedFor(wait.daysWaiting!)} '}No payment is due yet.',
+                            style: const TextStyle(fontSize: 13)),
                       ])),
             ])),
         const SizedBox(height: 20),
-        if (state['needs_details'] == true)
-          CirclePanel(children: [
-            const Text('A couple of details to finish',
-                style: TextStyle(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 8),
-            const Text(
-                'Add your WhatsApp number, birthday, photo and updated availability so we can match you.'),
-            TextButton(
-                onPressed: () => onEdit(0),
-                child: const Text('Finish my profile')),
-          ]),
         CirclePanel(children: [
           Row(children: [
             const Icon(Icons.event_available_outlined, color: circleTeal),
             const SizedBox(width: 10),
             Expanded(
-                child: Text('A little time, every week.',
+                child: Text('Still free at these times?',
                     style: Theme.of(context).textTheme.headlineSmall))
           ]),
           const SizedBox(height: 12),
-          const Text('One meetup · six weeks · the same people'),
+          const Text(
+              'We only match you with people free at the same time. Let us know every few weeks that these still work, so your invitation is one you can say yes to.'),
           const SizedBox(height: 16),
           Wrap(spacing: 8, runSpacing: 8, children: [
             for (final e in slots.entries)
@@ -177,35 +191,40 @@ class CircleHome extends StatelessWidget {
                   '${circleDays[circleDayKeys.indexOf(e.key)].substring(0, 3)} · ${e.value.join(' / ')}')
           ]),
           const SizedBox(height: 12),
-          Wrap(spacing: 10, runSpacing: 8, children: [
-            OutlinedButton(
-                onPressed: () => onEdit(1),
-                child: const Text('Update my availability')),
-            // Confirming twice in a week does nothing, so once it is fresh
-            // this stops being a button and becomes what it was really
-            // saying: these times are confirmed.
-            if (_confirmedRecently(state))
-              const CirclePill('Confirmed this week',
-                  icon: Icons.check_circle_outline)
-            else
-              FilledButton(
-                  onPressed: busy || state['needs_details'] == true
-                      ? null
-                      : () => act('refresh_commitment'),
-                  child: const Text('These times still work'))
-          ]),
+          // Confirming twice in a week does nothing, so once it is fresh
+          // this stops being a button and becomes what it was really
+          // saying: these times are confirmed.
+          if (_confirmedRecently(state))
+            const CirclePill('Confirmed this week',
+                icon: Icons.check_circle_outline)
+          else
+            SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                    style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48)),
+                    onPressed: busy || state['needs_details'] == true
+                        ? null
+                        : () => act('refresh_commitment'),
+                    child: const Text('Yes, these times still work'))),
+          const SizedBox(height: 8),
+          SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48)),
+                  onPressed: () => onEdit(1),
+                  child: const Text('Change my times'))),
           if (state['application_updated_at'] != null)
-            Text(
-                'Last confirmed ${circleDate(state['application_updated_at'].toString())}',
-                style: const TextStyle(fontSize: 11)),
+            Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                    'Last confirmed ${circleDate(state['application_updated_at'].toString())}',
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF4F5D66)))),
         ]),
         const SizedBox(height: 20),
         const CircleJourney(compact: true),
-        const SizedBox(height: 16),
-        TextButton(
-            style: destructiveTextStyle,
-            onPressed: busy ? null : () => _withdraw(context),
-            child: const Text('Withdraw my application')),
       ]);
     }
     if (stage == 'cancelled' || stage == 'refunded') {
@@ -240,7 +259,7 @@ class CircleHome extends StatelessWidget {
           graduated
               ? 'Your Circle is now yours.'
               : invited
-                  ? 'Your people.\nYour next chapter.'
+                  ? 'Meet your Circle.'
                   : 'A few familiar faces.\nA plan to look forward to.',
           eyebrow: graduated
               ? 'Six weeks. A new beginning.'
@@ -250,7 +269,7 @@ class CircleHome extends StatelessWidget {
           subtitle: graduated
               ? 'Keep meeting. Keep making plans. There’s no further programme payment.'
               : invited
-                  ? 'Meet your Circle. Take a look at the schedule, then make it a date.'
+                  ? 'Look at the people and the six dates. If it works for you, say yes.'
                   : null),
       if (invited)
         CirclePanel(tint: true, children: [
@@ -262,6 +281,9 @@ class CircleHome extends StatelessWidget {
           _info(Icons.schedule_rounded,
               circle['schedule']?.toString() ?? 'Schedule to be confirmed'),
           _info(Icons.place_outlined, circle['city']?.toString() ?? 'Alkmaar'),
+          if (_replyBy(circle) != null)
+            _info(Icons.hourglass_bottom_rounded,
+                'Please reply by ${_replyBy(circle)}'),
           const SizedBox(height: 20),
           ElevatedButton(
               onPressed: busy || agreed ? null : () => _checkout(context),
@@ -269,7 +291,7 @@ class CircleHome extends StatelessWidget {
                   agreed ? 'Invitation accepted' : 'Accept invitation — €19')),
           const SizedBox(height: 12),
           const Text(
-              'One payment · all 6 weeks. Food, drinks and activities are separate. Request a refund within 48 hours after Meetup #1 if the Circle doesn’t feel right.'),
+              'One payment for all six weeks. Food and drinks are paid at the venue. If the first meetup doesn’t feel right, you can ask for a refund within 48 hours.'),
           if (!demo) ...[
             const SizedBox(height: 10),
             Text(
@@ -296,6 +318,7 @@ class CircleHome extends StatelessWidget {
       if ((state['payment_agreement'] as Map?)?['can_cancel'] == true &&
           state['refund'] == null)
         TextButton(
+            style: destructiveTextStyle,
             onPressed: busy ? null : () => _cancelAgreement(context),
             child: const Text('Cancel my programme agreement')),
       if (graduated) ...[
@@ -348,7 +371,7 @@ class CircleHome extends StatelessWidget {
         const SizedBox(height: 18),
         Text(
             invited
-                ? 'About six people. The same faces each week.'
+                ? 'The same faces every week.'
                 : 'You don’t need a perfect opener. A simple “how’s your week?” works.',
             style: const TextStyle(fontSize: 13)),
         if (!invited)
@@ -361,7 +384,7 @@ class CircleHome extends StatelessWidget {
           style: Theme.of(context).textTheme.headlineSmall),
       const SizedBox(height: 8),
       const Text(
-          'We help with the first plans. Gradually, you make it your own.'),
+          'We plan weeks 1 to 3. From week 4, your group plans together. All times are Netherlands time.'),
       const SizedBox(height: 18),
       for (final m in meetups.where((m) => m['week'] != null))
         Padding(
@@ -386,6 +409,8 @@ class CircleHome extends StatelessWidget {
           ])
         else if (demo || state['refund_eligible'] == true)
           TextButton(
+              style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF4F5D66)),
               onPressed: busy ? null : () => _refund(context),
               child: const Text('Circle not feeling right? Request a refund')),
         // Cancelling inside 14 days is offered above. Once the programme is
@@ -393,6 +418,7 @@ class CircleHome extends StatelessWidget {
         // position to leave someone in for six weeks.
         if (!graduated)
           TextButton(
+              style: destructiveTextStyle,
               onPressed: busy ? null : () => _leave(context),
               child: const Text('I need to leave this Circle')),
       ],
@@ -402,6 +428,15 @@ class CircleHome extends StatelessWidget {
   /// Whether the member already told us these times still work this week.
   /// Confirming again inside that window changes nothing on the server, so
   /// offering the button again is a control that does not do anything.
+  /// The last day a "yes" is accepted: the database takes replies until the
+  /// day before the Circle starts.
+  static String? _replyBy(Map circle) {
+    final start = DateTime.tryParse('${circle['start_date']}');
+    if (start == null) return null;
+    return circleDate(
+        start.subtract(const Duration(days: 1)).toIso8601String());
+  }
+
   static bool _confirmedRecently(Json state, {DateTime? now}) {
     final at = DateTime.tryParse('${state['application_updated_at']}');
     if (at == null) return false;
@@ -448,17 +483,18 @@ class CircleHome extends StatelessWidget {
                     color: circleTeal))),
         if (done)
           const Icon(Icons.check_circle_rounded, color: circleTeal, size: 21)
-        else if (week != null && week >= 4)
-          const Icon(Icons.groups_outlined, color: circleTeal, size: 21)
       ]),
       const SizedBox(height: 10),
       Text(m['title'] as String,
           style: featured
               ? Theme.of(context).textTheme.headlineMedium
               : Theme.of(context).textTheme.titleMedium),
+      if (!done && week != null && week >= 4) ...[
+        const SizedBox(height: 8),
+        const CirclePill('Your group plans this', icon: Icons.groups_outlined),
+      ],
       const SizedBox(height: 8),
-      Text(
-          '${circleDate(m['date'] as String?)} · ${m['time'] ?? '19:30'} · Netherlands time'),
+      Text('${circleDate(m['date'] as String?)} · ${m['time'] ?? '19:30'}'),
       if (featured) ...[
         const SizedBox(height: 12),
         _info(Icons.place_outlined, circleVenueLabel(m)),
@@ -667,34 +703,6 @@ class CircleHome extends StatelessWidget {
     if (confirmed == true) await act('cancel_agreement');
   }
 
-  Future<void> _withdraw(BuildContext context) async {
-    final ok = await showDialog<bool>(
-        context: context,
-        builder: (c) => AlertDialog(
-                title: const Text('Withdraw your application?'),
-                content: const Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                          'You’ll lose your place on the waiting list, and this can’t be undone.',
-                          style: TextStyle(fontWeight: FontWeight.w700)),
-                      SizedBox(height: 12),
-                      Text(
-                          'We’ll stop looking for a Circle for you. If you apply again later, you’ll join at the back of the line.'),
-                    ]),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(c, false),
-                      child: const Text('Keep my place')),
-                  FilledButton(
-                      style: destructiveFilledStyle,
-                      onPressed: () => Navigator.pop(c, true),
-                      child: const Text('Withdraw'))
-                ]));
-    if (ok == true) await act('withdraw');
-  }
-
   Future<void> _refund(BuildContext context) async {
     final ok = await showDialog<bool>(
         context: context,
@@ -853,8 +861,9 @@ class _LeaveDialogState extends State<_LeaveDialog> {
                     controller: reason,
                     maxLength: 300,
                     maxLines: 3,
-                    decoration: const InputDecoration(
-                        labelText: 'Anything you want us to know? (Optional)',
+                    decoration: InputDecoration(
+                        labelText:
+                            t('Anything you want us to know? (Optional)'),
                         alignLabelWithHint: true)),
               ])),
           actions: [
@@ -907,13 +916,12 @@ class _ScheduleDialogState extends State<_ScheduleDialog> {
             TextField(
                 controller: title,
                 maxLength: 120,
-                decoration:
-                    const InputDecoration(labelText: 'What shall we do?')),
+                decoration: InputDecoration(labelText: t('What shall we do?'))),
             const SizedBox(height: 12),
             TextField(
                 controller: venue,
                 maxLength: 180,
-                decoration: const InputDecoration(labelText: 'Where?')),
+                decoration: InputDecoration(labelText: t('Where?'))),
             const SizedBox(height: 14),
             OutlinedButton(
                 onPressed: () async {
@@ -964,4 +972,34 @@ class _ScheduleDialogState extends State<_ScheduleDialog> {
                 },
                 child: const Text('Save plan'))
           ]);
+}
+
+/// Asks before withdrawing an application; true when the person confirms.
+/// Lives in the profile, next to the answers it throws away.
+Future<bool> confirmWithdraw(BuildContext context) async {
+  final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+              title: const Text('Withdraw your application?'),
+              content: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                        'You’ll lose your place on the waiting list, and this can’t be undone.',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
+                    SizedBox(height: 12),
+                    Text(
+                        'We’ll stop looking for a Circle for you. If you apply again later, you’ll join at the back of the line.'),
+                  ]),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(c, false),
+                    child: const Text('Keep my place')),
+                FilledButton(
+                    style: destructiveFilledStyle,
+                    onPressed: () => Navigator.pop(c, true),
+                    child: const Text('Withdraw'))
+              ]));
+  return ok == true;
 }

@@ -94,7 +94,8 @@ void main() {
       expect(submitted!.containsKey('age'), isFalse);
       expect(submitted!['goals'], ['Local friends']);
       expect(submitted!['phone'], '+31612345678');
-      expect(submitted!['address'], '');
+      // Home addresses are no longer collected.
+      expect(submitted!.containsKey('address'), isFalse);
     });
   }
   test('WhatsApp numbers are stored in international form', () {
@@ -106,8 +107,7 @@ void main() {
     expect(CircleApplicationTesting.isValid('0612'), isFalse);
     expect(CircleApplicationTesting.isValid('06 12345678'), isTrue);
   });
-  testWidgets(
-      'a WhatsApp number is required and a missing address is explained',
+  testWidgets('a WhatsApp number is required and no address is asked for',
       (tester) async {
     final noPhone = Map<String, dynamic>.from(initial)..remove('phone');
     await tester.pumpWidget(MaterialApp(
@@ -120,18 +120,12 @@ void main() {
                     onSave: (_) async {},
                     onSubmit: (_) async {})))));
     await tester.pumpAndSettle();
-    expect(find.textContaining('may be a little further from home'),
-        findsOneWidget);
+    expect(find.textContaining('Home address'), findsNothing);
     await tester.ensureVisible(find.text('Continue'));
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Add your WhatsApp number'), findsOneWidget);
     expect(find.text('Start with you.'), findsOneWidget);
-    await tester.enterText(
-        find.widgetWithText(TextField, 'Home address (optional)'), '1811 AB');
-    await tester.pumpAndSettle();
-    expect(
-        find.textContaining('may be a little further from home'), findsNothing);
   });
   testWidgets('photo is required before live application submission',
       (tester) async {
@@ -177,7 +171,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('6'));
     await tester.pumpAndSettle();
-    expect(find.text('Keep a good thing going.'), findsOneWidget);
+    expect(find.text('One last get-together'), findsOneWidget);
     expect(tester.binding.hasScheduledFrame, isFalse);
   });
 }

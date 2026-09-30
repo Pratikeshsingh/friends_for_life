@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -139,8 +140,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 controller: _passwordController,
                                 obscureText: _obscurePassword,
                                 decoration: InputDecoration(
-                                  labelText: 'New password',
-                                  hintText: 'Choose a new password',
+                                  labelText: t('New password'),
+                                  hintText: t('Choose a new password'),
                                   suffixIcon: IconButton(
                                     onPressed: () => setState(
                                       () =>
@@ -162,8 +163,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 controller: _confirmPasswordController,
                                 obscureText: _obscureConfirmPassword,
                                 decoration: InputDecoration(
-                                  labelText: 'Confirm password',
-                                  hintText: 'Type it again',
+                                  labelText: t('Confirm password'),
+                                  hintText: t('Type it again'),
                                   suffixIcon: IconButton(
                                     onPressed: () => setState(
                                       () => _obscureConfirmPassword =

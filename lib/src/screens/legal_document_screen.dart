@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+import '../core/i18n.dart';
 
 enum LegalDocumentType { terms, privacy }
 
@@ -115,7 +116,7 @@ abstract final class LegalDocuments {
         heading: '2. Data we collect',
         paragraphs: [
           'Account data: email address, password authentication records, first and last name, account identifiers, and account timestamps.',
-          'Profile and preference data: city, date of birth, gender, language, phone number, address, availability, energy and group preferences, conversation goals, dietary notes, interests, and profile photos. Optional fields are identified in the app.',
+          'Profile and preference data: city, date of birth, gender, language, phone number, availability, energy and group preferences, conversation goals, dietary notes, interests, and profile photos. Optional fields are identified in the app.',
           'Circle data: birthday-based age, matching goals, optional life context, availability, interests, your six-week commitment, membership, RSVPs, private meetup check-ins and optional connection choices, programme outcomes, and the optional 90-day follow-up. Organisers use matching answers to form groups. Other members cannot see your private check-ins or payment agreements.',
           'Payment data: the €19 agreement and its version and timestamp, contact email, and organiser confirmations of payment or refund. Bank and card details are not collected through the app. Payment records and the contact email needed to resolve refunds may be retained after account deletion for accounting and dispute purposes.',
           'Meetup data: meetup selections, reservations, cancellations, attendance status, calendar actions you initiate, and notifications associated with your meetups.',
@@ -136,7 +137,7 @@ abstract final class LegalDocuments {
         paragraphs: [
           'New Circle applications require a primary profile photo for recognition. A profile photo is not identity verification. That photo is available to your assigned Circle and authorised matching organisers, not the public activity feed.',
           'Information is shared with other members only where needed for social and meetup features. Depending on the feature, this may include your first name, profile photo, short introduction, interests, and messages you send to a meetup group.',
-          'Your email address, date of birth, phone number, home address, dietary notes, and private account details are not intended to appear on your public member profile. Avoid placing private information in free-text fields or messages that other members can view.',
+          'Your email address, date of birth, phone number, dietary notes, and private account details are not intended to appear on your public member profile. Avoid placing private information in free-text fields or messages that other members can view.',
         ],
       ),
       LegalSection(
@@ -243,6 +244,14 @@ class LegalDocumentScreen extends StatelessWidget {
                           color: const Color(0xFF138B8A),
                         ),
                       ),
+                      if (isDutch) ...[
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Deze Nederlandse vertaling is er voor je gemak. Bij verschillen geldt de Engelse versie.',
+                          style: TextStyle(
+                              fontSize: 13, fontStyle: FontStyle.italic),
+                        ),
+                      ],
                       const SizedBox(height: 20),
                       Text(document.introduction),
                       const SizedBox(height: 24),
