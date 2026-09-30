@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../core/i18n.dart' show isDutch;
 import '../core/profile_photo_service.dart';
+import 'circle_preferences.dart' show circleDays;
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -125,29 +126,68 @@ class CircleWaitEstimate {
   int get stillNeeded => groupSize - ready;
   double get progress => ready / groupSize;
 
+  bool get complete => isKnown && stillNeeded <= 0;
+
   String get headline => switch (stillNeeded) {
-        <= 0 => 'Enough people are waiting',
-        1 => 'One more person to go',
-        _ => '$stillNeeded more people to go',
+        <= 0 => 'We’re setting up your first meetup',
+        1 => 'Just one more person needed',
+        _ => '$stillNeeded more people needed',
       };
 
   /// Deliberately vague at the far end. Early on, a Circle depends on people
-  /// who have not applied yet.
-  String get estimate => switch (stillNeeded) {
-        <= 0 => 'Usually a few days from here',
-        1 => 'Usually about a week',
-        2 => 'Usually one to two weeks',
-        3 => 'Usually two to three weeks',
-        _ => 'Usually a few weeks',
-      };
+  /// who have not applied yet. Once the group is complete, the earliest
+  /// possible first meetup is shown instead: the same date the organiser
+  /// panel suggests, and clearly not a promise.
+  String get estimate {
+    if (stillNeeded <= 0) {
+      final start = earliestStart();
+      return start == null
+          ? 'Usually a few days from here'
+          : 'Earliest start: ${circleDate(start.toIso8601String())} at ${_hm(start)}. We’ll confirm it in your invitation.';
+    }
+    return switch (stillNeeded) {
+      1 => 'Usually about a week',
+      2 => 'Usually one to two weeks',
+      3 => 'Usually two to three weeks',
+      _ => 'Usually a few weeks',
+    };
+  }
 
   /// 'Thursday evening' reads as a single appointment; the queue is about the
   /// recurring slot, so it is pluralised with the day left capitalised.
   String get slotPhrase => slot == null ? '' : '${slot}s';
 
-  String get progressLine => isKnown
-      ? '$ready of $groupSize people ready for $slotPhrase'
-      : 'We’re looking for people who share your language and a time that fits.';
+  String get progressLine {
+    if (!isKnown) {
+      return 'We’re looking for people who share your language and a time that fits.';
+    }
+    if (stillNeeded <= 0) return 'We found your group for $slotPhrase.';
+    if (ready <= 1) return 'We’re gathering people for $slotPhrase.';
+    return 'Your group for $slotPhrase is coming together.';
+  }
+
+  /// The first possible meetup for the slot: the matching weekday at least
+  /// a week out, at the start time the organiser panel uses.
+  DateTime? earliestStart({DateTime? now}) {
+    final parts = (slot ?? '').split(' ');
+    if (parts.length != 2) return null;
+    final weekday = circleDays.indexOf(parts[0]) + 1;
+    const starts = {
+      'morning': (9, 30),
+      'afternoon': (13, 0),
+      'evening': (19, 0)
+    };
+    final time = starts[parts[1]];
+    if (weekday == 0 || time == null) return null;
+    var date = (now ?? DateTime.now()).add(const Duration(days: 7));
+    while (date.weekday != weekday) {
+      date = date.add(const Duration(days: 1));
+    }
+    return DateTime(date.year, date.month, date.day, time.$1, time.$2);
+  }
+
+  static String _hm(DateTime d) =>
+      '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 }
 
 /// Reads the estimate out of a snapshot, tolerating a server that has not

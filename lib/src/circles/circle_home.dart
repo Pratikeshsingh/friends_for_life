@@ -128,7 +128,13 @@ class CircleHome extends StatelessWidget {
                         const SizedBox(height: 20),
                         for (final item in [
                           (Icons.check_circle, 'Application received', true),
-                          (Icons.people_outline, 'Finding your people', false),
+                          wait.complete
+                              ? (Icons.check_circle, 'Group found', true)
+                              : (
+                                  Icons.people_outline,
+                                  'Finding your people',
+                                  false
+                                ),
                           (Icons.mail_outline, 'Your invitation', false)
                         ])
                           Padding(
@@ -146,6 +152,9 @@ class CircleHome extends StatelessWidget {
                                                 : FontWeight.w500))),
                                 if (item.$2 == 'Finding your people')
                                   const CirclePill('In progress')
+                                else if (item.$2 == 'Your invitation' &&
+                                    wait.complete)
+                                  const CirclePill('Being prepared')
                               ])),
                         if (wait.isKnown) ...[
                           Semantics(
@@ -162,42 +171,41 @@ class CircleHome extends StatelessWidget {
                                               const AlwaysStoppedAnimation(
                                                   circleTeal))))),
                           const SizedBox(height: 10),
-                          Text('${wait.headline} · ${wait.estimate}',
+                          Text(wait.headline,
                               style:
-                                  const TextStyle(fontWeight: FontWeight.w700)),
-                          const SizedBox(height: 8),
+                                  const TextStyle(fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 2),
+                          Text(wait.estimate),
+                          const SizedBox(height: 10),
                         ],
                         Text(
                             '${wait.daysWaiting == null ? '' : '${_waitedFor(wait.daysWaiting!)} '}No payment is due yet.',
                             style: const TextStyle(fontSize: 13)),
                       ])),
             ])),
-        const SizedBox(height: 20),
-        CirclePanel(children: [
-          Row(children: [
-            const Icon(Icons.event_available_outlined, color: circleTeal),
-            const SizedBox(width: 10),
-            Expanded(
-                child: Text('Still free at these times?',
-                    style: Theme.of(context).textTheme.headlineSmall))
-          ]),
-          const SizedBox(height: 12),
-          const Text(
-              'We only match you with people free at the same time. Let us know every few weeks that these still work, so your invitation is one you can say yes to.'),
-          const SizedBox(height: 16),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            for (final e in slots.entries)
-              CirclePill(
-                  '${circleDays[circleDayKeys.indexOf(e.key)].substring(0, 3)} · ${e.value.join(' / ')}')
-          ]),
-          const SizedBox(height: 12),
-          // Confirming twice in a week does nothing, so once it is fresh
-          // this stops being a button and becomes what it was really
-          // saying: these times are confirmed.
-          if (_confirmedRecently(state))
-            const CirclePill('Confirmed this week',
-                icon: Icons.check_circle_outline)
-          else
+        // A reminder, not a fixture: only when the times have not been
+        // confirmed for a while, and never once the group is complete.
+        // Changing times lives in the profile.
+        if (!wait.complete && !_confirmedRecently(state)) ...[
+          const SizedBox(height: 20),
+          CirclePanel(children: [
+            Row(children: [
+              const Icon(Icons.event_available_outlined, color: circleTeal),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: Text('Still free at these times?',
+                      style: Theme.of(context).textTheme.headlineSmall))
+            ]),
+            const SizedBox(height: 12),
+            const Text(
+                'A quick check every few weeks, so we only match you when you can come.'),
+            const SizedBox(height: 16),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              for (final e in slots.entries)
+                CirclePill(
+                    '${circleDays[circleDayKeys.indexOf(e.key)].substring(0, 3)} · ${e.value.join(' / ')}')
+            ]),
+            const SizedBox(height: 16),
             SizedBox(
                 width: double.infinity,
                 child: FilledButton(
@@ -207,22 +215,16 @@ class CircleHome extends StatelessWidget {
                         ? null
                         : () => act('refresh_commitment'),
                     child: const Text('Yes, these times still work'))),
-          const SizedBox(height: 8),
-          SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48)),
-                  onPressed: () => onEdit(1),
-                  child: const Text('Change my times'))),
-          if (state['application_updated_at'] != null)
-            Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                    'Last confirmed ${circleDate(state['application_updated_at'].toString())}',
-                    style: const TextStyle(
-                        fontSize: 12, color: Color(0xFF4F5D66)))),
-        ]),
+            const SizedBox(height: 8),
+            SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48)),
+                    onPressed: () => onEdit(1),
+                    child: const Text('Change my times'))),
+          ]),
+        ],
         const SizedBox(height: 20),
         const CircleJourney(compact: true),
       ]);
@@ -425,7 +427,7 @@ class CircleHome extends StatelessWidget {
     ]);
   }
 
-  /// Whether the member already told us these times still work this week.
+  /// Whether the member confirmed these times in the last three weeks.
   /// Confirming again inside that window changes nothing on the server, so
   /// offering the button again is a control that does not do anything.
   /// The last day a "yes" is accepted: the database takes replies until the
@@ -440,7 +442,7 @@ class CircleHome extends StatelessWidget {
   static bool _confirmedRecently(Json state, {DateTime? now}) {
     final at = DateTime.tryParse('${state['application_updated_at']}');
     if (at == null) return false;
-    return (now ?? DateTime.now()).difference(at) < const Duration(days: 7);
+    return (now ?? DateTime.now()).difference(at) < const Duration(days: 21);
   }
 
   /// Days are reassuring for the first fortnight and discouraging after it, so

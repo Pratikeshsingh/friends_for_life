@@ -139,8 +139,7 @@ void main() {
     for (final width in [320.0, 390.0]) {
       testWidgets('fits at ${width.toInt()}px on the first step',
           (tester) async {
-        await pumpForm(tester,
-            step: 0, focused: false, size: Size(width, 900));
+        await pumpForm(tester, step: 0, focused: false, size: Size(width, 900));
         expect(tester.takeException(), isNull);
         expect(find.text('Save for later'), findsOneWidget);
         expect(find.text('Back'), findsNothing);
@@ -148,8 +147,7 @@ void main() {
 
       testWidgets('fits at ${width.toInt()}px with Back alongside it',
           (tester) async {
-        await pumpForm(tester,
-            step: 1, focused: false, size: Size(width, 900));
+        await pumpForm(tester, step: 1, focused: false, size: Size(width, 900));
         expect(tester.takeException(), isNull);
         expect(find.text('Back'), findsOneWidget);
         expect(find.text('Save for later'), findsOneWidget);
@@ -171,11 +169,10 @@ void main() {
               body: SingleChildScrollView(
                   child: CircleHome(
                       state: {
-                        'stage': 'waiting',
-                        'application': applicant()..['name'] = 'Asha',
-                        if (updatedAt != null)
-                          'application_updated_at': updatedAt,
-                      },
+                'stage': 'waiting',
+                'application': applicant()..['name'] = 'Asha',
+                if (updatedAt != null) 'application_updated_at': updatedAt,
+              },
                       demo: true,
                       busy: false,
                       act: (_, [__ = const {}]) async {},
@@ -184,11 +181,11 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('reads as confirmed, not as a button, inside a week',
+    testWidgets('stays off the home screen while times are fresh',
         (tester) async {
-      await pumpWaiting(
-          tester, DateTime.now().subtract(const Duration(days: 2)).toIso8601String());
-      expect(find.text('Confirmed this week'), findsOneWidget);
+      await pumpWaiting(tester,
+          DateTime.now().subtract(const Duration(days: 10)).toIso8601String());
+      expect(find.text('Still free at these times?'), findsNothing);
       expect(find.text('Yes, these times still work'), findsNothing);
     });
 
@@ -196,7 +193,6 @@ void main() {
       await pumpWaiting(tester,
           DateTime.now().subtract(const Duration(days: 30)).toIso8601String());
       expect(find.text('Yes, these times still work'), findsOneWidget);
-      expect(find.text('Confirmed this week'), findsNothing);
     });
 
     testWidgets('is offered when nothing was ever confirmed', (tester) async {

@@ -21,7 +21,9 @@ void main() {
       final wait = circleWaitEstimate(waitingSnapshot(peers: 2));
       expect(wait.ready, 3);
       expect(wait.stillNeeded, 2);
-      expect(wait.progressLine, '3 of 5 people ready for Thursday evenings');
+      expect(wait.progressLine,
+          'Your group for Thursday evenings is coming together.');
+      expect(wait.headline, '2 more people needed');
     });
 
     test('says nothing specific when the server sends no slot', () {
@@ -30,12 +32,21 @@ void main() {
       expect(wait.progressLine, contains('share your language'));
     });
 
-    test('a full slot still reads as an estimate, never a date', () {
+    test('a full slot says the group is found and gives the earliest start',
+        () {
       final wait = circleWaitEstimate(waitingSnapshot(peers: 9));
       expect(wait.ready, CircleWaitEstimate.groupSize);
       expect(wait.stillNeeded, 0);
       expect(wait.progress, 1.0);
-      expect(wait.estimate, 'Usually a few days from here');
+      expect(wait.complete, isTrue);
+      expect(wait.progressLine, 'We found your group for Thursday evenings.');
+      expect(wait.headline, 'We’re setting up your first meetup');
+      expect(wait.estimate, startsWith('Earliest start: '));
+      expect(wait.estimate, contains('We’ll confirm it in your invitation.'));
+      // The same date the organiser panel suggests: the matching weekday at
+      // least a week out, at the evening start time.
+      final start = wait.earliestStart(now: DateTime(2026, 9, 30));
+      expect(start, DateTime(2026, 10, 8, 19, 0));
     });
 
     test('a longer queue gives a longer range', () {
@@ -140,23 +151,25 @@ void main() {
         (tester) async {
       await pumpWaiting(
           tester,
-          waitingSnapshot(
-              peers: 2, submittedAt: '2020-01-01T00:00:00Z')..addAll({
-            'application': {'name': 'Asha'}
-          }));
-      expect(find.text('3 of 5 people ready for Thursday evenings'),
+          waitingSnapshot(peers: 2, submittedAt: '2020-01-01T00:00:00Z')
+            ..addAll({
+              'application': {'name': 'Asha'}
+            }));
+      expect(find.text('Your group for Thursday evenings is coming together.'),
           findsOneWidget);
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
-      expect(find.textContaining('2 more people to go'), findsOneWidget);
+      expect(find.text('2 more people needed'), findsOneWidget);
+      expect(find.textContaining(' of 5 people'), findsNothing);
     });
 
     testWidgets('an older server without the field still renders cleanly',
         (tester) async {
       await pumpWaiting(
           tester,
-          waitingSnapshot(slot: null)..addAll({
-            'application': {'name': 'Asha'}
-          }));
+          waitingSnapshot(slot: null)
+            ..addAll({
+              'application': {'name': 'Asha'}
+            }));
       expect(find.byType(LinearProgressIndicator), findsNothing);
       expect(find.textContaining('share your language'), findsOneWidget);
     });

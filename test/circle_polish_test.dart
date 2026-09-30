@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vriendtime/src/core/theme.dart';
 import 'package:vriendtime/src/circles/circle_application.dart';
+import 'package:vriendtime/src/circles/circle_journey.dart';
 import 'package:vriendtime/src/circles/circle_repository.dart';
 import 'package:vriendtime/src/circles/circle_shell.dart';
 
@@ -92,5 +93,50 @@ void main() {
     await tester.pumpAndSettle();
     expect((await repository.load())['stage'], 'waiting');
     await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('the six weeks move on their own until someone taps one',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+        theme: buildTheme(), home: const Scaffold(body: CircleJourney())));
+    expect(find.text('Dinner together'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Bowling together'), findsOneWidget);
+    await tester.tap(find.text('5'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('A plan of your own'), findsOneWidget);
+    // After a tap it stays where the person put it.
+    await tester.pump(const Duration(seconds: 9));
+    expect(find.text('A plan of your own'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('one interests question, and older plan answers carry over',
+      (tester) async {
+    Json? saved;
+    await tester.pumpWidget(MaterialApp(
+        theme: buildTheme(),
+        home: Scaffold(
+            body: SingleChildScrollView(
+                child: CircleApplication(
+                    initial: const {
+              'name': 'Asha',
+              'interests': ['Books'],
+              'activities': ['A walk', 'Coffee & conversation'],
+              'goals': ['Local friends'],
+            },
+                    initialStep: 2,
+                    busy: false,
+                    onSave: (d) async => saved = d,
+                    onSubmit: (_) async {})))));
+    await tester.pumpAndSettle();
+    expect(find.text('A plan you’d say yes to'), findsNothing);
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    expect(saved!['interests'], containsAll(['Books', 'Walking', 'Coffee']));
+    // The database still requires the old field, so it mirrors interests.
+    expect(saved!['activities'], saved!['interests']);
   });
 }

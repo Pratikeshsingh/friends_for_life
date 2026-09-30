@@ -10,10 +10,12 @@ import 'circle_repository.dart' show Json, strings;
 /// and no two people who asked to be kept apart end up together.
 ///
 /// Soft preferences, scored out of 100:
-///   interests and activities in common  45
-///   goals in common                     20
+///   interests in common                 40
+///   goals in common                     15
 ///   a close age range                   15
-///   waiting longest                     20
+///   a good social mix                   10
+///   a shared life situation              5
+///   waiting longest                     15
 
 String _id(Json a) => '${a['profile_id']}';
 
@@ -42,8 +44,12 @@ String waitingLabel(Json a, {DateTime? now}) {
   return 'Waiting $weeks weeks';
 }
 
-Set<String> _tastes(Json a) =>
-    {...strings(a['interests']), ...strings(a['activities'])};
+/// Interests, plus older plan answers translated into the same words, so
+/// "A walk" and "Walking" count as one thing.
+Set<String> _tastes(Json a) => {
+      ...strings(a['interests']),
+      for (final x in strings(a['activities'])) circleLegacyActivity[x] ?? x,
+    };
 
 double _jaccard(Set<String> x, Set<String> y) {
   if (x.isEmpty && y.isEmpty) return 0;
@@ -54,14 +60,55 @@ double _jaccard(Set<String> x, Set<String> y) {
 /// How well two people fit, 0–1. Drives who gets added to a group next.
 double pairFit(Json a, Json b) {
   var score = 0.0;
-  score += 0.55 * _jaccard(_tastes(a), _tastes(b));
+  score += 0.5 * _jaccard(_tastes(a), _tastes(b));
   score +=
-      0.25 * _jaccard(strings(a['goals']).toSet(), strings(b['goals']).toSet());
+      0.2 * _jaccard(strings(a['goals']).toSet(), strings(b['goals']).toSet());
   final ageA = applicantAge(a), ageB = applicantAge(b);
   if (ageA != null && ageB != null) {
     score += 0.2 * (1 - ((ageA - ageB).abs() / 15).clamp(0, 1));
   }
+  score += 0.1 *
+      _jaccard(strings(a['life_context']).toSet(),
+          strings(b['life_context']).toSet());
   return score;
+}
+
+/// 'At a new table, I'm usually…': 0 warms up slowly, 1 a little of both,
+/// 2 breaks the ice. Missing answers count as the middle.
+int socialStyle(Json a) =>
+    (((a['energy'] as num?)?.toDouble() ?? 2) / 2).round().clamp(0, 2);
+
+/// A table of only quiet starters can stall on the first evening; one or two
+/// people who break the ice get everyone talking.
+({int points, String? reason}) socialMix(List<Json> members) {
+  final styles = members.map(socialStyle).toList();
+  final breakers = styles.where((s) => s == 2).length;
+  final middle = styles.where((s) => s == 1).length;
+  if (breakers > 0 && breakers < members.length) {
+    return (points: 10, reason: 'A good mix: someone to break the ice');
+  }
+  if (breakers == members.length) {
+    return (points: 7, reason: 'A lively group: everyone breaks the ice');
+  }
+  if (middle * 2 >= members.length) return (points: 6, reason: null);
+  return (points: 0, reason: null);
+}
+
+/// A life situation that at least two people share, e.g. 'New to the area'.
+({int points, String? reason}) sharedSituation(List<Json> members) {
+  final counts = <String, int>{};
+  for (final m in members) {
+    for (final c in strings(m['life_context'])) {
+      counts[c] = (counts[c] ?? 0) + 1;
+    }
+  }
+  final shared = counts.entries.where((e) => e.value >= 2).toList()
+    ..sort((a, b) => b.value.compareTo(a.value));
+  if (shared.isEmpty) return (points: 0, reason: null);
+  return (
+    points: 5,
+    reason: '${shared.first.value} share “${shared.first.key}”'
+  );
 }
 
 /// A proposed group, complete (5–6 people) or not yet (2–4 people).
@@ -137,8 +184,8 @@ class CircleMatch {
   pairTaste /= pairs;
   pairGoals /= pairs;
   // Jaccard between two people rarely passes 0.5, so scale it up.
-  final tastePoints = (45 * (pairTaste * 2).clamp(0, 1)).round();
-  final goalPoints = (20 * pairGoals).round();
+  final tastePoints = (40 * (pairTaste * 2).clamp(0, 1)).round();
+  final goalPoints = (15 * pairGoals).round();
 
   if (everyone.isNotEmpty) {
     reasons.add('All into ${everyone.take(3).join(', ')}');
@@ -185,7 +232,7 @@ class CircleMatch {
   final avgRank =
       members.map(seniorityRank).reduce((a, b) => a + b) / members.length;
   final waitPoints =
-      poolSize <= 1 ? 20 : (20 * (1 - avgRank / poolSize)).round().clamp(0, 20);
+      poolSize <= 1 ? 15 : (15 * (1 - avgRank / poolSize)).round().clamp(0, 15);
   final longest = members
       .map((m) => waitingDays(m, now: now))
       .whereType<int>()
@@ -194,7 +241,17 @@ class CircleMatch {
     reasons.add('Someone has waited ${longest ~/ 7} weeks');
   }
 
-  final score = tastePoints + goalPoints + agePoints + waitPoints;
+  final mix = socialMix(members);
+  if (mix.reason != null) reasons.add(mix.reason!);
+  final situation = sharedSituation(members);
+  if (situation.reason != null) reasons.add(situation.reason!);
+
+  final score = tastePoints +
+      goalPoints +
+      agePoints +
+      mix.points +
+      situation.points +
+      waitPoints;
   return (score: score.clamp(0, 100), reasons: reasons);
 }
 
@@ -261,8 +318,13 @@ List<CircleMatch> matchCircles(
                     group.length;
             // Up to 0.1 for waiting: enough to break ties, not to override fit.
             final wait = 0.1 * (1 - seniority(c) / (ready.length + 1));
-            if (fit + wait > bestScore) {
-              bestScore = fit + wait;
+            // A nudge towards someone who breaks the ice if nobody does yet.
+            final spark =
+                socialStyle(c) == 2 && group.every((m) => socialStyle(m) != 2)
+                    ? 0.08
+                    : 0.0;
+            if (fit + wait + spark > bestScore) {
+              bestScore = fit + wait + spark;
               best = c;
             }
           }
@@ -386,4 +448,60 @@ List<Json> replacementsFor(
     slots: orderedSlots,
     languages: circleLanguages.where(languages.contains).toList()
   );
+}
+
+/// Everyone who is ready, placed in at most one recommended group.
+class CirclePlan {
+  const CirclePlan({required this.groups, required this.unmatched});
+
+  /// Complete groups first (ready to create), then groups still forming,
+  /// largest first.
+  final List<CircleMatch> groups;
+
+  /// Ready people who share a language and a time with nobody else yet.
+  final List<Json> unmatched;
+
+  List<CircleMatch> get complete => [
+        for (final g in groups)
+          if (g.complete) g
+      ];
+  List<CircleMatch> get forming => [
+        for (final g in groups)
+          if (!g.complete) g
+      ];
+}
+
+/// Splits the ready applicants into non-overlapping groups. Unlike
+/// [matchCircles], which lists every possible group (so someone free on two
+/// evenings shows up twice), each person lands in exactly one place here:
+/// the best complete group available, else the largest group they can start.
+CirclePlan planCircles(
+  List<Json> applicants, {
+  Set<String> exclusions = const {},
+  String? language,
+  DateTime? now,
+}) {
+  final ready = applicants.where(isReadyApplicant).toList();
+  var left = [...ready];
+  final groups = <CircleMatch>[];
+  while (left.length >= 2) {
+    final options = matchCircles(left,
+        exclusions: exclusions, language: language, now: now);
+    if (options.isEmpty) break;
+    options.sort((a, b) {
+      if (a.complete != b.complete) return a.complete ? -1 : 1;
+      if (!a.complete && a.members.length != b.members.length) {
+        return b.members.length.compareTo(a.members.length);
+      }
+      return b.score.compareTo(a.score);
+    });
+    final best = options.first;
+    groups.add(best);
+    final taken = best.ids.toSet();
+    left = [
+      for (final a in left)
+        if (!taken.contains(_id(a))) a
+    ];
+  }
+  return CirclePlan(groups: groups, unmatched: left);
 }

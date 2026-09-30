@@ -559,8 +559,9 @@ class _CircleAdminState extends State<CircleAdmin>
         // Two tiles per row on a phone, fixed-width tiles otherwise.
         _tileWidth = box.maxWidth < 560 ? (box.maxWidth - 12) / 2 : 172;
         return Wrap(spacing: 12, runSpacing: 12, children: [
+          // Straight to the recommended groups, where they can be formed.
           _statTile('Ready to match', ready, 'Waiting with complete details',
-              () => _showApplicants(ready: true)),
+              () => tabs.animateTo(2)),
           _statTile(
               'Missing details',
               needsDetails.length,
@@ -1056,7 +1057,6 @@ class _CircleAdminState extends State<CircleAdmin>
       chips('Free', strings(a['availability'])),
       chips('Speaks', strings(a['languages'])),
       chips('Interests', strings(a['interests'])),
-      chips('Likes to do', strings(a['activities'])),
       chips('Looking for', strings(a['goals'])),
       chips('Context', strings(a['life_context'])),
       chips('Social style', [style]),
@@ -1077,11 +1077,12 @@ class _CircleAdminState extends State<CircleAdmin>
 
   List<Widget> _formTab(BuildContext context) {
     final exclusions = circleExclusions(data);
-    final matches = matchCircles(applicants,
-        exclusions: exclusions, language: boardLanguage, slot: boardSlot);
-    final complete = matches.where((m) => m.complete).toList();
-    final almost =
-        matches.where((m) => !m.complete && m.members.length >= 3).toList();
+    final plan = planCircles(applicants,
+        exclusions: exclusions, language: boardLanguage);
+    bool inSlot(CircleMatch m) => boardSlot == null || m.slot == boardSlot;
+    final complete = plan.complete.where(inSlot).toList();
+    final forming = plan.forming.where(inSlot).toList();
+    final readyCount = applicants.where(isReadyApplicant).length;
     return [
       if (selected.isNotEmpty) _selectionPanel(context, exclusions),
       _sectionTitle(context, 'When people are free',
@@ -1091,28 +1092,50 @@ class _CircleAdminState extends State<CircleAdmin>
       _sectionTitle(
           context,
           boardSlot == null
-              ? 'Groups that fit'
-              : 'Groups that fit on $boardSlot',
+              ? 'Recommended groups'
+              : 'Recommended groups on $boardSlot',
           hint:
-              'Same language and time for everyone. Ranked by shared interests and goals, age and waiting time. Someone free at several times can appear in more than one group.'),
-      if (complete.isEmpty)
-        Text(applicants.where(isReadyApplicant).isEmpty
-            ? 'Nobody is ready to match yet. People need a WhatsApp number, birthday, photo and times first.'
-            : boardSlot != null
-                ? 'No complete group on $boardSlot yet.'
-                : almost.isEmpty
-                    ? 'No complete group yet. More people need to share a language and a time.'
-                    : 'No complete group yet. See the almost-groups below.'),
-      for (final m in complete.take(showMatches)) _matchCard(context, m),
-      if (complete.length > showMatches)
-        TextButton(
-            onPressed: () => setState(() => showMatches += 6),
-            child: Text('Show more (${complete.length - showMatches} left)')),
-      if (almost.isNotEmpty) ...[
-        _sectionTitle(context, 'Almost there',
+              'Everyone is placed in one group only. Same language and time for everyone, ranked by shared interests and goals, age, social mix and waiting time.'),
+      if (readyCount == 0)
+        const Text(
+            'Nobody is ready to match yet. People need a WhatsApp number, birthday, photo and times first.')
+      else
+        Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Wrap(spacing: 8, runSpacing: 8, children: [
+              CirclePill('$readyCount ready to match',
+                  icon: Icons.people_outline),
+              CirclePill('${plan.complete.length} complete',
+                  icon: Icons.check_circle_outline),
+              CirclePill('${plan.forming.length} forming',
+                  icon: Icons.group_add_outlined),
+              if (plan.unmatched.isNotEmpty)
+                CirclePill('${plan.unmatched.length} not matched yet',
+                    icon: Icons.person_search_outlined),
+            ])),
+      if (complete.isNotEmpty) ...[
+        _subTitle('Ready to create'),
+        for (final m in complete) _matchCard(context, m),
+      ],
+      if (forming.isNotEmpty) ...[
+        _subTitle('Forming',
             hint:
-                'These people fit well but the group is not full yet. People free at a nearby time could complete it.'),
-        for (final m in almost.take(6)) _matchCard(context, m),
+                'These people fit together. The group still needs more people who share their language and time.'),
+        for (final m in forming.take(showMatches)) _matchCard(context, m),
+        if (forming.length > showMatches)
+          TextButton(
+              onPressed: () => setState(() => showMatches += 6),
+              child: Text('Show more (${forming.length - showMatches} left)')),
+      ],
+      if (readyCount > 0 && complete.isEmpty && forming.isEmpty)
+        Text(boardSlot != null
+            ? 'No group on $boardSlot yet.'
+            : 'No groups yet. People need to share a language and a time.'),
+      if (plan.unmatched.isNotEmpty && boardSlot == null) ...[
+        _subTitle('Not matched yet',
+            hint:
+                'Nobody else shares a language and a time with them yet. Asking them to add more times helps.'),
+        for (final a in plan.unmatched) _applicantRow(context, a),
       ],
       if (selected.isEmpty) ...[
         const SizedBox(height: 12),
@@ -1122,6 +1145,18 @@ class _CircleAdminState extends State<CircleAdmin>
       ],
     ];
   }
+
+  Widget _subTitle(String text, {String? hint}) => Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 8),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(text,
+            style: const TextStyle(
+                fontWeight: FontWeight.w800, fontSize: 16, color: circleNavy)),
+        if (hint != null) ...[
+          const SizedBox(height: 2),
+          Text(hint, style: const TextStyle(color: _muted, fontSize: 13)),
+        ]
+      ]));
 
   Widget _availabilityGrid(BuildContext context) {
     final counts = availabilityCounts(applicants, language: boardLanguage);
@@ -1216,7 +1251,7 @@ class _CircleAdminState extends State<CircleAdmin>
   Widget _matchCard(BuildContext context, CircleMatch m) {
     final title = m.complete
         ? '${m.members.length} people · ${m.slot} · ${m.language}'
-        : '${m.members.length} fit well · ${m.slot} · ${m.language} · ${m.missing} more needed';
+        : '${m.members.length} fit together · ${m.slot} · ${m.language} · ${m.missing} more needed';
     return _card([
       Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Expanded(
@@ -1226,7 +1261,7 @@ class _CircleAdminState extends State<CircleAdmin>
         const SizedBox(width: 8),
         Tooltip(
             message: t(
-                'Fit score out of 100: interests, goals, age and waiting time'),
+                'Fit score out of 100: interests, goals, age, social mix, shared situation and waiting time'),
             child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

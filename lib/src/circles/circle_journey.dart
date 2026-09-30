@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart' hide Text;
 import '../core/i18n.dart';
@@ -14,6 +15,39 @@ class CircleJourney extends StatefulWidget {
 
 class _CircleJourneyState extends State<CircleJourney> {
   int week = 0;
+
+  /// Moves through the weeks on its own, so it is obvious there are six.
+  /// Stops for good once someone taps or swipes, and never runs when the
+  /// device asks for reduced motion.
+  Timer? _auto;
+  bool _touched = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context) || _touched) {
+      _auto?.cancel();
+      _auto = null;
+    } else {
+      _auto ??= Timer.periodic(const Duration(seconds: 4), (_) {
+        if (mounted) setState(() => week = (week + 1) % 6);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _auto?.cancel();
+    super.dispose();
+  }
+
+  void _pick(int i) {
+    _touched = true;
+    _auto?.cancel();
+    _auto = null;
+    setState(() => week = i.clamp(0, 5));
+  }
+
   static const titles = circleWeekTitles;
   static const captions = circleWeekShort;
   static const icons = [
@@ -48,7 +82,7 @@ class _CircleJourneyState extends State<CircleJourney> {
                           button: true,
                           child: InkWell(
                               borderRadius: BorderRadius.circular(30),
-                              onTap: () => setState(() => week = i),
+                              onTap: () => _pick(i),
                               child: AnimatedContainer(
                                   duration:
                                       MediaQuery.disableAnimationsOf(context)
@@ -69,40 +103,48 @@ class _CircleJourneyState extends State<CircleJourney> {
                                           fontWeight: FontWeight.w800)))))))
           ]),
           const SizedBox(height: 24),
-          AnimatedSwitcher(
-              duration: MediaQuery.disableAnimationsOf(context)
-                  ? Duration.zero
-                  : const Duration(milliseconds: 250),
-              child: Row(
-                  key: ValueKey(week),
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                        width: 54,
-                        height: 54,
-                        decoration: BoxDecoration(
-                            color: const Color(0xFFF8D9B5),
-                            borderRadius: BorderRadius.circular(18)),
-                        child: Icon(icons[week], color: circleNavy, size: 28)),
-                    const SizedBox(width: 16),
-                    Expanded(
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                          Text(titles[week],
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall
-                                  ?.copyWith(color: Colors.white)),
-                          const SizedBox(height: 6),
-                          Text(captions[week],
-                              style: const TextStyle(
-                                  color: Color(0xFFDCE9ED), height: 1.5)),
-                        ])),
-                  ])),
+          GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onHorizontalDragEnd: (d) {
+                final v = d.primaryVelocity ?? 0;
+                if (v < -100) _pick((week + 1) % 6);
+                if (v > 100) _pick((week + 5) % 6);
+              },
+              child: AnimatedSwitcher(
+                  duration: MediaQuery.disableAnimationsOf(context)
+                      ? Duration.zero
+                      : const Duration(milliseconds: 250),
+                  child: Row(
+                      key: ValueKey(week),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                            width: 54,
+                            height: 54,
+                            decoration: BoxDecoration(
+                                color: const Color(0xFFF8D9B5),
+                                borderRadius: BorderRadius.circular(18)),
+                            child:
+                                Icon(icons[week], color: circleNavy, size: 28)),
+                        const SizedBox(width: 16),
+                        Expanded(
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              Text(titles[week],
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall
+                                      ?.copyWith(color: Colors.white)),
+                              const SizedBox(height: 6),
+                              Text(captions[week],
+                                  style: const TextStyle(
+                                      color: Color(0xFFDCE9ED), height: 1.5)),
+                            ])),
+                      ]))),
           const SizedBox(height: 16),
           const Text(
-              'Tap a week to see the plan. We plan weeks 1 to 3. From week 4, your group plans together.',
+              'Tap or swipe to see each week. We plan weeks 1 to 3. From week 4, your group plans together.',
               style: TextStyle(
                   color: Color(0xFFDCE9ED), fontSize: 13, height: 1.45)),
         ]),

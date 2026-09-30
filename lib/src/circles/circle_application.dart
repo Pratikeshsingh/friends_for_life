@@ -4,6 +4,26 @@ import 'circle_repository.dart';
 import 'circle_preferences.dart';
 import 'circle_widgets.dart';
 
+/// Everything someone can pick under "What are you into?".
+const circleInterestOptions = [
+  'Food',
+  'Coffee',
+  'Walking',
+  'Books',
+  'Music',
+  'Art',
+  'Museums',
+  'Films',
+  'Games',
+  'Board games',
+  'Cooking',
+  'Cycling',
+  'Nature',
+  'Sport',
+  'Travel',
+  'Photography',
+];
+
 /// Exposes the phone rules to tests without widening the widget's API.
 class CircleApplicationTesting {
   static String normalise(String v) =>
@@ -50,7 +70,7 @@ class CircleApplication extends StatefulWidget {
 
 class _CircleApplicationState extends State<CircleApplication> {
   late final TextEditingController name, intro, phone;
-  late Set<String> languages, interests, activities, goals, lifeContext;
+  late Set<String> languages, interests, goals, lifeContext;
   late Map<String, Set<String>> slots;
   final selectedDays = <String>{};
   final commonPeriods = <String>{};
@@ -71,8 +91,13 @@ class _CircleApplicationState extends State<CircleApplication> {
     photoPath = d['photo_path'] as String?;
     photoUrl = d['photo_url'] as String?;
     languages = strings(d['languages']).where(circleLanguages.contains).toSet();
-    interests = strings(d['interests']).toSet();
-    activities = strings(d['activities']).toSet();
+    // Earlier applicants answered a separate plan question; fold those
+    // answers into the matching interests so nothing they said is lost.
+    interests = {
+      ...strings(d['interests']),
+      for (final a in strings(d['activities']))
+        if (circleLegacyActivity[a] != null) circleLegacyActivity[a]!,
+    }.where(circleInterestOptions.contains).toSet();
     goals = strings(d['goals']).where(circleGoals.contains).toSet();
     lifeContext =
         strings(d['life_context']).where(circleContexts.contains).toSet();
@@ -134,7 +159,8 @@ class _CircleApplicationState extends State<CircleApplication> {
         },
         'availability': circleSlotLabels(currentSlots),
         'interests': interests.toList(),
-        'activities': activities.toList(),
+        // The database still requires this field; it now mirrors interests.
+        'activities': interests.toList(),
         'energy': style * 2,
         'goals': goals.toList(),
         'life_context': lifeContext.toList(),
@@ -161,9 +187,8 @@ class _CircleApplicationState extends State<CircleApplication> {
         (selectedDays.isEmpty || currentSlots.values.any((v) => v.isEmpty))) {
       return 'Choose at least one day and a time for each selected day.';
     }
-    if (step == 2 &&
-        (interests.isEmpty || activities.isEmpty || goals.isEmpty)) {
-      return 'Pick an interest, an activity, and what you’re looking for.';
+    if (step == 2 && (interests.isEmpty || goals.isEmpty)) {
+      return 'Pick at least one interest and what you’re looking for.';
     }
     if (step == 3) {
       if (widget.onPhoto != null && photoPath == null) {
@@ -474,39 +499,10 @@ class _CircleApplicationState extends State<CircleApplication> {
                 icon: Icons.check_circle_outline),
           ],
           if (step == 2) ...[
-            // Interests, not formats. Coffee and walking used to live here
-            // too, which made this question a near-duplicate of the plan
-            // question below it.
-            _choices(
-                'What are you into?',
-                const [
-                  'Food',
-                  'Books',
-                  'Music',
-                  'Art',
-                  'Films',
-                  'Games',
-                  'Cooking',
-                  'Cycling',
-                  'Nature',
-                  'Sport',
-                  'Travel',
-                  'Photography'
-                ],
-                interests),
-            const SizedBox(height: 24),
-            _choices(
-                'A plan you’d say yes to',
-                const [
-                  'Coffee & conversation',
-                  'Dinner',
-                  'Bowling',
-                  'A walk',
-                  'Board games',
-                  'A museum',
-                  'Something new'
-                ],
-                activities),
+            // One question. "A plan you'd say yes to" used to follow, but
+            // matching already treated both lists as one, so it only made
+            // the form longer.
+            _choices('What are you into?', circleInterestOptions, interests),
             const SizedBox(height: 24),
             _label('At a new table, I’m usually…'),
             const SizedBox(height: 12),
