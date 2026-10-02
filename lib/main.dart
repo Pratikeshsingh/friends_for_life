@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'src/app.dart';
+import 'src/core/app_diagnostics.dart';
 import 'src/core/i18n.dart' show loadSavedLanguage;
 import 'src/core/supabase_config.dart';
 import 'src/startup_error_app.dart';
@@ -14,6 +15,7 @@ Future<void> main() async {
     () async {
       WidgetsFlutterBinding.ensureInitialized();
 
+      ErrorWidget.builder = AppDiagnostics.fallback;
       FlutterError.onError = (details) {
         FlutterError.presentError(details);
         Zone.current.handleUncaughtError(
@@ -63,6 +65,7 @@ Future<void> _startApp() async {
 }
 
 void _reportUnhandledError(Object error, StackTrace stackTrace) {
+  AppDiagnostics.record(error, area: 'unhandled');
   if (kReleaseMode) return;
   debugPrint('Unhandled app error: $error');
   debugPrintStack(stackTrace: stackTrace);

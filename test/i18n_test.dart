@@ -6,6 +6,14 @@ import 'package:vriendtime/src/circles/circle_repository.dart' show circleDate;
 void main() {
   tearDown(() => appLanguage.value = 'en');
 
+  test('the first preferred language the app speaks wins', () {
+    expect(pickLanguage(['de', 'nl', 'en']), 'nl');
+    expect(pickLanguage(['fr', 'en', 'nl']), 'en');
+    expect(pickLanguage(['nl-NL'.split('-').first]), 'nl');
+    expect(pickLanguage(['de', 'fr']), 'en');
+    expect(pickLanguage([]), 'en');
+  });
+
   test('English is returned unchanged', () {
     appLanguage.value = 'en';
     expect(t('Apply for a spot'), 'Apply for a spot');
@@ -37,8 +45,8 @@ void main() {
   testWidgets('the Text widget translates and switches live', (tester) async {
     appLanguage.value = 'en';
     await tester.pumpWidget(LanguageScope(
-        child: const MaterialApp(
-            home: Scaffold(body: Text('Apply for a spot')))));
+        child:
+            const MaterialApp(home: Scaffold(body: Text('Apply for a spot')))));
     expect(find.text('Apply for a spot'), findsOneWidget);
     appLanguage.value = 'nl';
     await tester.pump();

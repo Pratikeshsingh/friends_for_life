@@ -41,6 +41,7 @@ class CircleApplication extends StatefulWidget {
       this.onPhoto,
       this.onSaveForLater,
       this.onDone,
+      this.onCancel,
       this.initialStep = 0,
       this.focusedEdit = false});
   final Json initial;
@@ -55,6 +56,7 @@ class CircleApplication extends StatefulWidget {
   /// Called after a focused edit is saved, so the shell can close the form
   /// and return the member to where they came from.
   final VoidCallback? onDone;
+  final VoidCallback? onCancel;
 
   /// Which step to open on, so "edit my availability" from the profile
   /// doesn't drop people back on the name and date-of-birth step.
@@ -75,6 +77,10 @@ class _CircleApplicationState extends State<CircleApplication> {
   final selectedDays = <String>{};
   final commonPeriods = <String>{};
   DateTime? birthday;
+
+  /// Day, month and year picked separately: three short lists are clearer
+  /// than a calendar where you have to discover that the years scroll.
+  int? bDay, bMonth, bYear;
   String? photoPath, photoUrl;
   int style = 1, step = 0;
   bool commitment = false, customTimes = false, saving = false;
@@ -88,6 +94,9 @@ class _CircleApplicationState extends State<CircleApplication> {
     intro = TextEditingController(text: d['intro'] as String? ?? '');
     phone = TextEditingController(text: d['phone'] as String? ?? '');
     birthday = DateTime.tryParse(d['date_of_birth']?.toString() ?? '');
+    bDay = birthday?.day;
+    bMonth = birthday?.month;
+    bYear = birthday?.year;
     photoPath = d['photo_path'] as String?;
     photoUrl = d['photo_url'] as String?;
     languages = strings(d['languages']).where(circleLanguages.contains).toSet();
@@ -171,6 +180,9 @@ class _CircleApplicationState extends State<CircleApplication> {
   String? validate() {
     if (step == 0) {
       if (name.text.trim().isEmpty) return 'Add your first name.';
+      if (_impossibleDate) {
+        return 'That date doesn’t exist. Check the day and month.';
+      }
       final age = circleAge(data['date_of_birth'] as String?);
       if (age == null || age < 18 || age > 120) {
         return 'Add your date of birth. Circles are for adults 18+.';
@@ -252,21 +264,90 @@ class _CircleApplicationState extends State<CircleApplication> {
     }
   }
 
-  Future<void> chooseBirthday() async {
+  /// Sets [birthday] once all three parts form a real date.
+  void _setBirthdayPart({int? day, int? month, int? year}) {
+    setState(() {
+      bDay = day ?? bDay;
+      bMonth = month ?? bMonth;
+      bYear = year ?? bYear;
+      birthday = null;
+      if (bDay != null && bMonth != null && bYear != null) {
+        final date = DateTime(bYear!, bMonth!, bDay!);
+        if (date.month == bMonth && date.day == bDay) birthday = date;
+      }
+    });
+  }
+
+  bool get _impossibleDate =>
+      bDay != null && bMonth != null && bYear != null && birthday == null;
+
+  Widget _birthdayPicker(BuildContext context) {
     final now = DateTime.now();
-    final date = await showDatePicker(
-        context: context,
-        helpText: t('Your date of birth'),
-        // Open on the calendar, starting at the year list — typing a
-        // birthday into a text field invites nonsense like "123456" and
-        // means nobody sees a calendar when they tap the field.
-        initialDatePickerMode: DatePickerMode.year,
-        initialEntryMode: DatePickerEntryMode.calendar,
-        initialDate: birthday ?? DateTime(now.year - 30, 1, 1),
-        firstDate: DateTime(now.year - 120, now.month, now.day),
-        lastDate: now,
-        fieldHintText: MaterialLocalizations.of(context).dateHelpText);
-    if (date != null && mounted) setState(() => birthday = date);
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June', //
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    Widget pick<T>(String label, T? value, List<(T, String)> options,
+            ValueChanged<T?> onChanged) =>
+        DropdownButtonFormField<T>(
+            initialValue: value,
+            isExpanded: true,
+            menuMaxHeight: 320,
+            decoration: InputDecoration(
+                labelText: t(label),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 14)),
+            items: [
+              for (final (v, text) in options)
+                DropdownMenuItem<T>(
+                    value: v,
+                    child: Text(text, overflow: TextOverflow.ellipsis))
+            ],
+            onChanged: busy ? null : onChanged);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Text('Date of birth',
+          style: TextStyle(fontWeight: FontWeight.w800, color: circleNavy)),
+      const SizedBox(height: 10),
+      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(
+            flex: 2,
+            child: pick<int>(
+                'Day',
+                bDay,
+                [for (var d = 1; d <= 31; d++) (d, '$d')],
+                (v) => _setBirthdayPart(day: v))),
+        const SizedBox(width: 8),
+        Expanded(
+            flex: 4,
+            child: pick<int>(
+                'Month',
+                bMonth,
+                [for (var m = 1; m <= 12; m++) (m, months[m - 1])],
+                (v) => _setBirthdayPart(month: v))),
+        const SizedBox(width: 8),
+        Expanded(
+            flex: 3,
+            // Newest first, starting at the youngest age allowed (18).
+            child: pick<int>(
+                'Year',
+                bYear,
+                [
+                  for (var y = now.year - 18; y >= now.year - 100; y--)
+                    (y, '$y')
+                ],
+                (v) => _setBirthdayPart(year: v))),
+      ]),
+      const SizedBox(height: 6),
+      Text(
+          _impossibleDate
+              ? 'That date doesn’t exist. Check the day and month.'
+              : 'Circles are for adults 18+. Kept private.',
+          style: TextStyle(
+              fontSize: 12,
+              color: _impossibleDate
+                  ? Theme.of(context).colorScheme.error
+                  : const Color(0xFF66727C))),
+    ]);
   }
 
   /// A rectangular upload gets cropped to a circle everywhere it appears,
@@ -377,22 +458,7 @@ class _CircleApplicationState extends State<CircleApplication> {
                 decoration: InputDecoration(
                     labelText: t('First name'), counterText: '')),
             const SizedBox(height: 20),
-            // Looks like the fields around it, opens the calendar on tap.
-            InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: busy ? null : chooseBirthday,
-                child: InputDecorator(
-                    isEmpty: birthday == null,
-                    decoration: InputDecoration(
-                        labelText: t('Date of birth'),
-                        hintText: t('Choose your birthday'),
-                        helperText:
-                            t('Circles are for adults 18+. Kept private.'),
-                        helperMaxLines: 2,
-                        suffixIcon: Icon(Icons.calendar_month_outlined)),
-                    child: Text(birthday == null
-                        ? ''
-                        : '${birthday!.day} ${MaterialLocalizations.of(context).formatMonthYear(birthday!)}'))),
+            _birthdayPicker(context),
             const SizedBox(height: 20),
             TextField(
                 controller: phone,
@@ -646,7 +712,7 @@ class _CircleApplicationState extends State<CircleApplication> {
           if (widget.focusedEdit)
             Center(
                 child: TextButton(
-                    onPressed: busy ? null : widget.onDone,
+                    onPressed: busy ? null : (widget.onCancel ?? widget.onDone),
                     child: const Text('Cancel')))
           else
             // A Wrap, not a Row: at 320px the two labels plus their icons do

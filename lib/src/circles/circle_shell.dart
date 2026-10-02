@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import '../core/app_diagnostics.dart';
+import 'circle_meetup_detail.dart';
+import 'circle_save_dialog.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import '../core/profile_photo_service.dart';
@@ -49,6 +52,14 @@ class _CircleShellState extends State<CircleShell> {
   final message = TextEditingController();
   final scroll = ScrollController();
   Timer? timer;
+  int _loadGeneration = 0;
+  bool _loading = false;
+  bool _stale = false;
+  var _applicationKey = GlobalKey();
+  String? _sendId, _sendBody;
+  final List<Json> _olderMessages = [];
+  bool _loadingOlder = false, _hasOlder = true;
+
   @override
   void initState() {
     super.initState();
@@ -63,7 +74,7 @@ class _CircleShellState extends State<CircleShell> {
       load();
     }
     timer = Timer.periodic(const Duration(seconds: 25), (_) {
-      if (repo != null && !busy && !editing) load(silent: true);
+      if (repo != null && !busy && !_loading) load(silent: true);
     });
   }
 
@@ -72,6 +83,12 @@ class _CircleShellState extends State<CircleShell> {
     super.didUpdateWidget(old);
     if (old.session?.user.id != widget.session?.user.id &&
         repo?.isDemo != true) {
+      _loadGeneration++;
+      _olderMessages.clear();
+      _sendId = _sendBody = null;
+      message.clear();
+      editing = false;
+      applicationParked = false;
       state = null;
       error = null;
       tab = 0;
@@ -120,27 +137,38 @@ class _CircleShellState extends State<CircleShell> {
   Future<void> load({bool silent = false}) async {
     final source = repo;
     if (source == null) return;
+    final generation = ++_loadGeneration;
+    _loading = true;
     try {
-      final value = await source.load();
-      if (mounted && identical(repo, source)) {
+      final value = await source.load().timeout(const Duration(seconds: 20));
+      if (mounted && identical(repo, source) && generation == _loadGeneration) {
         setState(() {
           state = value;
           error = null;
+          _stale = false;
         });
       }
-    } catch (_) {
-      if (mounted && !silent) {
-        setState(() => error =
-            'We couldn’t load your Circle right now. Please try again in a moment.');
+    } catch (e) {
+      AppDiagnostics.record(e, area: 'circle_load');
+      if (mounted && identical(repo, source) && generation == _loadGeneration) {
+        setState(() {
+          _stale = true;
+          if (!silent || state == null) {
+            error = 'We couldn’t load your Circle right now. Please try again in a moment.';
+          }
+        });
       }
+    } finally {
+      if (generation == _loadGeneration) _loading = false;
     }
   }
 
   Future<void> act(String action, [Json data = const {}]) async {
-    if (busy) return;
+    if (busy) throw StateError('Another change is still saving. Please wait.');
+    _loadGeneration++;
     setState(() => busy = true);
     try {
-      await repo!.act(action, data);
+      await repo!.act(action, data).timeout(const Duration(seconds: 25), onTimeout: () => throw StateError('Confirmation is taking longer than expected. Refresh before trying again.'));
       await load();
       if (mounted) {
         if (['apply', 'withdraw', 'preview', 'reset'].contains(action)) {
@@ -170,11 +198,12 @@ class _CircleShellState extends State<CircleShell> {
                     : 'Emails turned off. Your Circle updates stay in the app.',
                 'leave_circle' =>
                   'You’ve left the Circle. We’ll be in touch about anything outstanding.',
-                _ => 'Saved.'
+                _ => _stale ? 'Saved. Refresh to see the latest version.' : 'Saved.'
               });
         }
       }
     } catch (e) {
+      AppDiagnostics.record(e, area: 'circle_action');
       if (mounted) {
         showCircleToast(
             context,
@@ -271,6 +300,10 @@ class _CircleShellState extends State<CircleShell> {
             child: SafeArea(
                 bottom: false,
                 child: Column(children: [
+                  if (_stale && state != null)
+                    MaterialBanner(
+                      content: const Text('Updates paused. Showing your last loaded Circle.'),
+                      actions: [TextButton(onPressed: () => load(), child: const Text('Retry'))]),
                   if (demo)
                     Container(
                         width: double.infinity,
@@ -390,7 +423,11 @@ class _CircleShellState extends State<CircleShell> {
                                       child: ConstrainedBox(
                                           constraints: const BoxConstraints(
                                               maxWidth: 900),
-                                          child: _body(context)))))),
+                                          child: Column(children: [
+                                            if (editing || (state!['stage'] == 'apply' && !applicationParked))
+                                              Offstage(offstage: tab != 0, child: TickerMode(enabled: tab == 0, child: _application(context))),
+                                            if (tab != 0 || !(editing || (state!['stage'] == 'apply' && !applicationParked))) _body(context),
+                                          ])))))),
                 ]))),
         bottomNavigationBar: repo == null
             ? null
@@ -436,7 +473,9 @@ class _CircleShellState extends State<CircleShell> {
     final text = message.text.trim();
     if (text.isEmpty || busy) return;
     try {
-      await act('message', {'body': text});
+      if (_sendBody != text) { _sendId = circleRequestId(); _sendBody = text; }
+      await act('message', {'body': text, 'request_id': _sendId});
+      _sendId = _sendBody = null;
       message.clear();
       _scrollToLatest();
     } catch (_) {}
@@ -481,6 +520,7 @@ class _CircleShellState extends State<CircleShell> {
               ]))));
 
   void _openApplication(int step) => setState(() {
+        _applicationKey = GlobalKey();
         editing = true;
         editStep = step;
         applicationParked = false;
@@ -490,13 +530,26 @@ class _CircleShellState extends State<CircleShell> {
   Widget _body(BuildContext context) {
     if (tab == 1 && hasChat) return _messages(context);
     if (tab == 2) return _profile(context);
-    if (editing || (state!['stage'] == 'apply' && !applicationParked)) {
+    return CircleHome(
+        state: state!,
+        demo: repo!.isDemo,
+        busy: busy,
+        act: safeAct,
+        savePlan: act,
+        onEdit: _openApplication,
+        onMessages: () {
+          setState(() => tab = 1);
+          _scrollToLatest();
+        });
+  }
+
+  Widget _application(BuildContext context) {
       // A focused edit is one answer being changed from the profile or home
       // — never "Continue my application" or "Finish my profile", which both
       // open at step 0 and must keep the whole four-step walk.
       final focused = editing && editStep > 0;
       return CircleApplication(
-          key: ValueKey(editing ? 'edit' : 'apply'),
+          key: _applicationKey,
           initial: Map<String, dynamic>.from(state!['application'] as Map? ??
               {'name': widget.session?.user.userMetadata?['first_name'] ?? ''}),
           busy: busy,
@@ -516,6 +569,11 @@ class _CircleShellState extends State<CircleShell> {
               if (state?['stage'] == 'apply') applicationParked = true;
             });
           },
+          onCancel: () => setState(() {
+            editing = false;
+            editStep = 0;
+            if (state?['stage'] == 'apply') applicationParked = true;
+          }),
           onPhoto: repo!.isDemo ? null : _pickPhoto,
           onSave: (d) => act('draft', d),
           onSubmit: (d) => act('apply', d),
@@ -529,17 +587,6 @@ class _CircleShellState extends State<CircleShell> {
             });
             showCircleToast(context, 'Saved. Pick up where you left off.');
           });
-    }
-    return CircleHome(
-        state: state!,
-        demo: repo!.isDemo,
-        busy: busy,
-        act: safeAct,
-        onEdit: _openApplication,
-        onMessages: () {
-          setState(() => tab = 1);
-          _scrollToLatest();
-        });
   }
 
   String _messageTime(String? raw) {
@@ -554,7 +601,9 @@ class _CircleShellState extends State<CircleShell> {
   }
 
   Widget _messages(BuildContext context) {
-    final messages = rows(state!['messages']);
+    final all = [..._olderMessages, ...rows(state!['messages'])];
+    final byId = <String, Json>{for (var i = 0; i < all.length; i++) '${all[i]['id'] ?? 'local-$i'}': all[i]};
+    final messages = byId.values.toList()..sort((a,b) => '${a['created_at']}'.compareTo('${b['created_at']}'));
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const CircleHeading('A little hello goes a long way.',
           eyebrow: 'Circle messages',
@@ -564,8 +613,24 @@ class _CircleShellState extends State<CircleShell> {
         const Padding(
             padding: EdgeInsets.symmetric(vertical: 24),
             child: Text('No messages yet. Be the first to say hello.')),
+      if (_hasOlder && messages.length >= 100)
+        TextButton(onPressed: _loadingOlder ? null : _loadOlderMessages, child: Text(_loadingOlder ? 'Loading…' : 'Load earlier messages')),
       for (final m in messages) _bubble(context, m),
     ]);
+  }
+
+  Future<void> _loadOlderMessages() async {
+    if (repo is! SupabaseCircleRepository || _loadingOlder) return;
+    final messages = [..._olderMessages, ...rows(state!['messages'])]
+      ..sort((a,b) => '${a['created_at']}'.compareTo('${b['created_at']}'));
+    if (messages.isEmpty) return;
+    setState(() => _loadingOlder = true);
+    try {
+      final page = await (repo as SupabaseCircleRepository).olderMessages(messages.first);
+      if (mounted) setState(() { _olderMessages.insertAll(0, page); _hasOlder = page.length == 100; });
+    } catch (_) {
+      if (mounted) showCircleToast(context, 'Could not load earlier messages. Please retry.');
+    } finally { if (mounted) setState(() => _loadingOlder = false); }
   }
 
   Widget _bubble(BuildContext context, Json m) {
@@ -629,6 +694,8 @@ class _CircleShellState extends State<CircleShell> {
 
   Widget _profile(BuildContext context) => CircleProfile(
         state: state!,
+        act: safeAct,
+        busy: busy,
         onEdit: ['apply', 'waiting'].contains(state!['stage'])
             ? _openApplication
             : null,
@@ -787,14 +854,25 @@ class _CircleShellState extends State<CircleShell> {
       if (ProfilePhotoService.isTooLarge(bytes)) {
         throw StateError(ProfilePhotoService.tooLargeMessage(bytes.length));
       }
-      final codec = await ui.instantiateImageCodec(bytes, targetWidth: 1024);
+      final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+      final descriptor = await ui.ImageDescriptor.encoded(buffer);
+      if (descriptor.width > 12000 || descriptor.height > 12000) {
+        descriptor.dispose(); buffer.dispose();
+        throw StateError('Choose a photo smaller than 12000 pixels on each side.');
+      }
+      final scale = 1024 / (descriptor.width > descriptor.height ? descriptor.width : descriptor.height);
+      final codec = await descriptor.instantiateCodec(
+        targetWidth: scale < 1 ? (descriptor.width * scale).round() : descriptor.width,
+        targetHeight: scale < 1 ? (descriptor.height * scale).round() : descriptor.height);
       final frame = await codec.getNextFrame();
-      frame.image.dispose();
-      codec.dispose();
+      final encoded = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+      frame.image.dispose(); codec.dispose(); descriptor.dispose(); buffer.dispose();
+      if (encoded == null) throw StateError('Could not prepare this photo. Choose another image.');
+      final oldPhoto = (state?['application'] as Map?)?['photo_path'] as String?;
       uploaded = await ProfilePhotoService.uploadPhoto(
           supabase: client,
           userId: widget.session!.user.id,
-          bytes: bytes,
+          bytes: encoded.buffer.asUint8List(),
           fileName: file.name,
           slot: 'profile');
       await client.from('profiles').update({
@@ -814,6 +892,9 @@ class _CircleShellState extends State<CircleShell> {
               ...state!['application'] as Map,
               ...record
             });
+      }
+      if (oldPhoto != null && oldPhoto != record['photo_path']) {
+        try { await client.storage.from(ProfilePhotoService.bucketName).remove([oldPhoto]); } catch (_) {}
       }
       return record;
     } catch (e) {
@@ -855,74 +936,73 @@ class _CircleShellState extends State<CircleShell> {
   }
 
   Future<void> _report({String? messageId}) async {
-    final reason = TextEditingController();
-    final text = await showDialog<String>(
-        context: context,
-        builder: (c) => AlertDialog(
-              title: const Text('Tell the organiser'),
-              content: SingleChildScrollView(
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Text(
-                    'Your report is private. Describe what happened so the organiser can help. For immediate danger, contact emergency services.'),
-                const SizedBox(height: 16),
-                TextField(
-                    controller: reason,
-                    minLines: 3,
-                    maxLines: 6,
-                    maxLength: 2000,
-                    decoration: InputDecoration(labelText: t('Your concern'))),
-              ])),
-              actions: [
-                TextButton(
-                    onPressed: () => Navigator.pop(c),
-                    child: const Text('Back')),
-                FilledButton(
-                    onPressed: () {
-                      if (reason.text.trim().length >= 5) {
-                        Navigator.pop(c, reason.text.trim());
-                      }
-                    },
-                    child: const Text('Send private report'))
-              ],
-            ));
-    // Dialog transitions can still reference its controller until the next frame.
-    await Future<void>.delayed(const Duration(milliseconds: 250));
-    reason.dispose();
-    if (text != null && mounted) {
-      try {
-        await act('report',
-            {'reason': text, if (messageId != null) 'message_id': messageId});
-        if (mounted) {
-          showCircleToast(
-              context, 'Your report has been sent to the organiser.');
-        }
-      } catch (_) {}
-    }
+    final requestId = circleRequestId();
+    await showCircleSaveDialog(context,
+      title: 'Tell the organiser',
+      description: 'Your report is private. Tell us what happened. For immediate danger, contact emergency services. For urgent help, use Help & contact in Profile.',
+      fields: const {'reason': 'Your concern'},
+      multiline: true,
+      saveLabel: 'Send private report',
+      onSave: (data) async {
+        if ('${data['reason']}'.trim().length < 5) throw StateError('Please describe your concern in at least five characters.');
+        await act('report', {...data, 'request_id': requestId, if (messageId != null) 'message_id': messageId});
+      });
   }
 
+  /// "Just now", "3 h ago", "Yesterday", or a date.
+  String _ago(String? raw) {
+    final at = DateTime.tryParse(raw ?? '')?.toLocal();
+    if (at == null) return '';
+    final diff = DateTime.now().difference(at);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours} h ago';
+    if (diff.inDays == 1) return 'Yesterday';
+    return circleDate(at.toIso8601String());
+  }
+
+  Future<void> _markRead(List<String> ids) async {
+    if (ids.isEmpty || repo?.isDemo == true || widget.session == null) return;
+    try {
+      await Supabase.instance.client
+          .from('notifications')
+          .update({'read_at': DateTime.now().toUtc().toIso8601String()})
+          .eq('recipient_profile_id', widget.session!.user.id)
+          .inFilter('id', ids);
+      await load(silent: true);
+    } catch (_) {}
+  }
+
+  /// Where a notification leads. Organiser alerts ('support') open the
+  /// organiser panel; everything else is about the person's own Circle.
+  void _openNotification(Json n) {
+    if (n['kind'] == 'support' && state?['is_admin'] == true) {
+      openAdmin();
+      return;
+    }
+    final meetup = rows(state?['meetups']).where((m) => m['id'] == n['event_id']).firstOrNull;
+    if (meetup != null) {
+      openCircleMeetup(context, meetup);
+      return;
+    }
+    setState(() => tab = 0);
+    if (scroll.hasClients) scroll.jumpTo(0);
+  }
+
+  /// New (unread) on top, Earlier (read) below. Opening the list no longer
+  /// marks everything read: a notification is read once it is opened, or
+  /// with "Mark all as read".
   Future<void> _notifications(BuildContext context) async {
     var notes = rows(state?['notifications']);
     if (repo?.isDemo != true && widget.session != null) {
       try {
         final result = await Supabase.instance.client
             .from('notifications')
-            .select('id,title,body,created_at,read_at')
+            .select('id,kind,title,body,created_at,read_at,event_id')
             .eq('recipient_profile_id', widget.session!.user.id)
             .order('created_at', ascending: false)
-            .limit(20);
+            .limit(60);
         notes = rows(result);
-        final unread = notes
-            .where((n) => n['read_at'] == null)
-            .map((n) => n['id'] as String)
-            .toList();
-        if (unread.isNotEmpty) {
-          await Supabase.instance.client
-              .from('notifications')
-              .update({'read_at': DateTime.now().toUtc().toIso8601String()})
-              .eq('recipient_profile_id', widget.session!.user.id)
-              .inFilter('id', unread);
-          await load(silent: true);
-        }
       } catch (_) {
         if (context.mounted) {
           showCircleToast(
@@ -937,23 +1017,146 @@ class _CircleShellState extends State<CircleShell> {
         context: context,
         isScrollControlled: true,
         showDragHandle: true,
-        builder: (c) => SafeArea(
-            child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: SizedBox(
-                    height: MediaQuery.sizeOf(c).height * .65,
-                    child: ListView(children: [
-                      Text('A little update',
-                          style: Theme.of(c).textTheme.headlineSmall),
-                      const SizedBox(height: 18),
-                      if (notes.isEmpty)
-                        const Text(
-                            'You’re all caught up. Circle updates will appear here.'),
-                      for (final n in notes)
-                        ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(n['title'] as String),
-                            subtitle: Text(n['body'] as String))
-                    ])))));
+        builder: (sheet) => StatefulBuilder(builder: (sheet, update) {
+              final unread = [
+                for (final n in notes)
+                  if (n['read_at'] == null) n
+              ];
+              final read = [
+                for (final n in notes)
+                  if (n['read_at'] != null) n
+              ];
+              void markLocal(Iterable<Json> items) {
+                final now = DateTime.now().toUtc().toIso8601String();
+                for (final n in items) {
+                  n['read_at'] = now;
+                }
+              }
+
+              Widget tile(Json n) {
+                final isNew = n['read_at'] == null;
+                final leadsToAdmin =
+                    n['kind'] == 'support' && state?['is_admin'] == true;
+                return Material(
+                    color: isNew ? const Color(0xFFEAF7F5) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                    child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () {
+                          if (isNew) {
+                            update(() => markLocal([n]));
+                            _markRead(['${n['id']}']);
+                          }
+                          Navigator.pop(sheet);
+                          _openNotification(n);
+                        },
+                        child: Padding(
+                            padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+                            child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                      padding: const EdgeInsets.only(top: 6),
+                                      child: Container(
+                                          width: 9,
+                                          height: 9,
+                                          decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: isNew
+                                                  ? circleCoral
+                                                  : Colors.transparent))),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                      child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                        Text('${n['title'] ?? ''}',
+                                            style: TextStyle(
+                                                fontWeight: isNew
+                                                    ? FontWeight.w800
+                                                    : FontWeight.w600,
+                                                color: circleNavy)),
+                                        const SizedBox(height: 2),
+                                        Text('${n['body'] ?? ''}',
+                                            style: const TextStyle(
+                                                color: Color(0xFF4F5D66),
+                                                height: 1.35)),
+                                        const SizedBox(height: 4),
+                                        Text(_ago(n['created_at']?.toString()),
+                                            style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Color(0xFF66727C))),
+                                      ])),
+                                  Icon(
+                                      leadsToAdmin
+                                          ? Icons.admin_panel_settings_outlined
+                                          : Icons.chevron_right_rounded,
+                                      color: const Color(0xFF66727C)),
+                                ]))));
+              }
+
+              Widget label(String text) => Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+                  child: Text(t(text).toUpperCase(),
+                      style: const TextStyle(
+                          fontSize: 12,
+                          letterSpacing: 1.4,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF4F5D66))));
+
+              return SafeArea(
+                  child: SizedBox(
+                      height: MediaQuery.sizeOf(sheet).height * .75,
+                      child: ListView(
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                          children: [
+                            Row(children: [
+                              Expanded(
+                                  child: Text('Notifications',
+                                      style: Theme.of(sheet)
+                                          .textTheme
+                                          .headlineSmall)),
+                              if (unread.isNotEmpty)
+                                TextButton(
+                                    onPressed: () {
+                                      final ids = [
+                                        for (final n in unread) '${n['id']}'
+                                      ];
+                                      update(() => markLocal(unread));
+                                      _markRead(ids);
+                                    },
+                                    child: const Text('Mark all as read')),
+                            ]),
+                            if (notes.isEmpty)
+                              const Padding(
+                                  padding: EdgeInsets.only(top: 12),
+                                  child: Text(
+                                      'You’re all caught up. Circle updates will appear here.')),
+                            if (notes.isNotEmpty) ...[
+                              label('New'),
+                              if (unread.isEmpty)
+                                const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 4, vertical: 4),
+                                    child: Text(
+                                        'Nothing new. You’re all caught up.',
+                                        style: TextStyle(
+                                            color: Color(0xFF66727C))))
+                              else
+                                for (final n in unread)
+                                  Padding(
+                                      padding: const EdgeInsets.only(bottom: 6),
+                                      child: tile(n)),
+                              if (read.isNotEmpty) ...[
+                                label('Earlier'),
+                                for (final n in read)
+                                  Padding(
+                                      padding: const EdgeInsets.only(bottom: 6),
+                                      child: tile(n)),
+                              ],
+                            ],
+                          ])));
+            }));
   }
 }

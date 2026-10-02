@@ -95,21 +95,37 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('the six weeks move on their own until someone taps one',
+  testWidgets('the six weeks reveal once on screen, and can show progress',
       (tester) async {
+    tester.view.physicalSize = const Size(390, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
     await tester.pumpWidget(MaterialApp(
-        theme: buildTheme(), home: const Scaffold(body: CircleJourney())));
-    expect(find.text('Dinner together'), findsOneWidget);
-    await tester.pump(const Duration(seconds: 4));
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('Bowling together'), findsOneWidget);
-    await tester.tap(find.text('5'));
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('A plan of your own'), findsOneWidget);
-    // After a tap it stays where the person put it.
-    await tester.pump(const Duration(seconds: 9));
-    expect(find.text('A plan of your own'), findsOneWidget);
-    await tester.pumpWidget(const SizedBox());
+        theme: buildTheme(),
+        home: const Scaffold(
+            body: SingleChildScrollView(child: CircleJourney()))));
+    await tester.pump();
+    await tester.pumpAndSettle();
+    final last = tester.widget<Opacity>(find
+        .ancestor(
+            of: find.text('One last get-together'),
+            matching: find.byType(Opacity))
+        .first);
+    expect(last.opacity, 1.0);
+
+    // Inside the app: weeks behind get a tick, the next one is marked.
+    await tester.pumpWidget(MaterialApp(
+        theme: buildTheme(),
+        home: const Scaffold(
+            body: SingleChildScrollView(
+                child:
+                    CircleJourney(compact: true, completed: 2, current: 3)))));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.check_rounded), findsNWidgets(2));
+    expect(find.text('Next'), findsOneWidget);
   });
 
   testWidgets('one interests question, and older plan answers carry over',
@@ -138,5 +154,53 @@ void main() {
     expect(saved!['interests'], containsAll(['Books', 'Walking', 'Coffee']));
     // The database still requires the old field, so it mirrors interests.
     expect(saved!['activities'], saved!['interests']);
+  });
+
+  testWidgets('birthday is three dropdowns and rejects impossible dates',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(MaterialApp(
+        theme: buildTheme(),
+        home: Scaffold(
+            body: SingleChildScrollView(
+                child: CircleApplication(initial: const {
+          'name': 'Asha',
+          'date_of_birth': '1995-03-30',
+          'languages': ['English'],
+          'phone': '0612345678',
+        }, busy: false, onSave: (_) async {}, onSubmit: (_) async {})))));
+    await tester.pumpAndSettle();
+    expect(find.text('Day'), findsOneWidget);
+    expect(find.text('Month'), findsOneWidget);
+    expect(find.text('Year'), findsOneWidget);
+    // Change the month to February: 30 February does not exist.
+    await tester.tap(find.text('March'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('February').last);
+    await tester.pumpAndSettle();
+    expect(find.text('That date doesn’t exist. Check the day and month.'),
+        findsOneWidget);
+  });
+
+  testWidgets('notifications split into new and earlier, and open on tap',
+      (tester) async {
+    await repository.act('preview', {'stage': 'invited'});
+    await _pumpShell(tester, repository);
+    await tester.tap(find.byTooltip('Notifications'));
+    await tester.pumpAndSettle();
+    expect(find.text('NEW'), findsOneWidget);
+    expect(find.text('Mark all as read'), findsOneWidget);
+    expect(find.text('2 h ago'), findsOneWidget);
+    await tester.tap(find.text('Your Circle is ready'));
+    await tester.pumpAndSettle();
+    // The sheet closes and the person lands on their Circle.
+    expect(find.text('Mark all as read'), findsNothing);
+    expect(find.text('Meet your Circle.'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
   });
 }

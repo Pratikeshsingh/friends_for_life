@@ -61,16 +61,16 @@ void main() {
               body: SingleChildScrollView(
                   child: CircleHome(
                       state: {
-                        'stage': 'active',
-                        'profile_id': 'me',
-                        'exclusions': exclusions,
-                        'circle': {'name': 'The Thursday Circle'},
-                        'members': [
-                          {'id': 'me', 'name': 'You'},
-                          {'id': 'noor', 'name': 'Noor', 'bio': 'Hello.'}
-                        ],
-                        'meetups': const [],
-                      },
+                'stage': 'active',
+                'profile_id': 'me',
+                'exclusions': exclusions,
+                'circle': {'name': 'The Thursday Circle'},
+                'members': [
+                  {'id': 'me', 'name': 'You'},
+                  {'id': 'noor', 'name': 'Noor', 'bio': 'Hello.'}
+                ],
+                'meetups': const [],
+              },
                       demo: true,
                       busy: false,
                       act: (a, [d = const {}]) async =>
@@ -81,6 +81,9 @@ void main() {
       await tester.pumpWidget(app(const []));
       await tester.tap(find.text('Noor').last);
       await tester.pumpAndSettle();
+      expect(find.text('Don’t match us again'), findsNothing);
+      await tester.tap(find.text('Private matching preferences'));
+      await tester.pumpAndSettle();
       expect(find.text('Don’t match us again'), findsOneWidget);
       await tester.tap(find.text('Don’t match us again'));
       await tester.pumpAndSettle();
@@ -89,6 +92,8 @@ void main() {
       // Already excluded: the same card offers the way back.
       await tester.pumpWidget(app(const ['noor']));
       await tester.tap(find.text('Noor').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Private matching preferences'));
       await tester.pumpAndSettle();
       expect(find.text('Allow matching again'), findsOneWidget);
     });
@@ -101,13 +106,13 @@ void main() {
               body: SingleChildScrollView(
                   child: CircleHome(
                       state: const {
-                        'stage': 'active',
-                        'profile_id': 'me',
-                        'members': [
-                          {'id': 'me', 'name': 'You'}
-                        ],
-                        'meetups': [],
-                      },
+                'stage': 'active',
+                'profile_id': 'me',
+                'members': [
+                  {'id': 'me', 'name': 'You'}
+                ],
+                'meetups': [],
+              },
                       demo: true,
                       busy: false,
                       act: (_, [__ = const {}]) async {},
@@ -136,22 +141,31 @@ void main() {
           theme: buildTheme(),
           home: Scaffold(
               body: SingleChildScrollView(
-                  child: CircleHome(
+                  child: CircleProfile(
                       state: const {
-                        'stage': 'active',
-                        'profile_id': 'me',
-                        'circle': {'name': 'The Thursday Circle'},
-                        'members': [
-                          {'id': 'me', 'name': 'You'}
-                        ],
-                        'meetups': [],
-                      },
-                      demo: false,
+                'stage': 'active',
+                'payment_agreement': {'can_cancel': true},
+                'profile_id': 'me',
+                'circle': {'name': 'The Thursday Circle'},
+                'members': [
+                  {'id': 'me', 'name': 'You'}
+                ],
+                'meetups': [],
+              },
                       busy: false,
                       act: (a, [d = const {}]) async => calls.add(a),
                       onEdit: (_) {},
-                      onMessages: () {})))));
+                      onPhoto: null,
+                      onAccount: null,
+                      onReport: null,
+                      onExport: null,
+                      onBookings: null,
+                      onSignOut: null)))));
 
+      expect(find.text('I need to leave this Circle'), findsNothing);
+      await tester.ensureVisible(find.text('Programme settings'));
+      await tester.tap(find.text('Programme settings'));
+      await tester.pumpAndSettle();
       final leave = find.text('I need to leave this Circle');
       await tester.ensureVisible(leave);
       await tester.pumpAndSettle();
@@ -159,14 +173,22 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
 
-      expect(find.text('Leave your Circle?'), findsOneWidget);
-      expect(find.textContaining('not refunded automatically'), findsOneWidget);
-      expect(find.text('Stay'), findsOneWidget);
+      expect(find.text('Cancel your programme agreement?'), findsOneWidget);
+      expect(find.textContaining('full €19 refund'), findsOneWidget);
+      expect(find.text('Keep my place'), findsOneWidget);
 
       // Backing out must not release the place.
-      await tester.tap(find.text('Stay'));
+      await tester.tap(find.text('Keep my place'));
       await tester.pumpAndSettle();
       expect(calls, isEmpty);
+      final cancel = find.text('Cancel my programme agreement');
+      await tester.ensureVisible(cancel);
+      await tester.tap(cancel);
+      await tester.pumpAndSettle();
+      expect(find.text('Cancel your programme agreement?'), findsOneWidget);
+      await tester.tap(find.text('Confirm cancellation'));
+      await tester.pumpAndSettle();
+      expect(calls, ['cancel_agreement']);
     });
 
     testWidgets('confirming sends the reason along', (tester) async {
@@ -181,21 +203,30 @@ void main() {
           theme: buildTheme(),
           home: Scaffold(
               body: SingleChildScrollView(
-                  child: CircleHome(
+                  child: CircleProfile(
                       state: const {
-                        'stage': 'active',
-                        'profile_id': 'me',
-                        'circle': {'name': 'The Thursday Circle'},
-                        'members': [
-                          {'id': 'me', 'name': 'You'}
-                        ],
-                        'meetups': [],
-                      },
-                      demo: false,
+                'stage': 'active',
+                'profile_id': 'me',
+                'circle': {'name': 'The Thursday Circle'},
+                'members': [
+                  {'id': 'me', 'name': 'You'}
+                ],
+                'meetups': [],
+              },
                       busy: false,
-                      act: (a, [d = const {}]) async => sent = {'action': a, ...d},
+                      act: (a, [d = const {}]) async =>
+                          sent = {'action': a, ...d},
                       onEdit: (_) {},
-                      onMessages: () {})))));
+                      onPhoto: null,
+                      onAccount: null,
+                      onReport: null,
+                      onExport: null,
+                      onBookings: null,
+                      onSignOut: null)))));
+      expect(find.text('I need to leave this Circle'), findsNothing);
+      await tester.ensureVisible(find.text('Programme settings'));
+      await tester.tap(find.text('Programme settings'));
+      await tester.pumpAndSettle();
       final leave = find.text('I need to leave this Circle');
       await tester.ensureVisible(leave);
       await tester.pumpAndSettle();
@@ -225,10 +256,10 @@ void main() {
               body: SingleChildScrollView(
                   child: CircleProfile(
                       state: const {
-                        'stage': 'waiting',
-                        'application': {'name': 'Asha'},
-                        'email_notifications': false,
-                      },
+                'stage': 'waiting',
+                'application': {'name': 'Asha'},
+                'email_notifications': false,
+              },
                       onEdit: null,
                       onPhoto: null,
                       onAccount: null,
@@ -256,9 +287,9 @@ void main() {
               body: SingleChildScrollView(
                   child: CircleProfile(
                       state: const {
-                        'stage': 'waiting',
-                        'application': {'name': 'Asha'}
-                      },
+                'stage': 'waiting',
+                'application': {'name': 'Asha'}
+              },
                       onEdit: null,
                       onPhoto: null,
                       onAccount: null,

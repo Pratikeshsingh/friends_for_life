@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart' hide Text;
 import '../core/destructive.dart';
 import '../core/i18n.dart';
+import '../core/app_diagnostics.dart';
 import 'circle_preferences.dart';
+import 'circle_home.dart' show CircleAction;
 import 'circle_repository.dart';
 import 'circle_widgets.dart';
 
@@ -19,6 +21,8 @@ class CircleProfile extends StatelessWidget {
       required this.onExport,
       required this.onBookings,
       required this.onSignOut,
+      this.act,
+      this.busy = false,
       this.onAdmin,
       this.onEditPublic,
       this.onHelp,
@@ -27,6 +31,8 @@ class CircleProfile extends StatelessWidget {
       this.onWithdraw,
       this.onEmailNotifications});
   final Json state;
+  final CircleAction? act;
+  final bool busy;
   final VoidCallback? onEditPublic;
 
   /// Turns the notification emails on or off. Null hides the row entirely,
@@ -50,6 +56,39 @@ class CircleProfile extends StatelessWidget {
       onHelp,
       onTerms,
       onPrivacy;
+
+  /// Leaving after the programme has started. Cancelling inside 14 days is a
+  /// payment decision and lives elsewhere; this is the later case, where the
+  /// honest thing is to say plainly that the fee does not come back
+  /// automatically.
+  Future<void> _leave(BuildContext context) async {
+    if ((state['payment_agreement'] as Map?)?['can_cancel'] == true && state['refund'] == null) {
+      await _cancelAgreement(context); return;
+    }
+    final reason = await showDialog<String>(
+        context: context, builder: (c) => const _LeaveDialog());
+    if (reason != null) await act!('leave_circle', {'reason': reason});
+  }
+
+  Future<void> _cancelAgreement(BuildContext context, {String? paymentId}) async {
+    final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (c) => AlertDialog(
+              title: const Text('Cancel your programme agreement?'),
+              content: const Text(
+                  'You can cancel within 14 days of accepting. If you have paid, the organiser will arrange a full €19 refund. Otherwise your payment agreement will be cancelled.'),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(c, false),
+                    child: const Text('Keep my place')),
+                FilledButton(
+                    style: destructiveFilledStyle,
+                    onPressed: () => Navigator.pop(c, true),
+                    child: const Text('Confirm cancellation'))
+              ],
+            ));
+    if (confirmed == true) await act!('cancel_agreement', {if (paymentId != null) 'id': paymentId});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -159,8 +198,9 @@ class CircleProfile extends StatelessWidget {
         // app, so email is on by default, and this is the only place to stop it.
         if (onEmailNotifications != null) ...[
           const Divider(height: 1, color: _line),
-          SwitchListTile(
-              value: state['email_notifications'] != false,
+          if (state['email_notifications'] == null) const ListTile(title: Text('Email preference unavailable'), subtitle: Text('Refresh to load your saved choice.'))
+          else SwitchListTile(
+              value: state['email_notifications'] == true,
               onChanged: onEmailNotifications,
               secondary:
                   const Icon(Icons.mail_outline_rounded, color: circleTeal),
@@ -186,6 +226,40 @@ class CircleProfile extends StatelessWidget {
           ],
         ]),
       ],
+      if (act != null &&
+          ((inCircle && ['active', 'forming'].contains(stage)) ||
+              ((state['payment_agreement'] as Map?)?['can_cancel'] == true &&
+                  state['refund'] == null))) ...[
+        const SizedBox(height: 28),
+        _card([
+          ExpansionTile(
+            title: const Text('Programme settings'),
+            children: [
+              if (inCircle && ['active', 'forming'].contains(stage))
+                _tile(Icons.logout_rounded, 'I need to leave this Circle',
+                    busy ? null : () => _leave(context),
+                    destructive: true),
+              if ((state['payment_agreement'] as Map?)?['can_cancel'] == true &&
+                  state['refund'] == null)
+                _tile(Icons.cancel_outlined, 'Cancel my programme agreement',
+                    busy ? null : () => _cancelAgreement(context),
+                    destructive: true),
+            ],
+          ),
+        ]),
+      ],
+      if (rows(state['payment_history']).isNotEmpty) ...[
+        const SizedBox(height: 28),
+        _card([ExpansionTile(title: const Text('Payments & refunds'), children: [
+          for (final payment in rows(state['payment_history'])) ListTile(
+            title: Text('€19 · ${payment['refund'] ?? payment['status']}'),
+            subtitle: SelectableText('${payment['reference']}'),
+            trailing: payment['can_cancel'] == true && act != null
+              ? TextButton(onPressed: busy ? null : () => _cancelAgreement(context, paymentId: '${payment['id']}'), child: const Text('Cancel agreement')) : null),
+        ])]),
+      ],
+      const SizedBox(height: 12),
+      Text('App version ${AppDiagnostics.build}', style: const TextStyle(fontSize: 11)),
       const SizedBox(height: 28),
       _sectionLabel('Help & account'),
       _card([
@@ -349,4 +423,57 @@ class CircleProfile extends StatelessWidget {
         const SizedBox(height: 2),
         Text(value, style: Theme.of(context).textTheme.titleMedium),
       ]));
+}
+
+/// Owns its text controller so the controller outlives the dialog's closing
+/// animation: disposing it the moment the dialog is popped tears it away from
+/// a TextField that is still on screen.
+class _LeaveDialog extends StatefulWidget {
+  const _LeaveDialog();
+  @override
+  State<_LeaveDialog> createState() => _LeaveDialogState();
+}
+
+class _LeaveDialogState extends State<_LeaveDialog> {
+  final reason = TextEditingController();
+
+  @override
+  void dispose() {
+    reason.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+          title: const Text('Leave your Circle?'),
+          content: SingleChildScrollView(
+              child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                const Text(
+                    'Your place is released and your remaining meetups are removed from your plans. Your reason stays private. The group can see that you are no longer a member.'),
+                const SizedBox(height: 12),
+                const Text(
+                    'The €19 programme fee is not refunded automatically at this point. If something has gone wrong, tell us below and we’ll come back to you.',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 14),
+                TextField(
+                    controller: reason,
+                    maxLength: 300,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                        labelText:
+                            t('Anything you want us to know? (Optional)'),
+                        alignLabelWithHint: true)),
+              ])),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Stay')),
+            FilledButton(
+                style: destructiveFilledStyle,
+                onPressed: () => Navigator.pop(context, reason.text.trim()),
+                child: const Text('Leave the Circle'))
+          ]);
 }

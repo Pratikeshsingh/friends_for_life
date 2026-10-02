@@ -52,3 +52,6 @@ supabase/.temp/
 .env
 .env.*
 !*.example
+
+# Disposable backend test dependencies
+scripts/backend-tests/node_modules/

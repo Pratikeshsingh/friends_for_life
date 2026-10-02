@@ -22,8 +22,18 @@ const _prefsKey = 'app_language';
 /// The current language, 'en' or 'nl'. Starts from the device language.
 final appLanguage = ValueNotifier<String>(_deviceLanguage());
 
-String _deviceLanguage() =>
-    PlatformDispatcher.instance.locale.languageCode == 'nl' ? 'nl' : 'en';
+String _deviceLanguage() => pickLanguage(
+    PlatformDispatcher.instance.locales.map((l) => l.languageCode).toList());
+
+/// The first of the person's preferred languages that the app speaks, so a
+/// browser set to German, then Dutch, gets Dutch. English when none match.
+String pickLanguage(List<String> preferred) {
+  for (final code in preferred) {
+    final c = code.toLowerCase();
+    if (supportedLanguages.contains(c)) return c;
+  }
+  return 'en';
+}
 
 bool get isDutch => appLanguage.value == 'nl';
 

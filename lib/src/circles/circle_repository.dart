@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import '../core/i18n.dart' show isDutch;
 import '../core/profile_photo_service.dart';
 import 'circle_preferences.dart' show circleDays;
@@ -8,13 +9,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 typedef Json = Map<String, dynamic>;
 
+String circleRequestId() {
+  final r = Random.secure();
+  final bytes = List<int>.generate(16, (_) => r.nextInt(256));
+  bytes[6] = (bytes[6] & 15) | 64; bytes[8] = (bytes[8] & 63) | 128;
+  final h = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  return '${h.substring(0,8)}-${h.substring(8,12)}-${h.substring(12,16)}-${h.substring(16,20)}-${h.substring(20)}';
+}
+
 /// The six weeks, told the same way everywhere: landing page, invitation,
 /// the weekly plan and the organiser panel. The database creates meetups
-/// with these same titles (see supabase/migrations/20260930_week_one_dinner.sql).
+/// with these same titles (see supabase/migrations/20261002_flexible_week_themes.sql).
 const circleWeekTitles = [
   'Dinner together',
-  'Bowling together',
-  'A walk & a warm drink',
+  'Go beyond “what do you do?”',
+  'Find out who’s secretly competitive.',
   'Choose something together',
   'A plan of your own',
   'One last get-together',
@@ -26,8 +35,8 @@ const circleActivities = circleWeekTitles;
 /// One short line per week, for the six-week timeline.
 const circleWeekShort = [
   'A two-hour dinner to meet everyone.',
-  'A shared activity takes the pressure off.',
-  'A catch-up on foot, less small talk.',
+  'A relaxed catch-up over coffee, a drink, or a walk. Less introducing yourself, more getting to know each other.',
+  'Games, a quiz, or a playful challenge. An easy way to loosen up together.',
   'You pick the next activity as a group.',
   'Someone in the Circle makes the plan.',
   'Your group stays together. Nothing more to pay.',
@@ -36,12 +45,25 @@ const circleWeekShort = [
 /// The fuller description, on each week's card.
 const circleWeekNotes = [
   'A two-hour dinner. We book the table; you pay the restaurant for what you order. Leaving early is always fine, but the first evening is the one worth staying for.',
-  'A shared activity takes the pressure off conversation.',
-  'Catch up as a group, or add an optional coffee with one person.',
+  'A relaxed catch-up over coffee, a drink, or a walk. Less introducing yourself, more getting to know each other.',
+  'Games, a quiz, or a playful challenge. An easy way to loosen up together.',
   'Pick your next activity together.',
   'Someone in the Circle takes the lead this week.',
   'Make the plan yourselves. Keep the good thing going.',
 ];
+
+/// Older snapshots may still carry the original programme defaults.
+/// Custom activity titles chosen by organisers are preserved.
+String circleMeetupTitle(Json meetup) {
+  final title = meetup['title'] as String;
+  if (meetup['week'] == 2 && title == 'Bowling together') {
+    return circleWeekTitles[1];
+  }
+  if (meetup['week'] == 3 && title == 'A walk & a warm drink') {
+    return circleWeekTitles[2];
+  }
+  return title;
+}
 
 List<Json> rows(dynamic value) => (value as List? ?? [])
     .map((v) => Map<String, dynamic>.from(v as Map))
@@ -70,16 +92,26 @@ String circleDate(String? raw) {
 /// When a meetup begins, from the date and time the server sends as separate
 /// strings in the circle's own timezone. Null when either is missing.
 DateTime? circleMeetupStart(Json meetup) {
+  final instant = DateTime.tryParse('${meetup['starts_at']}');
+  if (instant != null) return instant.toUtc();
   final date = DateTime.tryParse('${meetup['date']}');
   if (date == null) return null;
   final parts = '${meetup['time'] ?? '19:30'}'.split(':');
-  return DateTime(
-      date.year,
-      date.month,
-      date.day,
-      int.tryParse(parts.first) ?? 19,
-      parts.length > 1 ? int.tryParse(parts[1]) ?? 30 : 30);
+  final wall = DateTime.utc(date.year,date.month,date.day,int.tryParse(parts.first) ?? 19,
+    parts.length > 1 ? int.tryParse(parts[1]) ?? 30 : 30);
+  // Compatibility for older snapshots. New snapshots send absolute instants.
+  // Europe/Amsterdam switches on the last Sundays of March and October.
+  DateTime sunday(int month) {
+    final last = DateTime.utc(date.year, month + 1, 0);
+    return last.subtract(Duration(days: last.weekday % 7));
+  }
+  final summer = !wall.isBefore(sunday(3).add(const Duration(hours: 3))) &&
+    wall.isBefore(sunday(10).add(const Duration(hours: 3)));
+  return wall.subtract(Duration(hours: summer ? 2 : 1));
 }
+DateTime? circleMeetupEnd(Json meetup) => DateTime.tryParse('${meetup['ends_at']}')?.toUtc() ?? circleMeetupStart(meetup)?.add(const Duration(hours: 2));
+bool circleMeetupPast(Json meetup, {DateTime? now}) => meetup['completed'] == true || (circleMeetupEnd(meetup)?.isBefore((now ?? DateTime.now()).toUtc()) ?? false);
+int circleMeetupCompare(Json a, Json b) => (circleMeetupStart(a) ?? DateTime.utc(9999)).compareTo(circleMeetupStart(b) ?? DateTime.utc(9999));
 
 /// The venue of a programme meetup is revealed 24 hours before it starts, so
 /// people commit to the Circle rather than to the restaurant. The server
@@ -91,7 +123,7 @@ String circleVenueLabel(Json meetup, {DateTime? now}) {
   if (meetup['venue_hidden'] == true) return hidden;
   if (venue == null || venue.isEmpty) return 'Location to be confirmed';
   // A plan the Circle made itself was never a secret from them.
-  if (meetup['week'] == null) return venue;
+  if (meetup['week'] == null || (meetup['week'] as int) >= 4) return venue;
   final start = circleMeetupStart(meetup);
   if (start == null) return venue;
   return start.difference(now ?? DateTime.now()) > const Duration(hours: 24)
@@ -243,7 +275,7 @@ class SupabaseCircleRepository implements CircleRepository {
           .maybeSingle();
       data['email_notifications'] = row?['email_enabled'] as bool? ?? true;
     } catch (_) {
-      data['email_notifications'] = true;
+      data['email_notifications'] = null;
     }
   }
 
@@ -255,7 +287,7 @@ class SupabaseCircleRepository implements CircleRepository {
           .map((r) => r['excluded_profile_id'].toString())
           .toList();
     } catch (_) {
-      data['exclusions'] = const <String>[];
+      data['exclusions'] = null;
     }
   }
 
@@ -299,6 +331,10 @@ class SupabaseCircleRepository implements CircleRepository {
             .rpc('circle_action', params: {'action': action, 'payload': data});
     }
   }
+
+  Future<List<Json>> olderMessages(Json before) async => rows(await client.rpc('circle_messages_before', params: {
+    'before_time': before['created_at'], 'before_id': before['id'],
+  }).timeout(const Duration(seconds: 15)));
 
   @override
   Future<Json> adminLoad() async {
@@ -423,8 +459,8 @@ class DemoCircleRepository implements CircleRepository {
               'time': '19:30',
               'venue': i == 0
                   ? 'A restaurant in central Alkmaar'
-                  : i == 1
-                      ? 'Bowling in Alkmaar'
+                  : i < 3
+                      ? 'Location to be confirmed'
                       : 'Alkmaar · choose together',
               'completed': false,
               'rsvp': false,
@@ -454,6 +490,13 @@ class DemoCircleRepository implements CircleRepository {
     state['check_ins'] = <Json>[];
     state['notifications'] = [
       {
+        'id': 'demo-ready',
+        'kind': 'update',
+        'created_at': DateTime.now()
+            .subtract(const Duration(hours: 2))
+            .toUtc()
+            .toIso8601String(),
+        'read_at': null,
         'title': 'Your Circle is ready',
         'body':
             'Your group and six Thursdays are ready. The first dinner is on 8 October.'
@@ -597,12 +640,28 @@ class DemoCircleRepository implements CircleRepository {
                 : m)
             .toList();
         break;
+      case 'payment_sent':
+        state['payment_agreement'] = {...?state['payment_agreement'] as Json?, 'payment_reported_at': DateTime.now().toIso8601String()};
+        break;
+      case 'cancel_extra':
+        state['meetups'] = rows(state['meetups']).where((m) => m['id'] != data['id']).toList();
+        break;
       case 'admin_schedule':
       case 'schedule':
         final existing = rows(state['meetups']);
         if (data['id'] != null) {
           state['meetups'] = existing
-              .map((m) => m['id'] == data['id'] ? {...m, ...data} : m)
+              .map((m) => m['id'] == data['id']
+                  ? {
+                      ...m,
+                      ...data,
+                      'plan_version': (m['plan_version'] as int? ?? 0) + 1,
+                      if (action == 'schedule' && m['week'] != null) ...{
+                        'date': m['date'],
+                        'time': m['time'],
+                      },
+                    }
+                  : m)
               .toList();
         } else {
           state['meetups'] = [
@@ -614,6 +673,8 @@ class DemoCircleRepository implements CircleRepository {
               'completed': false,
               'rsvp': true,
               'confirmed': 1,
+              'created_by': state['profile_id'] ?? 'you',
+              'plan_version': 1,
               'organiser': 'Your Circle'
             }
           ];

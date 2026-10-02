@@ -178,12 +178,12 @@ void main() {
   group('meetup start', () {
     test('combines the separate date and time the server sends', () {
       expect(circleMeetupStart({'date': '2026-10-08', 'time': '19:30'}),
-          DateTime(2026, 10, 8, 19, 30));
+          DateTime.utc(2026, 10, 8, 17, 30));
     });
 
     test('falls back to the usual evening slot when time is missing', () {
       expect(circleMeetupStart({'date': '2026-10-08'}),
-          DateTime(2026, 10, 8, 19, 30));
+          DateTime.utc(2026, 10, 8, 17, 30));
     });
 
     test('is null when there is no date to anchor to', () {

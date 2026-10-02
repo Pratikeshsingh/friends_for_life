@@ -1,154 +1,262 @@
-import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart' hide Text;
 import '../core/i18n.dart';
 import 'circle_repository.dart' show circleWeekTitles, circleWeekShort;
 import 'circle_widgets.dart';
 
-/// An illustration of the programme, never a representation of actual members.
+/// The six weeks as one vertical line, so the whole plan reads at a glance:
+/// a first dinner growing into plans the group makes itself.
+///
+/// The full version (landing page) draws its line and reveals each week the
+/// first time it scrolls into view. The compact version (inside the app) is
+/// still, and can mark weeks that are done and the one coming up. Reduced
+/// motion always gets the finished picture.
 class CircleJourney extends StatefulWidget {
-  const CircleJourney({super.key, this.compact = false});
+  const CircleJourney(
+      {super.key, this.compact = false, this.completed = 0, this.current});
   final bool compact;
+
+  /// Weeks already behind the group, shown with a tick.
+  final int completed;
+
+  /// The next week (1–6), highlighted. Null shows the plan without progress.
+  final int? current;
   @override
   State<CircleJourney> createState() => _CircleJourneyState();
 }
 
-class _CircleJourneyState extends State<CircleJourney> {
-  int week = 0;
+const _coral = Color(0xFFE9806A);
+const _soft = Color(0xFFDCE9ED);
+const _handover = Color(0xFF92DACE);
 
-  /// Moves through the weeks on its own, so it is obvious there are six.
-  /// Stops for good once someone taps or swipes, and never runs when the
-  /// device asks for reduced motion.
-  Timer? _auto;
-  bool _touched = false;
+class _CircleJourneyState extends State<CircleJourney>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _reveal = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 1800));
+  ScrollPosition? _scroll;
+  bool _started = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (MediaQuery.disableAnimationsOf(context) || _touched) {
-      _auto?.cancel();
-      _auto = null;
-    } else {
-      _auto ??= Timer.periodic(const Duration(seconds: 4), (_) {
-        if (mounted) setState(() => week = (week + 1) % 6);
-      });
+    final still = MediaQuery.disableAnimationsOf(context) || widget.compact;
+    if (still) {
+      _reveal.value = 1;
+      _started = true;
+      return;
+    }
+    if (_started) return;
+    _scroll?.removeListener(_check);
+    _scroll = Scrollable.maybeOf(context)?.position;
+    _scroll?.addListener(_check);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _check());
+  }
+
+  /// Starts the reveal once the top of the plan is well inside the screen.
+  void _check() {
+    if (_started || !mounted) return;
+    final box = context.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return;
+    final top = box.localToGlobal(Offset.zero).dy;
+    if (top < MediaQuery.sizeOf(context).height * .85) {
+      _started = true;
+      _scroll?.removeListener(_check);
+      _reveal.forward();
     }
   }
 
   @override
   void dispose() {
-    _auto?.cancel();
+    _scroll?.removeListener(_check);
+    _reveal.dispose();
     super.dispose();
   }
 
-  void _pick(int i) {
-    _touched = true;
-    _auto?.cancel();
-    _auto = null;
-    setState(() => week = i.clamp(0, 5));
+  /// 0→1 progress for one slot of the timeline (weeks and handover labels).
+  double _at(int slot, int slots) {
+    final start = slot / slots * .8;
+    return Curves.easeOutCubic
+        .transform(((_reveal.value - start) / .28).clamp(0.0, 1.0));
   }
 
-  static const titles = circleWeekTitles;
-  static const captions = circleWeekShort;
-  static const icons = [
-    Icons.restaurant_rounded,
-    Icons.local_activity_rounded,
-    Icons.park_rounded,
-    Icons.lightbulb_outline_rounded,
-    Icons.calendar_month_rounded,
-    Icons.favorite_rounded
-  ];
   @override
-  Widget build(BuildContext context) => Container(
-        padding: EdgeInsets.all(widget.compact ? 22 : 28),
+  Widget build(BuildContext context) {
+    final compact = widget.compact;
+    final theme = Theme.of(context);
+    final header =
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('Same people.',
+          style: theme.textTheme.displayMedium?.copyWith(
+              color: Colors.white,
+              height: 1.05,
+              fontSize: compact ? 30 : null)),
+      Text('Six weeks.',
+          style: theme.textTheme.displayMedium?.copyWith(
+              color: _coral, height: 1.05, fontSize: compact ? 30 : null)),
+      const SizedBox(height: 12),
+      const Text('From a first dinner to plans you make together.',
+          style: TextStyle(color: _soft, height: 1.45)),
+    ]);
+    final timeline = AnimatedBuilder(
+        animation: _reveal,
+        builder: (context, _) {
+          // Slots: handover, weeks 1–3, handover, weeks 4–6.
+          const slots = 8;
+          final rows = <Widget>[];
+          var slot = 0;
+          for (var i = 0; i < 6; i++) {
+            if (i == 0 || i == 3) {
+              rows.add(_handoverRow(
+                  i == 0
+                      ? 'We plan weeks 1 to 3'
+                      : 'From week 4, your group plans together',
+                  _at(slot++, slots),
+                  first: i == 0));
+            }
+            rows.add(_weekRow(i, _at(slot++, slots), last: i == 5));
+          }
+          return Column(
+              crossAxisAlignment: CrossAxisAlignment.start, children: rows);
+        });
+    return Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(compact ? 22 : 30),
         decoration: BoxDecoration(
             color: circleNavy, borderRadius: BorderRadius.circular(30)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('SAME PEOPLE. SIX WEEKS.',
-              style: TextStyle(
-                  color: Color(0xFF92DACE),
-                  fontSize: 11,
-                  letterSpacing: 2,
-                  fontWeight: FontWeight.w800)),
-          const SizedBox(height: 22),
-          Row(children: [
-            for (var i = 0; i < 6; i++)
-              Expanded(
-                  child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 3),
-                      child: Semantics(
-                          selected: week == i,
-                          label: t('Week ${i + 1}'),
-                          button: true,
-                          child: InkWell(
-                              borderRadius: BorderRadius.circular(30),
-                              onTap: () => _pick(i),
-                              child: AnimatedContainer(
-                                  duration:
-                                      MediaQuery.disableAnimationsOf(context)
-                                          ? Duration.zero
-                                          : const Duration(milliseconds: 220),
-                                  height: 44,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                      color: week == i
-                                          ? circleCoral
-                                          : Colors.white.withValues(alpha: .12),
-                                      borderRadius: BorderRadius.circular(24)),
-                                  child: Text('${i + 1}',
-                                      style: TextStyle(
-                                          color: week == i
-                                              ? circleNavy
-                                              : Colors.white,
-                                          fontWeight: FontWeight.w800)))))))
-          ]),
-          const SizedBox(height: 24),
-          GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onHorizontalDragEnd: (d) {
-                final v = d.primaryVelocity ?? 0;
-                if (v < -100) _pick((week + 1) % 6);
-                if (v > 100) _pick((week + 5) % 6);
-              },
-              child: AnimatedSwitcher(
-                  duration: MediaQuery.disableAnimationsOf(context)
-                      ? Duration.zero
-                      : const Duration(milliseconds: 250),
-                  child: Row(
-                      key: ValueKey(week),
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                            width: 54,
-                            height: 54,
-                            decoration: BoxDecoration(
-                                color: const Color(0xFFF8D9B5),
-                                borderRadius: BorderRadius.circular(18)),
-                            child:
-                                Icon(icons[week], color: circleNavy, size: 28)),
-                        const SizedBox(width: 16),
-                        Expanded(
-                            child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                              Text(titles[week],
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineSmall
-                                      ?.copyWith(color: Colors.white)),
-                              const SizedBox(height: 6),
-                              Text(captions[week],
-                                  style: const TextStyle(
-                                      color: Color(0xFFDCE9ED), height: 1.5)),
-                            ])),
-                      ]))),
-          const SizedBox(height: 16),
-          const Text(
-              'Tap or swipe to see each week. We plan weeks 1 to 3. From week 4, your group plans together.',
-              style: TextStyle(
-                  color: Color(0xFFDCE9ED), fontSize: 13, height: 1.45)),
-        ]),
-      );
+        child: LayoutBuilder(builder: (context, box) {
+          if (!compact && box.maxWidth >= 720) {
+            return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(flex: 2, child: header),
+              const SizedBox(width: 40),
+              Expanded(flex: 3, child: timeline),
+            ]);
+          }
+          return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                header,
+                SizedBox(height: compact ? 20 : 28),
+                timeline,
+              ]);
+        }));
+  }
+
+  /// The left rail: a line segment that grows with [t], so the line draws
+  /// downwards as the plan reveals.
+  Widget _rail(
+      {required double t, Widget? node, bool upper = true, bool lower = true}) {
+    final grow = Align(
+        alignment: Alignment.topCenter,
+        child: FractionallySizedBox(
+            heightFactor: t,
+            child: Container(width: 3, color: _coral.withValues(alpha: .9))));
+    return SizedBox(
+        width: 48,
+        child: Column(children: [
+          if (node == null)
+            Expanded(child: grow)
+          else ...[
+            Container(
+                width: 3,
+                height: 6,
+                color: upper ? _coral.withValues(alpha: .9) : null),
+            node,
+            Expanded(child: lower ? grow : const SizedBox.shrink()),
+          ],
+        ]));
+  }
+
+  Widget _handoverRow(String label, double p, {bool first = false}) => _railRow(
+      first ? const SizedBox(width: 48) : _rail(t: p),
+      Opacity(
+          opacity: p,
+          child: Padding(
+              padding: const EdgeInsets.only(bottom: 14, top: 2),
+              child: Text(t(label).toUpperCase(),
+                  style: const TextStyle(
+                      color: _handover,
+                      fontSize: 11,
+                      letterSpacing: 1.4,
+                      fontWeight: FontWeight.w800)))));
+
+  Widget _weekRow(int i, double t, {required bool last}) {
+    final done = i < widget.completed;
+    final next = widget.current == i + 1;
+    final dim = widget.current != null && !done && !next;
+    final circle = Transform.scale(
+        scale: .6 + .4 * t,
+        child: Container(
+            width: 42,
+            height: 42,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: done
+                    ? circleTeal
+                    : dim
+                        ? _coral.withValues(alpha: .45)
+                        : _coral,
+                border:
+                    next ? Border.all(color: Colors.white, width: 3) : null),
+            child: done
+                ? const Icon(Icons.check_rounded, color: Colors.white, size: 22)
+                : Text('${i + 1}',
+                    style: const TextStyle(
+                        color: circleNavy,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800))));
+    return _railRow(
+        _rail(t: t, node: circle, upper: i != 0, lower: !last),
+        Opacity(
+            opacity: dim ? .55 * t : t,
+            child: Transform.translate(
+                offset: Offset(0, 14 * (1 - t)),
+                child: Padding(
+                    padding: EdgeInsets.only(top: 8, bottom: last ? 0 : 22),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(children: [
+                            Flexible(
+                                child: Text(circleWeekTitles[i],
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: widget.compact ? 16 : 18,
+                                        fontWeight: FontWeight.w700))),
+                            if (next) ...[
+                              const SizedBox(width: 8),
+                              const _NextTag(),
+                            ],
+                          ]),
+                          const SizedBox(height: 4),
+                          Text(circleWeekShort[i],
+                              style:
+                                  const TextStyle(color: _soft, height: 1.4)),
+                        ])))));
+  }
+
+  /// The rail takes the full height of the text beside it, so the line runs
+  /// unbroken from one week to the next.
+  Widget _railRow(Widget rail, Widget content) => Stack(children: [
+        Positioned(left: 0, top: 0, bottom: 0, width: 48, child: rail),
+        Padding(
+            padding: const EdgeInsets.only(left: 62),
+            child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: content)),
+      ]);
+}
+
+class _NextTag extends StatelessWidget {
+  const _NextTag();
+  @override
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+          color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      child: const Text('Next',
+          style: TextStyle(
+              color: circleNavy, fontSize: 11, fontWeight: FontWeight.w800)));
 }
 
 class CircleStoryCard extends StatelessWidget {

@@ -73,7 +73,10 @@ void main() {
                         submitted = d;
                       })))));
       await tester.pumpAndSettle();
-      expect(find.text('15 June 1995'), findsOneWidget);
+      // Day, month and year each show in their own dropdown.
+      expect(find.text('15'), findsOneWidget);
+      expect(find.text('June'), findsOneWidget);
+      expect(find.text('1995'), findsOneWidget);
       expect(find.text('Other'), findsNothing);
       expect(find.text('German'), findsNothing);
       expect(find.text('Dutch'), findsOneWidget);
@@ -161,17 +164,27 @@ void main() {
     await tester.pumpAndSettle();
     expect(submitted, isTrue);
   });
-  testWidgets('visual journey changes week and respects reduced motion',
+  testWidgets('the six-week plan shows every week and stays still',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
         theme: buildTheme(),
         home: MediaQuery(
             data: const MediaQueryData(disableAnimations: true),
-            child: const Scaffold(body: CircleJourney()))));
+            child: const Scaffold(
+                body: SingleChildScrollView(child: CircleJourney())))));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('6'));
-    await tester.pumpAndSettle();
-    expect(find.text('One last get-together'), findsOneWidget);
+    for (final title in [
+      'Dinner together',
+      'Go beyond “what do you do?”',
+      'Find out who’s secretly competitive.',
+      'Choose something together',
+      'A plan of your own',
+      'One last get-together',
+    ]) {
+      expect(find.text(title), findsOneWidget);
+    }
+    expect(find.text('WE PLAN WEEKS 1 TO 3'), findsOneWidget);
+    expect(find.text('FROM WEEK 4, YOUR GROUP PLANS TOGETHER'), findsOneWidget);
     expect(tester.binding.hasScheduledFrame, isFalse);
   });
 }

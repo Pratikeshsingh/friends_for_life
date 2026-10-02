@@ -14,13 +14,14 @@
 //   RESEND_API_KEY                           (from resend.com)
 //   NOTIFICATION_FROM   e.g. "VriendTime <hallo@vriendtime.nl>"
 //   NOTIFICATION_CRON_SECRET                 (any long random string)
-//   APP_URL             e.g. "https://vriendtime.nl"  (link back into the app)
+//   APP_URL             e.g. "https://vriendtime.com"  (link back into the app)
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const BATCH_SIZE = 50;
 
 type Pending = {
   id: string;
+  lease_token: string;
   email: string;
   first_name: string | null;
   kind: string;
@@ -39,7 +40,7 @@ function escapeHtml(value: string): string {
 /// The email says what happened and sends people to the app; it never repeats
 /// details like a venue or another member's name, so a forwarded or
 /// mis-delivered message gives nothing away.
-function render(row: Pending, appUrl: string): { html: string; text: string } {
+export function render(row: Pending, appUrl: string): { html: string; text: string } {
   const greeting = row.first_name ? `Hi ${row.first_name},` : "Hi,";
   const title = escapeHtml(row.title);
   const body = escapeHtml(row.body);
@@ -67,7 +68,7 @@ function render(row: Pending, appUrl: string): { html: string; text: string } {
   return { html, text };
 }
 
-Deno.serve(async (request: Request) => {
+export async function handler(request: Request): Promise<Response> {
   if (request.method !== "POST") {
     return new Response("Method not allowed.", { status: 405 });
   }
@@ -84,7 +85,7 @@ Deno.serve(async (request: Request) => {
   if (!resendKey || !from) {
     return new Response("Email is not configured.", { status: 500 });
   }
-  const appUrl = Deno.env.get("APP_URL") ?? "https://vriendtime.nl";
+  const appUrl = Deno.env.get("APP_URL") ?? "https://vriendtime.com";
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -101,55 +102,40 @@ Deno.serve(async (request: Request) => {
   }
 
   const pending = (data ?? []) as Pending[];
-  const sent: string[] = [];
-  const failures = new Map<string, string[]>();
-
+  let sent = 0;
+  const started = Date.now();
   for (const row of pending) {
+    // Return before the five-minute lease; unprocessed rows safely expire.
+    if (Date.now() - started > 90_000) break;
     const { html, text } = render(row, appUrl);
+    let failure: string | null = null;
     try {
       const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${resendKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from,
-          to: [row.email],
-          subject: row.title,
-          html,
-          text,
-        }),
+        method: "POST", signal: AbortSignal.timeout(10_000),
+        headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json",
+          "Idempotency-Key": `vriendtime-notification/${row.id}` },
+        body: JSON.stringify({ from, to: [row.email], subject: row.title, html, text }),
       });
-      if (response.ok) {
-        sent.push(row.id);
-      } else {
-        // Group by reason so one update call covers every row that failed the
-        // same way, and the reason is readable in the table afterwards.
-        const reason = `${response.status}: ${(await response.text()).slice(0, 300)}`;
-        failures.set(reason, [...(failures.get(reason) ?? []), row.id]);
-      }
-    } catch (cause) {
-      const reason = `network: ${String(cause).slice(0, 300)}`;
-      failures.set(reason, [...(failures.get(reason) ?? []), row.id]);
+      if (!response.ok) failure = `Provider HTTP ${response.status}`;
+    } catch { failure = "Delivery interrupted; retry with the same idempotency key."; }
+    const ack = await supabase.rpc("ack_notification_email", {
+      notification_id: row.id, lease_token: row.lease_token, failure,
+    });
+    if (ack.error) {
+      console.error("Email acknowledgement failed", row.id);
+      return new Response("Could not record delivery. Safe retry required.", { status: 503 });
     }
-  }
-
-  // Recording the outcome matters more than the send: an unrecorded success
-  // is sent again on the next run, which is how people get duplicates.
-  if (sent.length > 0) {
-    await supabase.rpc("mark_notifications_emailed", { ids: sent });
-  }
-  for (const [reason, ids] of failures) {
-    await supabase.rpc("mark_notifications_emailed", { ids, failure: reason });
+    if (failure === null) sent++;
   }
 
   return new Response(
     JSON.stringify({
       considered: pending.length,
-      sent: sent.length,
-      failed: pending.length - sent.length,
+      sent,
+      not_sent: pending.length - sent,
     }),
     { headers: { "Content-Type": "application/json" } },
   );
-});
+}
+
+if (import.meta.main) Deno.serve(handler);

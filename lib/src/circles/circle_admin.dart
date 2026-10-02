@@ -198,7 +198,7 @@ class _CircleAdminState extends State<CircleAdmin>
     }
   }
 
-  Future<void> action(String action, [Json payload = const {}]) async {
+  Future<void> action(String action, [Json payload = const {}, bool propagate = false]) async {
     setState(() => busy = true);
     try {
       await widget.repository.act(action, payload);
@@ -210,6 +210,7 @@ class _CircleAdminState extends State<CircleAdmin>
         setState(() => error =
             'That change could not be saved. ${e is StateError ? e.message : e is PostgrestException ? e.message : 'Please try again.'}');
       }
+      if (propagate) rethrow;
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -1517,6 +1518,8 @@ class _CircleAdminState extends State<CircleAdmin>
   Widget _circleCard(BuildContext context, Json c) => _card([
         Text(c['name'] as String? ?? 'Circle',
             style: Theme.of(context).textTheme.titleMedium),
+        if (c['paid_members'] != null && (c['paid_members'] as num) < 5)
+          Text('${c['paid_members']}/5 paid places. Confirm enough people are joining before the first meetup.', style: const TextStyle(color: Colors.deepOrange)),
         Text('${c['schedule']} · ${c['status']}',
             style: const TextStyle(color: _muted)),
         if (['offered', 'active'].contains(c['status']))
@@ -1549,7 +1552,8 @@ class _CircleAdminState extends State<CircleAdmin>
                     onPressed: busy
                         ? null
                         : () => scheduleCircleMeetup(context,
-                            (a, [d = const {}]) => action('admin_schedule', d),
+                            (a, [d = const {}]) => action('admin_schedule', d, true),
+                            organiser: true,
                             meetup: m)),
               if (m['completed'] != true)
                 TextButton.icon(

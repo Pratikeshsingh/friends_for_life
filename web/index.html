@@ -93,7 +93,14 @@
         var saved = localStorage.getItem('flutter.app_language');
         if (saved) return saved.indexOf('nl') !== -1;
       } catch (e) {}
-      return (navigator.language || '').toLowerCase().indexOf('nl') === 0;
+      // First preferred language the app speaks, same rule as the app.
+      var langs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''];
+      for (var i = 0; i < langs.length; i++) {
+        var code = String(langs[i]).toLowerCase().slice(0, 2);
+        if (code === 'nl') return true;
+        if (code === 'en') return false;
+      }
+      return false;
     })();
     if (window.vtDutch) {
       document.documentElement.lang = 'nl';

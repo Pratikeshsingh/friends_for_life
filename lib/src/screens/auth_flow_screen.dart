@@ -77,6 +77,8 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
   bool _isSubmitting = false;
   bool _hasAcceptedLegal = false;
   String? _statusMessage;
+  bool _awaitingConfirmation = false;
+  DateTime? _resendAvailableAt;
 
   String? _selectedCity;
   DateTime? _selectedBirthDate;
@@ -151,16 +153,16 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
   }
 
   String? get _passwordValidationMessage {
-    final password = _passwordController.text.trim();
+    final password = _passwordController.text;
     if (password.isEmpty || _accountMode == _AccountMode.signIn) return null;
     return password.length < 6 ? 'Use at least six characters.' : null;
   }
 
   String? get _confirmPasswordValidationMessage {
     if (_accountMode == _AccountMode.signIn) return null;
-    final confirm = _confirmPasswordController.text.trim();
+    final confirm = _confirmPasswordController.text;
     if (confirm.isEmpty) return null;
-    return confirm != _passwordController.text.trim()
+    return confirm != _passwordController.text
         ? 'Passwords do not match yet.'
         : null;
   }
@@ -442,6 +444,11 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (_awaitingConfirmation) ...[
+              const Text('Check your email', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              const Text('Open the confirmation link, then sign in. Check spam too. You can correct the email below if needed.'),
+              TextButton(onPressed: _isSubmitting ? null : _resendConfirmation, child: const Text('Resend confirmation email')),
+            ],
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -1074,9 +1081,19 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
     _checkSignUpAccess();
   }
 
+  Future<void> _resendConfirmation() async {
+    if (!_looksLikeEmail(_emailController.text)) { _setStatus('Enter a valid email address.'); return; }
+    if (_resendAvailableAt?.isAfter(DateTime.now()) == true) { _setStatus('Please wait a minute before requesting another email.'); return; }
+    await _runAuthAction(() async {
+      await _supabase.auth.resend(type: OtpType.signup, email: _emailController.text.trim(), emailRedirectTo: AuthRedirects.emailRedirectTo);
+      _resendAvailableAt = DateTime.now().add(const Duration(minutes: 1));
+      if (mounted) _setStatus('If this address has an unconfirmed account, we’ve sent a new confirmation link.');
+    });
+  }
+
   Future<void> _checkSignUpAccess() async {
-    final password = _passwordController.text.trim();
-    final confirmPassword = _confirmPasswordController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
 
     if (_firstNameController.text.trim().isEmpty) {
       _setStatus('Add your first name to continue.');
@@ -1122,6 +1139,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
 
       if (session == null) {
         setState(() {
+          _awaitingConfirmation = true;
           _accountMode = _AccountMode.signIn;
           _statusMessage =
               'Account created. Confirm your email, then sign in to finish setup.';

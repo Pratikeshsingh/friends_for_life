@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/destructive.dart';
 import '../core/payment_config.dart';
 import 'circle_repository.dart';
+import 'circle_meetup_detail.dart';
 import 'circle_widgets.dart';
 import 'circle_journey.dart';
 import 'circle_preferences.dart';
@@ -18,10 +19,11 @@ class CircleHome extends StatelessWidget {
       required this.busy,
       required this.act,
       required this.onEdit,
-      required this.onMessages});
+      required this.onMessages, this.savePlan});
   final Json state;
   final bool demo, busy;
   final CircleAction act;
+  final CircleAction? savePlan;
 
   /// Opens the application at a specific step, so "update my availability"
   /// lands on availability rather than on name and date of birth.
@@ -37,8 +39,8 @@ class CircleHome extends StatelessWidget {
     final completed = meetups
         .where((m) => m['week'] != null && m['completed'] == true)
         .length;
-    final pending = meetups.where((m) => m['completed'] != true).toList()
-      ..sort((a, b) => '${a['date']}'.compareTo('${b['date']}'));
+    final pending = meetups.where((m) => !circleMeetupPast(m)).toList()
+      ..sort(circleMeetupCompare);
     final upcoming = pending.firstOrNull;
     if (stage == 'apply') {
       return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -305,7 +307,7 @@ class CircleHome extends StatelessWidget {
                         ? 'Accept first, then pay the €19 with iDEAL.'
                         : 'No online checkout. If you accept, the organiser will send your payment link on WhatsApp.',
                 style: const TextStyle(fontWeight: FontWeight.w700)),
-            if (agreed && PaymentConfig.hasCircleFeeLink) ...[
+            if (agreed && PaymentConfig.hasCircleFeeLink && (state['payment_agreement'] as Map?)?['payment_reported_at'] == null) ...[
               const SizedBox(height: 12),
               FilledButton.icon(
                   onPressed: busy ? null : () => _pay(context),
@@ -313,16 +315,17 @@ class CircleHome extends StatelessWidget {
                   label: const Text('Pay €19 with iDEAL'))
             ],
           ],
+          if (agreed) ...[
+            SelectableText('Payment reference: ${(state['payment_agreement'] as Map?)?['reference'] ?? 'Contact the organiser'}'),
+            const Text('Use this reference with your payment. Paying does not immediately unlock your Circle; the organiser verifies receipt.'),
+            if ((state['payment_agreement'] as Map?)?['payment_reported_at'] != null)
+              const Text('Payment sent · awaiting organiser verification. Please do not pay again. Contact us if it is still pending after 2 working days.')
+            else TextButton(onPressed: busy ? null : () => act('payment_sent'), child: const Text('I’ve sent the payment')),
+          ],
           TextButton(
               onPressed: busy ? null : () => _decline(context),
               child: const Text('This schedule doesn’t work for me'))
         ]),
-      if ((state['payment_agreement'] as Map?)?['can_cancel'] == true &&
-          state['refund'] == null)
-        TextButton(
-            style: destructiveTextStyle,
-            onPressed: busy ? null : () => _cancelAgreement(context),
-            child: const Text('Cancel my programme agreement')),
       if (graduated) ...[
         CirclePanel(tint: true, children: [
           const Icon(Icons.favorite_rounded, color: circleCoral, size: 36),
@@ -334,7 +337,7 @@ class CircleHome extends StatelessWidget {
               'Pick a day. Revisit a favourite place. It doesn’t need to be a big occasion.'),
           const SizedBox(height: 18),
           ElevatedButton(
-              onPressed: busy ? null : () => scheduleCircleMeetup(context, act),
+              onPressed: busy ? null : () => scheduleCircleMeetup(context, savePlan ?? act),
               child: const Text('Plan our next meetup')),
           TextButton(onPressed: onMessages, child: const Text('Ask the Circle'))
         ]),
@@ -386,16 +389,23 @@ class CircleHome extends StatelessWidget {
           style: Theme.of(context).textTheme.headlineSmall),
       const SizedBox(height: 8),
       const Text(
-          'We plan weeks 1 to 3. From week 4, your group plans together. All times are Netherlands time.'),
+          'Your weekly dates and times are fixed. We plan weeks 1 to 3; from week 4, you choose the activity and place together. Extra meetups can be any day. All times are Netherlands time.'),
       const SizedBox(height: 18),
       for (final m in meetups.where((m) => m['week'] != null))
         Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: _meetup(context, m)),
+      if (meetups.any((m) => m['week'] == null && !circleMeetupPast(m))) ...[
+        const SizedBox(height: 20),
+        Text('Extra plans', style: Theme.of(context).textTheme.headlineSmall),
+        const Text('Optional plans from your Circle. RSVP to let everyone know you’re coming.'),
+        for (final m in meetups.where((m) => m['week'] == null && !circleMeetupPast(m)))
+          Padding(padding: const EdgeInsets.only(top: 12), child: _meetup(context, m)),
+      ],
       if (!invited) ...[
         const SizedBox(height: 16),
         OutlinedButton(
-            onPressed: busy ? null : () => scheduleCircleMeetup(context, act),
+            onPressed: busy ? null : () => scheduleCircleMeetup(context, savePlan ?? act),
             child: Text(
                 graduated ? 'Add another plan' : 'Suggest an extra meetup')),
         const SizedBox(height: 16),
@@ -415,14 +425,6 @@ class CircleHome extends StatelessWidget {
                   foregroundColor: const Color(0xFF4F5D66)),
               onPressed: busy ? null : () => _refund(context),
               child: const Text('Circle not feeling right? Request a refund')),
-        // Cancelling inside 14 days is offered above. Once the programme is
-        // under way there was no way out of the app at all, which is not a
-        // position to leave someone in for six weeks.
-        if (!graduated)
-          TextButton(
-              style: destructiveTextStyle,
-              onPressed: busy ? null : () => _leave(context),
-              child: const Text('I need to leave this Circle')),
       ],
     ]);
   }
@@ -465,7 +467,7 @@ class CircleHome extends StatelessWidget {
       ]));
   Widget _meetup(BuildContext context, Json m, {bool featured = false}) {
     final week = m['week'] as int?;
-    final done = m['completed'] == true;
+    final done = circleMeetupPast(m);
     final checks = rows(state['check_ins']);
     final checked = checks.any((c) => c['id'] == m['id']);
     final invited = state['stage'] == 'invited';
@@ -487,7 +489,7 @@ class CircleHome extends StatelessWidget {
           const Icon(Icons.check_circle_rounded, color: circleTeal, size: 21)
       ]),
       const SizedBox(height: 10),
-      Text(m['title'] as String,
+      Text(circleMeetupTitle(m),
           style: featured
               ? Theme.of(context).textTheme.headlineMedium
               : Theme.of(context).textTheme.titleMedium),
@@ -497,26 +499,42 @@ class CircleHome extends StatelessWidget {
       ],
       const SizedBox(height: 8),
       Text('${circleDate(m['date'] as String?)} · ${m['time'] ?? '19:30'}'),
-      if (featured) ...[
+      if (featured || week == null) ...[
         const SizedBox(height: 12),
         _info(Icons.place_outlined, circleVenueLabel(m)),
-        CirclePill(
-            '${m['confirmed'] ?? 0}/${rows(state['members']).length} confirmed',
-            icon: Icons.people_outline),
-        const SizedBox(height: 18),
-        ElevatedButton(
-            onPressed: busy
-                ? null
-                : () =>
-                    act('rsvp', {'id': m['id'], 'going': m['rsvp'] != true}),
-            child: Text(m['rsvp'] == true
-                ? 'You’re going ✓ · Change RSVP'
-                : 'I’ll be there')),
+        if (week != null)
+          const Text(
+              'Your place is included in the programme. Can’t make it? Let your Circle know in the chat.'),
+        if (week == null) ...[
+          CirclePill(
+              '${m['confirmed'] ?? 0}/${rows(state['members']).length} confirmed',
+              icon: Icons.people_outline),
+          const SizedBox(height: 18),
+          ElevatedButton(
+              onPressed: busy
+                  ? null
+                  : () =>
+                      act('rsvp', {'id': m['id'], 'going': m['rsvp'] != true}),
+              child: Text(m['rsvp'] == true
+                  ? 'You’re going ✓ · Change RSVP'
+                  : 'I’ll be there')),
+        ],
         if (demo)
           TextButton(
               onPressed:
                   busy ? null : () => act('complete_meetup', {'id': m['id']}),
               child: const Text('Preview: finish this meetup'))
+      ],
+      TextButton(onPressed: () => openCircleMeetup(context, m), child: const Text('View meetup details')),
+      if (!done && !invited && week == null && (m['created_by'] == state['profile_id'] || demo || state['is_admin'] == true)) ...[
+        TextButton(onPressed: busy ? null : () => scheduleCircleMeetup(context, savePlan ?? act, meetup: m), child: const Text('Edit extra plan')),
+        TextButton(onPressed: busy ? null : () async {
+          final yes = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
+            title: const Text('Cancel this extra plan?'), content: const Text('Your Circle will be notified.'),
+            actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Keep plan')),
+              TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Cancel plan'))]));
+          if (yes == true) await act('cancel_extra', {'id': m['id'], 'version': m['plan_version']});
+        }, child: const Text('Cancel extra plan')),
       ],
       if (!featured && week != null) ...[
         const SizedBox(height: 8),
@@ -534,7 +552,7 @@ class CircleHome extends StatelessWidget {
         TextButton(
             onPressed: busy
                 ? null
-                : () => scheduleCircleMeetup(context, act, meetup: m),
+                : () => scheduleCircleMeetup(context, savePlan ?? act, meetup: m),
             child: const Text('Make a plan together')),
     ]);
   }
@@ -577,7 +595,7 @@ class CircleHome extends StatelessWidget {
     if (confirmed == true) await act('join', {'agree_to_pay': true});
   }
 
-  /// A member's card, and the one place to say "not this person again".
+  /// Keep introductions first; private matching controls are secondary.
   /// Excluding is private: the other member is never told, and it only takes
   /// effect on future matching, never on the Circle they are both in now.
   Future<void> _member(BuildContext context, Json member) async {
@@ -585,52 +603,50 @@ class CircleHome extends StatelessWidget {
     final name = member['name'] as String;
     final isSelf = id == '${state['profile_id']}' || id == 'you';
     final excluded = strings(state['exclusions']).contains(id);
+    final preferencesKnown = state['exclusions'] != null;
+    bool showPreferences = false;
     final exclude = await showDialog<bool>(
         context: context,
-        builder: (c) => AlertDialog(
-                title: Text(name),
-                content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(member['bio'] as String? ??
-                          'Looking forward to getting to know the Circle.'),
-                      const SizedBox(height: 12),
-                      Text(strings(member['interests']).join(' · ')),
-                      if (!isSelf) ...[
-                        const SizedBox(height: 18),
-                        const Divider(),
-                        Text(
-                            excluded
-                                ? 'You’ve asked not to be matched with $name again.'
-                                : 'Not a good fit? We can keep you out of the same Circle in future.',
-                            style: const TextStyle(fontSize: 12)),
-                      ]
-                    ]),
-                actions: [
-                  if (!isSelf)
-                    TextButton(
-                        onPressed: () => Navigator.pop(c, !excluded),
-                        child: Text(excluded
-                            ? 'Allow matching again'
-                            : 'Don’t match us again')),
-                  TextButton(
-                      onPressed: () => Navigator.pop(c),
-                      child: const Text('Close'))
-                ]));
+        builder: (c) => StatefulBuilder(
+            builder: (c, update) => AlertDialog(
+                    title: Text(name),
+                    content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(member['bio'] as String? ??
+                              'Looking forward to getting to know the Circle.'),
+                          const SizedBox(height: 12),
+                          Text(strings(member['interests']).join(' · ')),
+                          if (!isSelf && showPreferences) ...[
+                            const SizedBox(height: 18),
+                            const Divider(),
+                            Text(
+                                excluded
+                                    ? 'You’ve asked not to be matched with $name again.'
+                                    : 'Not a good fit? We can keep you out of the same Circle in future.',
+                                style: const TextStyle(fontSize: 12)),
+                          ]
+                        ]),
+                    actions: [
+                      if (!isSelf && preferencesKnown && !showPreferences)
+                        TextButton(
+                            onPressed: () =>
+                                update(() => showPreferences = true),
+                            child: const Text('Private matching preferences')),
+                      if (!isSelf && showPreferences)
+                        TextButton(
+                            onPressed: () => Navigator.pop(c, !excluded),
+                            child: Text(excluded
+                                ? 'Allow matching again'
+                                : 'Don’t match us again')),
+                      TextButton(
+                          onPressed: () => Navigator.pop(c),
+                          child: const Text('Close'))
+                    ])));
     if (exclude != null) {
       await act('exclude', {'target': id, 'active': exclude});
     }
-  }
-
-  /// Leaving after the programme has started. Cancelling inside 14 days is a
-  /// payment decision and lives elsewhere; this is the later case, where the
-  /// honest thing is to say plainly that the fee does not come back
-  /// automatically.
-  Future<void> _leave(BuildContext context) async {
-    final reason = await showDialog<String>(
-        context: context, builder: (c) => const _LeaveDialog());
-    if (reason != null) await act('leave_circle', {'reason': reason});
   }
 
   /// Opens the organiser's payment request. Receipt is still confirmed by
@@ -683,26 +699,6 @@ class CircleHome extends StatelessWidget {
               ],
             ));
     if (confirmed == true) await act('decline');
-  }
-
-  Future<void> _cancelAgreement(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (c) => AlertDialog(
-              title: const Text('Cancel your programme agreement?'),
-              content: const Text(
-                  'You can cancel within 14 days of accepting. If you have paid, the organiser will arrange a full €19 refund. Otherwise your payment agreement will be cancelled.'),
-              actions: [
-                TextButton(
-                    onPressed: () => Navigator.pop(c, false),
-                    child: const Text('Keep my place')),
-                FilledButton(
-                    style: destructiveFilledStyle,
-                    onPressed: () => Navigator.pop(c, true),
-                    child: const Text('Confirm cancellation'))
-              ],
-            ));
-    if (confirmed == true) await act('cancel_agreement');
   }
 
   Future<void> _refund(BuildContext context) async {
@@ -820,67 +816,15 @@ class CircleHome extends StatelessWidget {
 }
 
 Future<void> scheduleCircleMeetup(BuildContext context, CircleAction act,
-    {Json? meetup}) async {
-  final result = await showDialog<Json>(
-      context: context, builder: (c) => _ScheduleDialog(meetup: meetup));
-  if (result != null) await act('schedule', result);
-}
-
-/// Owns its text controller so the controller outlives the dialog's closing
-/// animation: disposing it the moment the dialog is popped tears it away from
-/// a TextField that is still on screen.
-class _LeaveDialog extends StatefulWidget {
-  const _LeaveDialog();
-  @override
-  State<_LeaveDialog> createState() => _LeaveDialogState();
-}
-
-class _LeaveDialogState extends State<_LeaveDialog> {
-  final reason = TextEditingController();
-
-  @override
-  void dispose() {
-    reason.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-          title: const Text('Leave your Circle?'),
-          content: SingleChildScrollView(
-              child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                const Text(
-                    'Your place is released and your remaining meetups are removed from your plans. The others are told that someone stepped away — never who, or why.'),
-                const SizedBox(height: 12),
-                const Text(
-                    'The €19 programme fee is not refunded automatically at this point. If something has gone wrong, tell us below and we’ll come back to you.',
-                    style: TextStyle(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 14),
-                TextField(
-                    controller: reason,
-                    maxLength: 300,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                        labelText:
-                            t('Anything you want us to know? (Optional)'),
-                        alignLabelWithHint: true)),
-              ])),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Stay')),
-            FilledButton(
-                style: destructiveFilledStyle,
-                onPressed: () => Navigator.pop(context, reason.text.trim()),
-                child: const Text('Leave the Circle'))
-          ]);
+    {Json? meetup, bool organiser = false}) async {
+  await showDialog<void>(context: context, barrierDismissible: false,
+      builder: (c) => _ScheduleDialog(meetup: meetup, act: act, organiser: organiser));
 }
 
 class _ScheduleDialog extends StatefulWidget {
-  const _ScheduleDialog({this.meetup});
+  const _ScheduleDialog({this.meetup, required this.act, this.organiser = false});
+  final bool organiser;
+  final CircleAction act;
   final Json? meetup;
   @override
   State<_ScheduleDialog> createState() => _ScheduleDialogState();
@@ -888,14 +832,22 @@ class _ScheduleDialog extends StatefulWidget {
 
 class _ScheduleDialogState extends State<_ScheduleDialog> {
   late final TextEditingController title, venue;
+  late final TextEditingController address, meeting, costs, access;
+  bool saving = false;
+  final requestId = circleRequestId();
   DateTime? date;
   TimeOfDay time = const TimeOfDay(hour: 19, minute: 30);
   String? error;
+  bool get fixedSchedule => !widget.organiser && widget.meetup?['week'] != null;
   @override
   void initState() {
     super.initState();
     title = TextEditingController(text: widget.meetup?['title'] as String?);
     venue = TextEditingController(text: widget.meetup?['venue'] as String?);
+    address = TextEditingController(text: widget.meetup?['venue_address']);
+    meeting = TextEditingController(text: widget.meetup?['meeting_point']);
+    costs = TextEditingController(text: widget.meetup?['cost_notes']);
+    access = TextEditingController(text: widget.meetup?['accessibility_notes']);
     date = DateTime.tryParse(widget.meetup?['date'] as String? ?? '');
     final parts = (widget.meetup?['time'] as String? ?? '19:30').split(':');
     time = TimeOfDay(
@@ -907,63 +859,89 @@ class _ScheduleDialogState extends State<_ScheduleDialog> {
   void dispose() {
     title.dispose();
     venue.dispose();
+    address.dispose(); meeting.dispose(); costs.dispose(); access.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-          title: const Text('Make a plan together'),
+  Widget build(BuildContext context) => PopScope(canPop: !saving, child: AlertDialog(
+          title: Text(fixedSchedule
+              ? 'Make a plan together'
+              : 'Suggest an extra meetup'),
           content: SingleChildScrollView(
               child: Column(mainAxisSize: MainAxisSize.min, children: [
             TextField(
-                controller: title,
+                controller: title, enabled: !saving,
                 maxLength: 120,
                 decoration: InputDecoration(labelText: t('What shall we do?'))),
             const SizedBox(height: 12),
             TextField(
-                controller: venue,
+                controller: venue, enabled: !saving,
                 maxLength: 180,
                 decoration: InputDecoration(labelText: t('Where?'))),
+            for (final field in {address: 'Address (optional)', meeting: 'Meeting point (optional)', costs: 'Costs (optional)', access: 'Accessibility (optional)'}.entries)
+              TextField(controller: field.key, enabled: !saving, maxLength: 300, decoration: InputDecoration(labelText: t(field.value))),
+            const Text('Discuss the idea in your Circle chat first. Saving shares this plan with everyone.'),
             const SizedBox(height: 14),
-            OutlinedButton(
-                onPressed: () async {
-                  final now = DateTime.now();
-                  final picked = await showDatePicker(
-                      context: context,
-                      initialDate: date != null && date!.isAfter(now)
-                          ? date
-                          : now.add(const Duration(days: 1)),
-                      firstDate: DateTime(now.year, now.month, now.day),
-                      lastDate: now.add(const Duration(days: 730)));
-                  if (picked != null && mounted) setState(() => date = picked);
-                },
-                child: Text(date == null
-                    ? 'Choose a date'
-                    : circleDate(date!.toIso8601String()))),
-            const SizedBox(height: 10),
-            OutlinedButton(
-                onPressed: () async {
-                  final picked =
-                      await showTimePicker(context: context, initialTime: time);
-                  if (picked != null && mounted) setState(() => time = picked);
-                },
-                child: Text('${time.format(context)} · Netherlands time')),
+            if (fixedSchedule) ...[
+              Text(
+                  '${circleDate(widget.meetup?["date"] as String?)} · ${widget.meetup?["time"]} · Netherlands time'),
+              const SizedBox(height: 8),
+              const Text(
+                  'The weekly date and time are fixed. Choose the activity and place together.'),
+            ] else ...[
+              OutlinedButton(
+                  onPressed: saving ? null : () async {
+                    final now = DateTime.now();
+                    final picked = await showDatePicker(
+                        context: context,
+                        initialDate: date != null && date!.isAfter(now)
+                            ? date
+                            : now.add(const Duration(days: 1)),
+                        firstDate: DateTime(now.year, now.month, now.day),
+                        lastDate: now.add(const Duration(days: 730)));
+                    if (picked != null && mounted) {
+                      setState(() => date = picked);
+                    }
+                  },
+                  child: Text(date == null
+                      ? 'Choose a date'
+                      : circleDate(date!.toIso8601String()))),
+              const SizedBox(height: 10),
+              OutlinedButton(
+                  onPressed: saving ? null : () async {
+                    final picked = await showTimePicker(
+                        context: context, initialTime: time);
+                    if (picked != null && mounted) {
+                      setState(() => time = picked);
+                    }
+                  },
+                  child: Text('${time.format(context)} · Netherlands time')),
+            ],
             if (error != null)
               Text(error!, style: const TextStyle(color: Colors.red))
           ])),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: saving ? null : () => Navigator.pop(context),
                 child: const Text('Cancel')),
             FilledButton(
-                onPressed: () {
+                onPressed: saving ? null : () async {
                   if (title.text.trim().isEmpty ||
                       venue.text.trim().isEmpty ||
                       date == null) {
                     setState(() => error = 'Add an activity, place, and date.');
                     return;
                   }
-                  Navigator.pop(context, {
+                  setState(() { saving = true; error = null; });
+                  try {
+                  await widget.act('schedule', {
+                    'request_id': requestId,
+                    'version': widget.meetup?['plan_version'],
+                    'venue_address': address.text.trim(),
+                    'meeting_point': meeting.text.trim(),
+                    'cost_notes': costs.text.trim(),
+                    'accessibility_notes': access.text.trim(),
                     'title': title.text.trim(),
                     'venue': venue.text.trim(),
                     'date': date!.toIso8601String().split('T').first,
@@ -971,9 +949,13 @@ class _ScheduleDialogState extends State<_ScheduleDialog> {
                         '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
                     if (widget.meetup != null) 'id': widget.meetup!['id']
                   });
+                  if (context.mounted) Navigator.pop(context);
+                  } catch (e) {
+                    if (mounted) setState(() => error = e is StateError ? e.message : 'Could not save. Your plan is still here. Please retry.');
+                  } finally { if (mounted) setState(() => saving = false); }
                 },
-                child: const Text('Save plan'))
-          ]);
+                child: Text(saving ? 'Saving…' : 'Save plan'))
+          ]));
 }
 
 /// Asks before withdrawing an application; true when the person confirms.
