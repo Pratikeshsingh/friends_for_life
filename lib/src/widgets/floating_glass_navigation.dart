@@ -89,7 +89,8 @@ class FloatingGlassNavigation extends StatelessWidget {
                     NavigationDestination(
                       icon: Icon(Icons.home_outlined),
                       selectedIcon: Icon(Icons.home_rounded),
-                      label: t(homeLabel ?? (circleMode ? 'My Circle' : 'Home')),
+                      label:
+                          t(homeLabel ?? (circleMode ? 'My Circle' : 'Home')),
                     ),
                     if (showMessages)
                       NavigationDestination(

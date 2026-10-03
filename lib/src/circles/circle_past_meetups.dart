@@ -17,9 +17,7 @@ class CirclePastMeetups extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final past = rows(state['meetups'])
-        .where(circleMeetupPast)
-        .toList()
+    final past = rows(state['meetups']).where(circleMeetupPast).toList()
       // Most recent first: the evening you are most likely to be looking for.
       ..sort((a, b) => circleMeetupCompare(b, a));
     final circle = state['circle'] as Map? ?? {};

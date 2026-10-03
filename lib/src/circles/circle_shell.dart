@@ -4,7 +4,7 @@ import '../core/app_diagnostics.dart';
 import 'circle_meetup_detail.dart';
 import 'circle_save_dialog.dart';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
+import '../core/photo_preparation.dart';
 import '../core/profile_photo_service.dart';
 import 'circle_profile.dart';
 import 'package:file_picker/file_picker.dart';
@@ -154,7 +154,8 @@ class _CircleShellState extends State<CircleShell> {
         setState(() {
           _stale = true;
           if (!silent || state == null) {
-            error = 'We couldn’t load your Circle right now. Please try again in a moment.';
+            error =
+                'We couldn’t load your Circle right now. Please try again in a moment.';
           }
         });
       }
@@ -168,7 +169,9 @@ class _CircleShellState extends State<CircleShell> {
     _loadGeneration++;
     setState(() => busy = true);
     try {
-      await repo!.act(action, data).timeout(const Duration(seconds: 25), onTimeout: () => throw StateError('Confirmation is taking longer than expected. Refresh before trying again.'));
+      await repo!.act(action, data).timeout(const Duration(seconds: 25),
+          onTimeout: () => throw StateError(
+              'Confirmation is taking longer than expected. Refresh before trying again.'));
       await load();
       if (mounted) {
         if (['apply', 'withdraw', 'preview', 'reset'].contains(action)) {
@@ -182,7 +185,7 @@ class _CircleShellState extends State<CircleShell> {
           'check_in',
           'outcome',
           'schedule',
-          'refund',
+          'request_move',
           'refresh_commitment',
           'exclude',
           'email_notifications',
@@ -193,12 +196,16 @@ class _CircleShellState extends State<CircleShell> {
               switch (action) {
                 'refresh_commitment' => 'Availability confirmed.',
                 'exclude' => 'Noted. This stays between you and us.',
+                'request_move' =>
+                  'You’re moving to a new group. Your €19 carries over.',
                 'email_notifications' => data['enabled'] == true
                     ? 'We’ll email you about your Circle.'
                     : 'Emails turned off. Your Circle updates stay in the app.',
                 'leave_circle' =>
                   'You’ve left the Circle. We’ll be in touch about anything outstanding.',
-                _ => _stale ? 'Saved. Refresh to see the latest version.' : 'Saved.'
+                _ => _stale
+                    ? 'Saved. Refresh to see the latest version.'
+                    : 'Saved.'
               });
         }
       }
@@ -302,8 +309,13 @@ class _CircleShellState extends State<CircleShell> {
                 child: Column(children: [
                   if (_stale && state != null)
                     MaterialBanner(
-                      content: const Text('Updates paused. Showing your last loaded Circle.'),
-                      actions: [TextButton(onPressed: () => load(), child: const Text('Retry'))]),
+                        content: const Text(
+                            'Updates paused. Showing your last loaded Circle.'),
+                        actions: [
+                          TextButton(
+                              onPressed: () => load(),
+                              child: const Text('Retry'))
+                        ]),
                   if (demo)
                     Container(
                         width: double.infinity,
@@ -424,9 +436,21 @@ class _CircleShellState extends State<CircleShell> {
                                           constraints: const BoxConstraints(
                                               maxWidth: 900),
                                           child: Column(children: [
-                                            if (editing || (state!['stage'] == 'apply' && !applicationParked))
-                                              Offstage(offstage: tab != 0, child: TickerMode(enabled: tab == 0, child: _application(context))),
-                                            if (tab != 0 || !(editing || (state!['stage'] == 'apply' && !applicationParked))) _body(context),
+                                            if (editing ||
+                                                (state!['stage'] == 'apply' &&
+                                                    !applicationParked))
+                                              Offstage(
+                                                  offstage: tab != 0,
+                                                  child: TickerMode(
+                                                      enabled: tab == 0,
+                                                      child: _application(
+                                                          context))),
+                                            if (tab != 0 ||
+                                                !(editing ||
+                                                    (state!['stage'] ==
+                                                            'apply' &&
+                                                        !applicationParked)))
+                                              _body(context),
                                           ])))))),
                 ]))),
         bottomNavigationBar: repo == null
@@ -473,7 +497,10 @@ class _CircleShellState extends State<CircleShell> {
     final text = message.text.trim();
     if (text.isEmpty || busy) return;
     try {
-      if (_sendBody != text) { _sendId = circleRequestId(); _sendBody = text; }
+      if (_sendBody != text) {
+        _sendId = circleRequestId();
+        _sendBody = text;
+      }
       await act('message', {'body': text, 'request_id': _sendId});
       _sendId = _sendBody = null;
       message.clear();
@@ -544,49 +571,49 @@ class _CircleShellState extends State<CircleShell> {
   }
 
   Widget _application(BuildContext context) {
-      // A focused edit is one answer being changed from the profile or home
-      // — never "Continue my application" or "Finish my profile", which both
-      // open at step 0 and must keep the whole four-step walk.
-      final focused = editing && editStep > 0;
-      return CircleApplication(
-          key: _applicationKey,
-          initial: Map<String, dynamic>.from(state!['application'] as Map? ??
-              {'name': widget.session?.user.userMetadata?['first_name'] ?? ''}),
-          busy: busy,
-          initialStep: editing ? editStep : 0,
-          focusedEdit: focused,
-          onDone: () {
-            showCircleToast(context, 'Saved.');
-            setState(() {
-              editing = false;
-              editStep = 0;
-              // Closing a focused edit is not enough on its own: an
-              // application still in the 'apply' stage matches the second
-              // clause of the condition above, so the full four-step form
-              // would re-open at step 0 the instant this one closed —
-              // which reads as "saving my availability restarted my
-              // onboarding". Park it so they land on the home card.
-              if (state?['stage'] == 'apply') applicationParked = true;
-            });
-          },
-          onCancel: () => setState(() {
+    // A focused edit is one answer being changed from the profile or home
+    // — never "Continue my application" or "Finish my profile", which both
+    // open at step 0 and must keep the whole four-step walk.
+    final focused = editing && editStep > 0;
+    return CircleApplication(
+        key: _applicationKey,
+        initial: Map<String, dynamic>.from(state!['application'] as Map? ??
+            {'name': widget.session?.user.userMetadata?['first_name'] ?? ''}),
+        busy: busy,
+        initialStep: editing ? editStep : 0,
+        focusedEdit: focused,
+        onDone: () {
+          showCircleToast(context, 'Saved.');
+          setState(() {
             editing = false;
             editStep = 0;
+            // Closing a focused edit is not enough on its own: an
+            // application still in the 'apply' stage matches the second
+            // clause of the condition above, so the full four-step form
+            // would re-open at step 0 the instant this one closed —
+            // which reads as "saving my availability restarted my
+            // onboarding". Park it so they land on the home card.
             if (state?['stage'] == 'apply') applicationParked = true;
-          }),
-          onPhoto: repo!.isDemo ? null : _pickPhoto,
-          onSave: (d) => act('draft', d),
-          onSubmit: (d) => act('apply', d),
-          // Leaving the form needs somewhere to land; for an unsubmitted
-          // application that is the home tab's "continue" card.
-          onSaveForLater: () {
-            setState(() {
+          });
+        },
+        onCancel: () => setState(() {
               editing = false;
               editStep = 0;
-              applicationParked = true;
-            });
-            showCircleToast(context, 'Saved. Pick up where you left off.');
+              if (state?['stage'] == 'apply') applicationParked = true;
+            }),
+        onPhoto: repo!.isDemo ? null : _pickPhoto,
+        onSave: (d) => act('draft', d),
+        onSubmit: (d) => act('apply', d),
+        // Leaving the form needs somewhere to land; for an unsubmitted
+        // application that is the home tab's "continue" card.
+        onSaveForLater: () {
+          setState(() {
+            editing = false;
+            editStep = 0;
+            applicationParked = true;
           });
+          showCircleToast(context, 'Saved. Pick up where you left off.');
+        });
   }
 
   String _messageTime(String? raw) {
@@ -602,8 +629,12 @@ class _CircleShellState extends State<CircleShell> {
 
   Widget _messages(BuildContext context) {
     final all = [..._olderMessages, ...rows(state!['messages'])];
-    final byId = <String, Json>{for (var i = 0; i < all.length; i++) '${all[i]['id'] ?? 'local-$i'}': all[i]};
-    final messages = byId.values.toList()..sort((a,b) => '${a['created_at']}'.compareTo('${b['created_at']}'));
+    final byId = <String, Json>{
+      for (var i = 0; i < all.length; i++)
+        '${all[i]['id'] ?? 'local-$i'}': all[i]
+    };
+    final messages = byId.values.toList()
+      ..sort((a, b) => '${a['created_at']}'.compareTo('${b['created_at']}'));
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const CircleHeading('A little hello goes a long way.',
           eyebrow: 'Circle messages',
@@ -614,7 +645,9 @@ class _CircleShellState extends State<CircleShell> {
             padding: EdgeInsets.symmetric(vertical: 24),
             child: Text('No messages yet. Be the first to say hello.')),
       if (_hasOlder && messages.length >= 100)
-        TextButton(onPressed: _loadingOlder ? null : _loadOlderMessages, child: Text(_loadingOlder ? 'Loading…' : 'Load earlier messages')),
+        TextButton(
+            onPressed: _loadingOlder ? null : _loadOlderMessages,
+            child: Text(_loadingOlder ? 'Loading…' : 'Load earlier messages')),
       for (final m in messages) _bubble(context, m),
     ]);
   }
@@ -622,15 +655,26 @@ class _CircleShellState extends State<CircleShell> {
   Future<void> _loadOlderMessages() async {
     if (repo is! SupabaseCircleRepository || _loadingOlder) return;
     final messages = [..._olderMessages, ...rows(state!['messages'])]
-      ..sort((a,b) => '${a['created_at']}'.compareTo('${b['created_at']}'));
+      ..sort((a, b) => '${a['created_at']}'.compareTo('${b['created_at']}'));
     if (messages.isEmpty) return;
     setState(() => _loadingOlder = true);
     try {
-      final page = await (repo as SupabaseCircleRepository).olderMessages(messages.first);
-      if (mounted) setState(() { _olderMessages.insertAll(0, page); _hasOlder = page.length == 100; });
+      final page = await (repo as SupabaseCircleRepository)
+          .olderMessages(messages.first);
+      if (mounted) {
+        setState(() {
+          _olderMessages.insertAll(0, page);
+          _hasOlder = page.length == 100;
+        });
+      }
     } catch (_) {
-      if (mounted) showCircleToast(context, 'Could not load earlier messages. Please retry.');
-    } finally { if (mounted) setState(() => _loadingOlder = false); }
+      if (mounted) {
+        showCircleToast(
+            context, 'Could not load earlier messages. Please retry.');
+      }
+    } finally {
+      if (mounted) setState(() => _loadingOlder = false);
+    }
   }
 
   Widget _bubble(BuildContext context, Json m) {
@@ -842,37 +886,20 @@ class _CircleShellState extends State<CircleShell> {
     final client = Supabase.instance.client;
     try {
       final result = await FilePicker.platform.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
-          withData: true);
-      if (result == null) return null;
-      final file = result.files.single, bytes = result.files.single.bytes;
-      if (bytes == null ||
-          !ProfilePhotoService.hasSupportedImageSignature(bytes)) {
-        throw StateError('Choose a JPG, PNG or WebP photo.');
+          type: FileType.image, withData: true);
+      if (result == null || result.files.isEmpty) return null;
+      final file = result.files.single;
+      if (file.bytes == null) {
+        throw const PhotoPreparationException(
+            'We could not read this photo. Please choose it again.');
       }
-      if (ProfilePhotoService.isTooLarge(bytes)) {
-        throw StateError(ProfilePhotoService.tooLargeMessage(bytes.length));
-      }
-      final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-      final descriptor = await ui.ImageDescriptor.encoded(buffer);
-      if (descriptor.width > 12000 || descriptor.height > 12000) {
-        descriptor.dispose(); buffer.dispose();
-        throw StateError('Choose a photo smaller than 12000 pixels on each side.');
-      }
-      final scale = 1024 / (descriptor.width > descriptor.height ? descriptor.width : descriptor.height);
-      final codec = await descriptor.instantiateCodec(
-        targetWidth: scale < 1 ? (descriptor.width * scale).round() : descriptor.width,
-        targetHeight: scale < 1 ? (descriptor.height * scale).round() : descriptor.height);
-      final frame = await codec.getNextFrame();
-      final encoded = await frame.image.toByteData(format: ui.ImageByteFormat.png);
-      frame.image.dispose(); codec.dispose(); descriptor.dispose(); buffer.dispose();
-      if (encoded == null) throw StateError('Could not prepare this photo. Choose another image.');
-      final oldPhoto = (state?['application'] as Map?)?['photo_path'] as String?;
+      final prepared = await prepareProfilePhoto(file.bytes!);
+      final oldPhoto =
+          (state?['application'] as Map?)?['photo_path'] as String?;
       uploaded = await ProfilePhotoService.uploadPhoto(
           supabase: client,
           userId: widget.session!.user.id,
-          bytes: encoded.buffer.asUint8List(),
+          bytes: prepared,
           fileName: file.name,
           slot: 'profile');
       await client.from('profiles').update({
@@ -894,7 +921,11 @@ class _CircleShellState extends State<CircleShell> {
             });
       }
       if (oldPhoto != null && oldPhoto != record['photo_path']) {
-        try { await client.storage.from(ProfilePhotoService.bucketName).remove([oldPhoto]); } catch (_) {}
+        try {
+          await client.storage
+              .from(ProfilePhotoService.bucketName)
+              .remove([oldPhoto]);
+        } catch (_) {}
       }
       return record;
     } catch (e) {
@@ -938,15 +969,22 @@ class _CircleShellState extends State<CircleShell> {
   Future<void> _report({String? messageId}) async {
     final requestId = circleRequestId();
     await showCircleSaveDialog(context,
-      title: 'Tell the organiser',
-      description: 'Your report is private. Tell us what happened. For immediate danger, contact emergency services. For urgent help, use Help & contact in Profile.',
-      fields: const {'reason': 'Your concern'},
-      multiline: true,
-      saveLabel: 'Send private report',
-      onSave: (data) async {
-        if ('${data['reason']}'.trim().length < 5) throw StateError('Please describe your concern in at least five characters.');
-        await act('report', {...data, 'request_id': requestId, if (messageId != null) 'message_id': messageId});
+        title: 'Tell the organiser',
+        description:
+            'Your report is private. Tell us what happened. For immediate danger, contact emergency services. For urgent help, use Help & contact in Profile.',
+        fields: const {'reason': 'Your concern'},
+        multiline: true,
+        saveLabel: 'Send private report', onSave: (data) async {
+      if ('${data['reason']}'.trim().length < 5) {
+        throw StateError(
+            'Please describe your concern in at least five characters.');
+      }
+      await act('report', {
+        ...data,
+        'request_id': requestId,
+        if (messageId != null) 'message_id': messageId
       });
+    });
   }
 
   /// "Just now", "3 h ago", "Yesterday", or a date.
@@ -980,7 +1018,9 @@ class _CircleShellState extends State<CircleShell> {
       openAdmin();
       return;
     }
-    final meetup = rows(state?['meetups']).where((m) => m['id'] == n['event_id']).firstOrNull;
+    final meetup = rows(state?['meetups'])
+        .where((m) => m['id'] == n['event_id'])
+        .firstOrNull;
     if (meetup != null) {
       openCircleMeetup(context, meetup);
       return;

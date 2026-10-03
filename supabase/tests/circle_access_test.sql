@@ -69,8 +69,11 @@ select public.circle_action('admin_attendance',jsonb_build_object('id',public.ci
 select pg_temp.assert_true((public.circle_admin_snapshot()->'metrics'->>'meetup_1_attended')::int=1,'actual attendance recorded separately from RSVP');
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
 select public.circle_action('check_in',jsonb_build_object('id',public.circle_snapshot()->'meetups'->0->>'id','feeling','😐 Okay','connections','[]'::jsonb));
-select public.circle_action('refund');
-select pg_temp.assert_true(public.circle_snapshot()->>'refund'='requested','eligible refund request saved');
+do $$ declare blocked boolean:=false; begin
+ begin perform public.circle_action('refund'); exception when others then blocked:=true; end;
+ perform pg_temp.assert_true(blocked,'no refund after the first meetup');
+end $$;
+select pg_temp.assert_true((public.circle_snapshot()->'move'->>'available')::boolean,'a free move is offered instead');
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000002',true);
 select pg_temp.assert_true(jsonb_array_length(public.circle_snapshot()->'check_ins')=0,'other members cannot see private check-ins');
 select pg_temp.assert_true(public.circle_snapshot()->>'refund' is null,'other members cannot see refund request');

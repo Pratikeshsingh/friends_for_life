@@ -198,7 +198,8 @@ class _CircleAdminState extends State<CircleAdmin>
     }
   }
 
-  Future<void> action(String action, [Json payload = const {}, bool propagate = false]) async {
+  Future<void> action(String action,
+      [Json payload = const {}, bool propagate = false]) async {
     setState(() => busy = true);
     try {
       await widget.repository.act(action, payload);
@@ -891,6 +892,7 @@ class _CircleAdminState extends State<CircleAdmin>
           .map((l) => l == 'English' ? 'EN' : 'NL')
           .join('/'),
       if (waiting.isNotEmpty) waiting,
+      if (a['moving'] == true) t('Moving · already paid'),
     ].where((s) => s.isNotEmpty).join(' · ');
     return Padding(
         padding: const EdgeInsets.only(bottom: 6),
@@ -1028,6 +1030,39 @@ class _CircleAdminState extends State<CircleAdmin>
             icon: const Icon(Icons.close)),
       ]),
       const SizedBox(height: 16),
+      if (a['moving'] == true)
+        Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+                color: const Color(0xFFEAF7F5),
+                borderRadius: BorderRadius.circular(14)),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Moving from another Circle',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w800, color: circleNavy)),
+              const SizedBox(height: 4),
+              const Text(
+                  'Already paid: their next Circle is free. Place them first. If no group fits in time, refund them instead.'),
+              Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                      style: TextButton.styleFrom(foregroundColor: circleCoral),
+                      onPressed: busy || a['move_id'] == null
+                          ? null
+                          : () async {
+                              Navigator.pop(context);
+                              await confirmAction(
+                                  'Refund instead of moving?',
+                                  'They leave the waiting list and appear under Refunds to send. Confirm there once you have returned the €19.',
+                                  'admin_refund_move',
+                                  {'id': a['move_id']},
+                                  destructive: true);
+                            },
+                      child: const Text('Refund instead'))),
+            ])),
       if (!ready)
         const Padding(
             padding: EdgeInsets.only(bottom: 12),
@@ -1519,7 +1554,9 @@ class _CircleAdminState extends State<CircleAdmin>
         Text(c['name'] as String? ?? 'Circle',
             style: Theme.of(context).textTheme.titleMedium),
         if (c['paid_members'] != null && (c['paid_members'] as num) < 5)
-          Text('${c['paid_members']}/5 paid places. Confirm enough people are joining before the first meetup.', style: const TextStyle(color: Colors.deepOrange)),
+          Text(
+              '${c['paid_members']}/5 paid places. Confirm enough people are joining before the first meetup.',
+              style: const TextStyle(color: Colors.deepOrange)),
         Text('${c['schedule']} · ${c['status']}',
             style: const TextStyle(color: _muted)),
         if (['offered', 'active'].contains(c['status']))
@@ -1551,8 +1588,10 @@ class _CircleAdminState extends State<CircleAdmin>
                     label: const Text('Edit plan'),
                     onPressed: busy
                         ? null
-                        : () => scheduleCircleMeetup(context,
-                            (a, [d = const {}]) => action('admin_schedule', d, true),
+                        : () => scheduleCircleMeetup(
+                            context,
+                            (a, [d = const {}]) =>
+                                action('admin_schedule', d, true),
                             organiser: true,
                             meetup: m)),
               if (m['completed'] != true)

@@ -4,7 +4,7 @@ import '../core/i18n.dart';
 enum LegalDocumentType { terms, privacy }
 
 abstract final class LegalDocuments {
-  static const termsVersion = '2026-09-18-v3';
+  static const termsVersion = '2026-10-03-v4';
   static const privacyVersion = '2026-09-18-v3';
 
   static LegalDocument documentFor(LegalDocumentType type) {
@@ -16,7 +16,7 @@ abstract final class LegalDocuments {
 
   static const _terms = LegalDocument(
     title: 'Terms & Conditions',
-    effectiveDate: '18 September 2026',
+    effectiveDate: '3 October 2026',
     introduction:
         'These Terms & Conditions govern your use of VriendTime. By creating an account, you agree to these terms.',
     sections: [
@@ -38,8 +38,11 @@ abstract final class LegalDocuments {
         heading: '3. Friendship Circles, payments and meetups',
         paragraphs: [
           'The founding Circle programme costs €19 once for six weeks. Food, drinks, travel, and activity purchases are separate. There is no subscription or further programme fee after graduation. Your group and schedule are shown before you accept the invitation.',
-          'Accepting an invitation requires an explicit agreement to pay €19. The organiser contacts you using your account email to arrange payment separately. Accepting does not collect money. Your place and group chat open when the organiser confirms receipt.',
-          'You can cancel your programme agreement in the app within 14 days of accepting for a full refund of any programme fee paid. You can also request a full programme-fee refund within 48 hours after the first meetup ends if the Circle does not feel right. If VriendTime cancels your Circle, received programme fees are refunded. Refunds are arranged manually; these promises do not limit mandatory consumer rights. Contact the organiser for other cancellation or payment concerns.',
+          'Accepting an invitation requires an explicit agreement to pay €19. The organiser contacts you on your WhatsApp number to arrange payment separately. Accepting does not collect money. Your place and group chat open when the organiser confirms receipt.',
+          'Each Circle is a leisure service on fixed dates. For this kind of service the statutory 14-day right of withdrawal for online purchases does not apply. Instead, the following cancellation rules apply.',
+          'Before your first meetup: you can cancel your programme agreement in the app until 48 hours before the first meetup starts. If you have paid, we refund the full €19.',
+          'After that: the €19 is not refunded. If your Circle does not feel right, you can move to another group once, free of charge, between the start of your first meetup and the start of your second meetup. You keep your place on the waiting list and your €19 covers the new Circle. If we cannot offer you a new group within a reasonable time, we refund your €19. After your second meetup has started, no move or refund is possible, and joining a further Circle means paying again.',
+          'If VriendTime cancels your Circle, received programme fees are always refunded. If you leave because of a safety concern you have reported to us, we will look at a refund or a free move with you, separately from the rules above. Refunds are arranged manually and these terms do not limit any rights you have under mandatory consumer law. Contact the organiser for other cancellation or payment concerns.',
           'Meetup availability, capacity, venue, timing, and other details may change. A reservation is not transferable unless VriendTime agrees. Exact venue information may be shared shortly before a meetup and must not be used to disrupt the venue or compromise another member’s safety.',
           'The cancellation deadline displayed in the app applies to your reservation. If a meetup is cancelled or materially changed, we will try to notify affected members using the contact details associated with their accounts.',
           'Any price or payment information shown for a meetup will be presented before you reserve. Venue purchases and services supplied directly by a third party may be governed by that third party’s own terms.',

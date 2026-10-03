@@ -52,50 +52,96 @@ void main() {
       expect(strings((await repository.load())['exclusions']), ['noor']);
     });
 
-    testWidgets('a member card offers it, and offers to undo it',
+    testWidgets('a member card is about the person, never about matching',
         (tester) async {
-      final calls = <String>[];
-      Widget app(List<String> exclusions) => MaterialApp(
+      await tester.pumpWidget(MaterialApp(
           theme: buildTheme(),
           home: Scaffold(
               body: SingleChildScrollView(
                   child: CircleHome(
-                      state: {
+                      state: const {
                 'stage': 'active',
                 'profile_id': 'me',
-                'exclusions': exclusions,
+                'exclusions': <String>[],
+                'application': {
+                  'interests': ['Films', 'Coffee']
+                },
                 'circle': {'name': 'The Thursday Circle'},
                 'members': [
                   {'id': 'me', 'name': 'You'},
-                  {'id': 'noor', 'name': 'Noor', 'bio': 'Hello.'}
+                  {
+                    'id': 'noor',
+                    'name': 'Noor',
+                    'bio': 'Looking forward to meeting the Circle.',
+                    'interests': ['Films', 'Walking']
+                  }
                 ],
-                'meetups': const [],
+                'meetups': [],
               },
                       demo: true,
                       busy: false,
-                      act: (a, [d = const {}]) async =>
-                          calls.add('$a:${d['target']}:${d['active']}'),
+                      act: (_, [__ = const {}]) async {},
                       onEdit: (_) {},
-                      onMessages: () {}))));
-
-      await tester.pumpWidget(app(const []));
+                      onMessages: () {})))));
       await tester.tap(find.text('Noor').last);
       await tester.pumpAndSettle();
+      // The server's stand-in sentence is not presented as Noor's words.
+      expect(find.textContaining('Looking forward'), findsNothing);
+      expect(find.text('Noor hasn’t written an introduction yet.'),
+          findsOneWidget);
+      expect(find.text('INTERESTS'), findsOneWidget);
+      expect(find.text('You both like Films.'), findsOneWidget);
+      expect(find.text('Private matching preferences'), findsNothing);
       expect(find.text('Don’t match us again'), findsNothing);
-      await tester.tap(find.text('Private matching preferences'));
+    });
+
+    Widget profile(List<Json> meetups, List<String> calls) => MaterialApp(
+        theme: buildTheme(),
+        home: Scaffold(
+            body: SingleChildScrollView(
+                child: CircleProfile(
+                    state: {
+              'stage': 'active',
+              'profile_id': 'me',
+              'exclusions': const <String>[],
+              'circle': {'name': 'The Thursday Circle'},
+              'members': [
+                {'id': 'me', 'name': 'You'},
+                {'id': 'noor', 'name': 'Noor'}
+              ],
+              'meetups': meetups,
+            },
+                    busy: false,
+                    act: (a, [d = const {}]) async =>
+                        calls.add('$a:${d['target']}:${d['active']}'),
+                    onEdit: (_) {},
+                    onPhoto: null,
+                    onAccount: null,
+                    onReport: null,
+                    onExport: null,
+                    onBookings: null,
+                    onSignOut: null))));
+
+    testWidgets('Profile offers it only after the Circle has met',
+        (tester) async {
+      final calls = <String>[];
+      await tester.pumpWidget(profile([
+        {'id': 'w1', 'week': 1, 'completed': false, 'date': '2099-01-01'}
+      ], calls));
+      expect(find.text('Future Circles'), findsNothing);
+
+      await tester.pumpWidget(profile([
+        {'id': 'w1', 'week': 1, 'completed': true}
+      ], calls));
+      await tester.ensureVisible(find.text('Future Circles'));
+      await tester.tap(find.text('Future Circles'));
       await tester.pumpAndSettle();
-      expect(find.text('Don’t match us again'), findsOneWidget);
-      await tester.tap(find.text('Don’t match us again'));
+      expect(find.text('Happy to meet again'), findsOneWidget);
+      expect(find.text('You'), findsNothing);
+      await tester.tap(find.byType(Switch));
       await tester.pumpAndSettle();
       expect(calls, ['exclude:noor:true']);
-
-      // Already excluded: the same card offers the way back.
-      await tester.pumpWidget(app(const ['noor']));
-      await tester.tap(find.text('Noor').last);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Private matching preferences'));
-      await tester.pumpAndSettle();
-      expect(find.text('Allow matching again'), findsOneWidget);
+      expect(find.text('Not in my next Circle'), findsOneWidget);
     });
 
     testWidgets('you are never offered the option against yourself',
@@ -174,7 +220,8 @@ void main() {
       expect(tester.takeException(), isNull);
 
       expect(find.text('Cancel your programme agreement?'), findsOneWidget);
-      expect(find.textContaining('full €19 refund'), findsOneWidget);
+      expect(find.textContaining('up to 48 hours before your first meetup'),
+          findsOneWidget);
       expect(find.text('Keep my place'), findsOneWidget);
 
       // Backing out must not release the place.

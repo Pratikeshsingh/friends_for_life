@@ -13,6 +13,7 @@ import '../core/city_service.dart';
 import '../core/destructive.dart';
 import '../core/event_catalog.dart';
 import '../core/interest_service.dart';
+import '../core/photo_preparation.dart';
 import '../core/profile_photo_service.dart';
 import '../core/responsive.dart';
 import '../widgets/app_shell_header.dart';
@@ -678,48 +679,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final file = result.files.single;
     if (file.bytes == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "We couldn't read that image. Choose a JPG, PNG, or WebP file.",
-          ),
-        ),
-      );
-      return;
-    }
-
-    if (ProfilePhotoService.isTooLarge(file.bytes!)) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            ProfilePhotoService.tooLargeMessage(file.bytes!.lengthInBytes),
-          ),
-        ),
-      );
-      return;
-    }
-
-    if (!ProfilePhotoService.hasSupportedImageSignature(file.bytes!)) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Choose a valid JPG, PNG, or WebP image.'),
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('We could not read this photo. Please choose it again.')));
       return;
     }
 
     setState(() => _isSaving = true);
 
     try {
+      final prepared = await prepareProfilePhoto(file.bytes!);
       final previousPhotoPath =
           (_user.userMetadata?['profile_photo_path'] as String?) ??
               _profilePhotoPath;
       final photoPath = await ProfilePhotoService.uploadPhoto(
         supabase: _supabase,
         userId: _user.id,
-        bytes: file.bytes!,
+        bytes: prepared,
         fileName: file.name,
         slot: 'primary',
       );
@@ -732,7 +707,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'profile_photo_name': file.name,
           'has_profile_photo': true,
         },
-        nextProfilePhotoBytes: file.bytes,
+        nextProfilePhotoBytes: prepared,
       );
     } on StorageException catch (error) {
       if (!mounted) return;
@@ -742,11 +717,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
       setState(() => _isSaving = false);
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(ProfilePhotoService.genericUploadErrorMessage),
+        SnackBar(
+          content: Text(ProfilePhotoService.uploadErrorMessage(error)),
         ),
       );
       setState(() => _isSaving = false);
@@ -1903,7 +1878,7 @@ class _FaqPage extends StatelessWidget {
                   icon: Icons.favorite_border_rounded,
                   title: 'What if the Circle does not feel right?',
                   body:
-                      'Request a refund from your Circle within 48 hours after the first meetup ends. Your request and private check-ins are never shared with other members.'),
+                      'Before your first meetup you can cancel for a full refund, up to 48 hours before it starts. Between your first and second meetup you can move to another group once, free of charge, from your Circle’s home screen. Your €19 carries over. Your reasons and private check-ins are never shared with other members.'),
               _HelpAnswerCard(
                   icon: Icons.event_repeat_outlined,
                   title: 'What happens after week six?',

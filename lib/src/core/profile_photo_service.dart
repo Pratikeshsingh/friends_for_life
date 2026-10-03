@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'photo_preparation_policy.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -8,7 +9,7 @@ class ProfilePhotoService {
   static const maxUploadLabel = '8 MB';
   static const supportedFormatsLabel = 'JPG, PNG or WebP';
   static const genericUploadErrorMessage =
-      "We couldn't upload this photo. Choose a JPG, PNG, or WebP up to 8 MB and try again.";
+      "We couldn't upload your photo. Please try again. Your current photo has not changed.";
   static final Map<String, _SignedUrlCacheEntry> _signedUrlCache = {};
 
   static Future<String> uploadPhoto({
@@ -158,12 +159,13 @@ class ProfilePhotoService {
   }
 
   static String uploadErrorMessage(Object error) {
+    if (error is PhotoPreparationException) return error.message;
     if (isBucketMissing(error)) {
       return 'Photo uploads are temporarily unavailable. Your current photo has not changed.';
     }
 
     if (isUploadTooLargeError(error)) {
-      return 'That photo exceeds $maxUploadLabel. Choose a smaller JPG, PNG, or WebP image.';
+      return 'We could not reduce this photo enough to upload it. Please choose another photo.';
     }
 
     if (error is! StorageException) {
@@ -186,7 +188,7 @@ class ProfilePhotoService {
         details.contains('mime') ||
         details.contains('content type') ||
         details.contains('unsupported')) {
-      return 'That image type is not supported. Choose a JPG, PNG, or WebP image up to $maxUploadLabel.';
+      return 'Photo storage could not accept the prepared image. Please try again or contact support.';
     }
 
     if ((statusCode != null && statusCode >= 500) ||

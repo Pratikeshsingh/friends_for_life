@@ -445,9 +445,13 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (_awaitingConfirmation) ...[
-              const Text('Check your email', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              const Text('Open the confirmation link, then sign in. Check spam too. You can correct the email below if needed.'),
-              TextButton(onPressed: _isSubmitting ? null : _resendConfirmation, child: const Text('Resend confirmation email')),
+              const Text('Check your email',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              const Text(
+                  'Open the confirmation link, then sign in. Check spam too. You can correct the email below if needed.'),
+              TextButton(
+                  onPressed: _isSubmitting ? null : _resendConfirmation,
+                  child: const Text('Resend confirmation email')),
             ],
             Container(
               padding: const EdgeInsets.all(4),
@@ -588,7 +592,8 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
                 suffixIcon: IconButton(
                   onPressed: () =>
                       setState(() => _obscurePassword = !_obscurePassword),
-                  tooltip: t(_obscurePassword ? 'Show password' : 'Hide password'),
+                  tooltip:
+                      t(_obscurePassword ? 'Show password' : 'Hide password'),
                   icon: Icon(_obscurePassword
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined),
@@ -1082,12 +1087,24 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
   }
 
   Future<void> _resendConfirmation() async {
-    if (!_looksLikeEmail(_emailController.text)) { _setStatus('Enter a valid email address.'); return; }
-    if (_resendAvailableAt?.isAfter(DateTime.now()) == true) { _setStatus('Please wait a minute before requesting another email.'); return; }
+    if (!_looksLikeEmail(_emailController.text)) {
+      _setStatus('Enter a valid email address.');
+      return;
+    }
+    if (_resendAvailableAt?.isAfter(DateTime.now()) == true) {
+      _setStatus('Please wait a minute before requesting another email.');
+      return;
+    }
     await _runAuthAction(() async {
-      await _supabase.auth.resend(type: OtpType.signup, email: _emailController.text.trim(), emailRedirectTo: AuthRedirects.emailRedirectTo);
+      await _supabase.auth.resend(
+          type: OtpType.signup,
+          email: _emailController.text.trim(),
+          emailRedirectTo: AuthRedirects.emailRedirectTo);
       _resendAvailableAt = DateTime.now().add(const Duration(minutes: 1));
-      if (mounted) _setStatus('If this address has an unconfirmed account, we’ve sent a new confirmation link.');
+      if (mounted) {
+        _setStatus(
+            'If this address has an unconfirmed account, we’ve sent a new confirmation link.');
+      }
     });
   }
 
@@ -2448,7 +2465,8 @@ class _RecommendationPreviewSheet extends StatelessWidget {
                   runSpacing: 10,
                   children: [
                     _SheetMetaPill(
-                        label: t('${event.activityLabel} • ${event.vibeLabel}')),
+                        label:
+                            t('${event.activityLabel} • ${event.vibeLabel}')),
                     _SheetMetaPill(label: event.groupSizeLabel),
                     _SheetMetaPill(label: availability.label),
                   ],
@@ -2886,8 +2904,8 @@ class _LegalConsentField extends StatelessWidget {
 
     return Semantics(
       container: true,
-      label:
-          t('Agreement to the Terms and Conditions and acknowledgement of the Privacy Policy'),
+      label: t(
+          'Agreement to the Terms and Conditions and acknowledgement of the Privacy Policy'),
       child: Container(
         key: const ValueKey('legal-consent-field'),
         padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),

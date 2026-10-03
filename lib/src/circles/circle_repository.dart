@@ -12,9 +12,10 @@ typedef Json = Map<String, dynamic>;
 String circleRequestId() {
   final r = Random.secure();
   final bytes = List<int>.generate(16, (_) => r.nextInt(256));
-  bytes[6] = (bytes[6] & 15) | 64; bytes[8] = (bytes[8] & 63) | 128;
+  bytes[6] = (bytes[6] & 15) | 64;
+  bytes[8] = (bytes[8] & 63) | 128;
   final h = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-  return '${h.substring(0,8)}-${h.substring(8,12)}-${h.substring(12,16)}-${h.substring(16,20)}-${h.substring(20)}';
+  return '${h.substring(0, 8)}-${h.substring(8, 12)}-${h.substring(12, 16)}-${h.substring(16, 20)}-${h.substring(20)}';
 }
 
 /// The six weeks, told the same way everywhere: landing page, invitation,
@@ -97,21 +98,34 @@ DateTime? circleMeetupStart(Json meetup) {
   final date = DateTime.tryParse('${meetup['date']}');
   if (date == null) return null;
   final parts = '${meetup['time'] ?? '19:30'}'.split(':');
-  final wall = DateTime.utc(date.year,date.month,date.day,int.tryParse(parts.first) ?? 19,
-    parts.length > 1 ? int.tryParse(parts[1]) ?? 30 : 30);
+  final wall = DateTime.utc(
+      date.year,
+      date.month,
+      date.day,
+      int.tryParse(parts.first) ?? 19,
+      parts.length > 1 ? int.tryParse(parts[1]) ?? 30 : 30);
   // Compatibility for older snapshots. New snapshots send absolute instants.
   // Europe/Amsterdam switches on the last Sundays of March and October.
   DateTime sunday(int month) {
     final last = DateTime.utc(date.year, month + 1, 0);
     return last.subtract(Duration(days: last.weekday % 7));
   }
+
   final summer = !wall.isBefore(sunday(3).add(const Duration(hours: 3))) &&
-    wall.isBefore(sunday(10).add(const Duration(hours: 3)));
+      wall.isBefore(sunday(10).add(const Duration(hours: 3)));
   return wall.subtract(Duration(hours: summer ? 2 : 1));
 }
-DateTime? circleMeetupEnd(Json meetup) => DateTime.tryParse('${meetup['ends_at']}')?.toUtc() ?? circleMeetupStart(meetup)?.add(const Duration(hours: 2));
-bool circleMeetupPast(Json meetup, {DateTime? now}) => meetup['completed'] == true || (circleMeetupEnd(meetup)?.isBefore((now ?? DateTime.now()).toUtc()) ?? false);
-int circleMeetupCompare(Json a, Json b) => (circleMeetupStart(a) ?? DateTime.utc(9999)).compareTo(circleMeetupStart(b) ?? DateTime.utc(9999));
+
+DateTime? circleMeetupEnd(Json meetup) =>
+    DateTime.tryParse('${meetup['ends_at']}')?.toUtc() ??
+    circleMeetupStart(meetup)?.add(const Duration(hours: 2));
+bool circleMeetupPast(Json meetup, {DateTime? now}) =>
+    meetup['completed'] == true ||
+    (circleMeetupEnd(meetup)?.isBefore((now ?? DateTime.now()).toUtc()) ??
+        false);
+int circleMeetupCompare(Json a, Json b) =>
+    (circleMeetupStart(a) ?? DateTime.utc(9999))
+        .compareTo(circleMeetupStart(b) ?? DateTime.utc(9999));
 
 /// The venue of a programme meetup is revealed 24 hours before it starts, so
 /// people commit to the Circle rather than to the restaurant. The server
@@ -332,9 +346,11 @@ class SupabaseCircleRepository implements CircleRepository {
     }
   }
 
-  Future<List<Json>> olderMessages(Json before) async => rows(await client.rpc('circle_messages_before', params: {
-    'before_time': before['created_at'], 'before_id': before['id'],
-  }).timeout(const Duration(seconds: 15)));
+  Future<List<Json>> olderMessages(Json before) async =>
+      rows(await client.rpc('circle_messages_before', params: {
+        'before_time': before['created_at'],
+        'before_id': before['id'],
+      }).timeout(const Duration(seconds: 15)));
 
   @override
   Future<Json> adminLoad() async {
@@ -397,6 +413,16 @@ class DemoCircleRepository implements CircleRepository {
     }
     state['email_notifications'] ??= true;
     state['exclusions'] ??= const <String>[];
+    // One free move, between the first and the second meetup, as on the
+    // server.
+    if (state['stage'] == 'active') {
+      bool done(int week) => rows(state['meetups'])
+          .any((m) => m['week'] == week && m['completed'] == true);
+      state['move'] = {
+        'used': state['move_used'] == true,
+        'available': state['move_used'] != true && done(1) && !done(2),
+      };
+    }
     return state;
   }
 
@@ -533,6 +559,8 @@ class DemoCircleRepository implements CircleRepository {
         state['stage'] = stage;
         state.remove('refund');
         state.remove('outcome');
+        state.remove('move_credit');
+        state.remove('move_used');
         state['payment'] =
             ['active', 'completed'].contains(stage) ? 'demo_paid' : 'unpaid';
         if (stage == 'completed') {
@@ -575,6 +603,27 @@ class DemoCircleRepository implements CircleRepository {
         }
         state['stage'] = 'active';
         state['payment'] = 'demo_paid';
+        if (state['move_credit'] == true) {
+          state['move_credit'] = false;
+          state['move_used'] = true;
+        }
+        break;
+      case 'request_move':
+        bool done(int week) => rows(state['meetups'])
+            .any((m) => m['week'] == week && m['completed'] == true);
+        if (state['stage'] != 'active' ||
+            state['move_used'] == true ||
+            !done(1) ||
+            done(2)) {
+          throw StateError(
+              'A move is possible between your first and second meetup.');
+        }
+        state['stage'] = 'waiting';
+        state['move_credit'] = true;
+        state.remove('circle');
+        state.remove('members');
+        state.remove('meetups');
+        state.remove('move');
         break;
       case 'rsvp':
         state['meetups'] = rows(state['meetups'])
@@ -641,10 +690,14 @@ class DemoCircleRepository implements CircleRepository {
             .toList();
         break;
       case 'payment_sent':
-        state['payment_agreement'] = {...?state['payment_agreement'] as Json?, 'payment_reported_at': DateTime.now().toIso8601String()};
+        state['payment_agreement'] = {
+          ...?state['payment_agreement'] as Json?,
+          'payment_reported_at': DateTime.now().toIso8601String()
+        };
         break;
       case 'cancel_extra':
-        state['meetups'] = rows(state['meetups']).where((m) => m['id'] != data['id']).toList();
+        state['meetups'] =
+            rows(state['meetups']).where((m) => m['id'] != data['id']).toList();
         break;
       case 'admin_schedule':
       case 'schedule':

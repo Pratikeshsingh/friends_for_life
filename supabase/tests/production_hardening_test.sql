@@ -54,10 +54,11 @@ do $$ begin
  begin perform public.circle_leave(); raise exception 'eligible payment stranded by leave'; exception when others then if sqlerrm='eligible payment stranded by leave' then raise; end if; end;
 end $$;
 reset role;
--- End-of-meetup eligibility does not wait for manual completion.
+-- Once the first meetup has started, a free move replaces the refund.
 update public.events set starts_at=now()-interval '3 hours',ends_at=now()-interval '1 hour' where circle_week=1;
 set local role authenticated;
-select pg_temp.assert_true((public.circle_snapshot()->>'refund_eligible')::boolean,'refund clock follows end time');
+select pg_temp.assert_true(not (public.circle_snapshot()->>'refund_eligible')::boolean,'no refund after the first meetup');
+select pg_temp.assert_true((public.circle_snapshot()->'move'->>'available')::boolean,'a move is offered after the first meetup');
 select public.circle_action('check_in','{"id":"20000000-0000-0000-0000-000000000001","feeling":"🙂 Good","connections":[]}');
 select public.record_app_error('test','StateError','test-build','test-ref');
 select public.record_app_error('test','StateError','test-build','test-ref-2');

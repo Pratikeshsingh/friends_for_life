@@ -222,7 +222,7 @@ void main() {
             statusCode: '415',
           ),
         ),
-        contains('JPG, PNG, or WebP'),
+        contains('prepared image'),
       );
     });
 

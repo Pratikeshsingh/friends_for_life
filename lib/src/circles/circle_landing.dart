@@ -79,7 +79,7 @@ class _CircleLandingState extends State<CircleLanding> {
                             'One payment for all six weeks. No subscription. You pay the venue for what you eat and drink.'),
                         const SizedBox(height: 18),
                         const Text(
-                            'If the Circle doesn’t feel right after the first meetup, ask for a refund within 48 hours.',
+                            'Cancel up to 48 hours before your first meetup for a full refund. Not the right group after the first meetup? Move to another one once, free of charge.',
                             style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 color: circleNavy)),

@@ -60,10 +60,9 @@ class CircleProfile extends StatelessWidget {
       onTerms,
       onPrivacy;
 
-  /// Leaving after the programme has started. Cancelling inside 14 days is a
-  /// payment decision and lives elsewhere; this is the later case, where the
-  /// honest thing is to say plainly that the fee does not come back
-  /// automatically.
+  /// Leaving once the refund window has closed. Until 48 hours before the
+  /// first meetup, cancelling for a refund is the better route, so that is
+  /// what this offers instead.
   Future<void> _leave(BuildContext context) async {
     if ((state['payment_agreement'] as Map?)?['can_cancel'] == true &&
         state['refund'] == null) {
@@ -82,7 +81,7 @@ class CircleProfile extends StatelessWidget {
         builder: (c) => AlertDialog(
               title: const Text('Cancel your programme agreement?'),
               content: const Text(
-                  'You can cancel within 14 days of accepting. If you have paid, the organiser will arrange a full €19 refund. Otherwise your payment agreement will be cancelled.'),
+                  'You can cancel up to 48 hours before your first meetup. If you have paid, the organiser will return your €19. Otherwise your payment agreement will be cancelled.'),
               actions: [
                 TextButton(
                     onPressed: () => Navigator.pop(c, false),
@@ -237,6 +236,13 @@ class CircleProfile extends StatelessWidget {
           if (onBookings != null && inCircle)
             _tile(Icons.history_rounded, 'Previous meetups', onBookings,
                 color: circleTeal),
+          if (_canChooseMatches) ...[
+            const Divider(height: 1, color: _line),
+            _tile(Icons.people_alt_outlined, 'Future Circles',
+                () => _futureCircles(context),
+                subtitle: 'Who you’d rather not be matched with again',
+                color: _violet),
+          ],
           if (onReport != null) ...[
             const Divider(height: 1, color: _line),
             _tile(Icons.flag_outlined, 'Report a concern privately', onReport,
@@ -435,6 +441,73 @@ class CircleProfile extends StatelessWidget {
                 ])),
           ])));
 
+  /// The other members of the Circle, without you.
+  List<Json> get _others => rows(state['members'])
+      .where((m) =>
+          '${m['id']}' != '${state['profile_id']}' && '${m['id']}' != 'you')
+      .toList();
+
+  /// Only once the Circle has actually met: you cannot judge someone you
+  /// have not sat at a table with. Also needs the saved choices to have
+  /// loaded, so a switch never shows the wrong position.
+  bool get _canChooseMatches =>
+      act != null &&
+      state['circle'] != null &&
+      state['exclusions'] != null &&
+      _others.isNotEmpty &&
+      rows(state['meetups']).any((m) => circleMeetupPast(m));
+
+  /// Private and only about future matching: the other person is never told
+  /// and the current Circle does not change.
+  Future<void> _futureCircles(BuildContext context) async {
+    final excluded = strings(state['exclusions']).toSet();
+    await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (c) => StatefulBuilder(
+            builder: (c, update) => SafeArea(
+                child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Future Circles',
+                              style: Theme.of(c).textTheme.headlineSmall),
+                          const SizedBox(height: 8),
+                          const Text(
+                              'When we form new Circles, we can keep you apart from someone. They are never told, and your current Circle stays as it is.',
+                              style: TextStyle(color: _muted, height: 1.4)),
+                          const SizedBox(height: 12),
+                          for (final m in _others)
+                            SwitchListTile(
+                                contentPadding: EdgeInsets.zero,
+                                secondary: CircleMemberAvatar('${m['name']}',
+                                    radius: 20,
+                                    photoUrl: m['photo_url'] as String?,
+                                    photoPath: m['photo_path'] as String?),
+                                title: Text('${m['name']}',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w700)),
+                                subtitle: Text(excluded.contains('${m['id']}')
+                                    ? 'Not in my next Circle'
+                                    : 'Happy to meet again'),
+                                value: !excluded.contains('${m['id']}'),
+                                onChanged: busy
+                                    ? null
+                                    : (meetAgain) async {
+                                        final id = '${m['id']}';
+                                        update(() => meetAgain
+                                            ? excluded.remove(id)
+                                            : excluded.add(id));
+                                        await act!('exclude', {
+                                          'target': id,
+                                          'active': !meetAgain
+                                        });
+                                      }),
+                        ])))));
+  }
+
   Widget _sectionLabel(String text) => Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 10),
       child: Text(t(text).toUpperCase(),
@@ -569,7 +642,7 @@ class _LeaveDialogState extends State<_LeaveDialog> {
                     'Your place is released and your remaining meetups are removed from your plans. Your reason stays private. The group can see that you are no longer a member.'),
                 const SizedBox(height: 12),
                 const Text(
-                    'The €19 programme fee is not refunded automatically at this point. If something has gone wrong, tell us below and we’ll come back to you.',
+                    'The €19 is no longer refundable at this point. If this group isn’t right for you and your second meetup hasn’t started yet, you can move to another group once, free of charge, from your Circle’s home screen.',
                     style: TextStyle(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 14),
                 TextField(
