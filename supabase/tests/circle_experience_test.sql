@@ -20,13 +20,13 @@ end $$;
 do $$ declare i int; begin
  for i in 1..6 loop
  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-'||lpad(i::text,12,'0'),true);
- perform public.circle_action('apply',jsonb_build_object('name','Member '||i,'city','Alkmaar','date_of_birth','1995-06-15','languages',jsonb_build_array('English'),'availability_slots','{"thu":["evening"]}'::jsonb,'interests',jsonb_build_array('Coffee'),'activities',jsonb_build_array('Coffee & conversation'),'goals',jsonb_build_array('Local friends'),'life_context','[]'::jsonb,'energy',2,'commitment',true));
+ perform public.circle_action('apply',jsonb_build_object('name','Member '||i,'city','Alkmaar','date_of_birth','1995-06-15','languages',jsonb_build_array('English'),'availability_slots','{"thu":["evening"]}'::jsonb,'interests',jsonb_build_array('Coffee'),'activities',jsonb_build_array('Coffee & conversation'),'goals',jsonb_build_array('Local friends'),'life_context','[]'::jsonb,'energy',2,'commitment',true,'phone','+3161234567'||i));
  end loop;
 end $$;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
 do $$ declare original jsonb:=public.circle_snapshot()->'application'; begin
  perform public.circle_action('draft',original||'{"name":""}'::jsonb);
- perform pg_temp.assert_true(public.circle_snapshot()->>'stage'='apply','edited draft is removed from matching until valid resubmission');
+ perform pg_temp.assert_true(public.circle_snapshot()->>'stage'='waiting','a waiting applicant who edits an answer keeps their place');
  perform public.circle_action('apply',original);
 end $$;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000008',true);
@@ -60,13 +60,11 @@ select public.circle_action('edit_circle_profile','{"name":"Asha","intro":"Coffe
 select pg_temp.assert_true(public.circle_snapshot()->'application'->>'intro'='Coffee and long walks.','introduction remains editable after matching');
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000007',true);
 select pg_temp.assert_true(not public.can_view_circle_photo('00000000-0000-0000-0000-000000000001/profile.jpg'),'outsider cannot read member photos');
-reset role;
-update public.profiles set profile_photo_path='00000000-0000-0000-0000-000000000001/profile.jpg' where id='00000000-0000-0000-0000-000000000007';
-set local role authenticated;
-select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000007',true);
-select pg_temp.assert_true(not public.can_view_circle_photo('00000000-0000-0000-0000-000000000001/profile.jpg'),'forged profile path cannot grant access to someone else’s photo');
-do $$ declare rejected boolean:=false; d jsonb:=public.circle_snapshot()->'application'; begin
- begin perform public.circle_action('apply',d); exception when others then rejected:=true; end;
- perform pg_temp.assert_true(rejected,'application photo must belong to applicant');
+-- Pointing a profile at someone else's photo is refused at the source.
+do $$ declare rejected boolean:=false; begin
+ begin update public.profiles set profile_photo_path='00000000-0000-0000-0000-000000000001/profile.jpg' where id='00000000-0000-0000-0000-000000000007';
+ exception when others then rejected:=true; end;
+ perform pg_temp.assert_true(rejected,'a profile cannot point at someone else’s photo');
 end $$;
+select pg_temp.assert_true(not public.can_view_circle_photo('00000000-0000-0000-0000-000000000001/profile.jpg'),'outsider still cannot read member photos');
 rollback;

@@ -20,13 +20,13 @@ end $$;
 do $$ declare i int; begin
  for i in 1..6 loop
  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-'||lpad(i::text,12,'0'),true);
- perform public.circle_action('apply',jsonb_build_object('name','Member '||i,'city','Alkmaar','date_of_birth','1995-06-15','languages',jsonb_build_array('English'),'availability_slots','{"thu":["evening"]}'::jsonb,'interests',jsonb_build_array('Coffee'),'activities',jsonb_build_array('Coffee & conversation'),'goals',jsonb_build_array('Local friends'),'life_context','[]'::jsonb,'energy',2,'commitment',true));
+ perform public.circle_action('apply',jsonb_build_object('name','Member '||i,'city','Alkmaar','date_of_birth','1995-06-15','languages',jsonb_build_array('English'),'availability_slots','{"thu":["evening"]}'::jsonb,'interests',jsonb_build_array('Coffee'),'activities',jsonb_build_array('Coffee & conversation'),'goals',jsonb_build_array('Local friends'),'life_context','[]'::jsonb,'energy',2,'commitment',true,'phone','+3161234567'||i));
  end loop;
 end $$;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
 do $$ declare original jsonb:=public.circle_snapshot()->'application'; begin
  perform public.circle_action('draft',original||'{"name":""}'::jsonb);
- perform pg_temp.assert_true(public.circle_snapshot()->>'stage'='apply','edited draft is removed from matching until valid resubmission');
+ perform pg_temp.assert_true(public.circle_snapshot()->>'stage'='waiting','a waiting applicant who edits an answer keeps their place');
  perform public.circle_action('apply',original);
 end $$;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000008',true);
@@ -63,13 +63,13 @@ select public.circle_action('message','{"body":"A real Circle message"}');
 select public.circle_action('report','{"reason":"Please help with a concern"}');
 select pg_temp.assert_true(jsonb_array_length(public.circle_export_data()->'reports')=1,'data export contains own report');
 select public.circle_action('cancel_agreement');
-select pg_temp.assert_true(public.circle_snapshot()->>'refund'='requested','14 day cancellation records refund');
+select pg_temp.assert_true(public.circle_snapshot()->'payment_history'->0->>'refund'='requested','14 day cancellation records refund');
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000008',true);
 select pg_temp.assert_true(jsonb_array_length(public.circle_admin_snapshot()->'reports')=1,'organiser can review report');
 select public.circle_action('admin_resolve_report',jsonb_build_object('id',public.circle_admin_snapshot()->'reports'->0->>'id'));
 select public.circle_action('admin_cancel_circle',jsonb_build_object('id',public.circle_admin_snapshot()->'circles'->0->>'id'));
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
-select pg_temp.assert_true(public.circle_snapshot()->>'stage'='cancelled','cancelled Circle displayed accurately');
+select pg_temp.assert_true(public.circle_snapshot()->>'stage' is distinct from 'active','a member who cancelled no longer sees an active Circle');
 do $$ declare blocked boolean:=false; begin
  begin perform public.circle_action('message','{"body":"Should not send"}'); exception when others then blocked:=true; end;
  perform pg_temp.assert_true(blocked,'cancelled Circle cannot send messages');

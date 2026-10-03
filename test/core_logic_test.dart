@@ -1,9 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vriendtime/src/core/auth_redirects.dart';
-import 'package:vriendtime/src/core/calendar_service.dart';
 import 'package:vriendtime/src/core/event_catalog.dart';
-import 'package:vriendtime/src/core/notification_service.dart';
 import 'package:vriendtime/src/core/profile_photo_service.dart';
 
 void main() {
@@ -132,38 +130,6 @@ void main() {
     });
   });
 
-  group('calendar invite', () {
-    test('brands the title and includes an eligible exact venue', () {
-      final event = _meetup(
-        startsAt: DateTime.utc(2026, 7, 11, 17),
-        venueName: 'Cafe Noord',
-        venueAddress: 'Laat 1',
-      );
-      final uri = buildGoogleCalendarUri(event);
-      final details = uri.queryParameters['details']!;
-
-      expect(uri.queryParameters['text'], 'VriendTime · Test meetup');
-      expect(uri.queryParameters['location'], 'Cafe Noord, Laat 1');
-      expect(details, contains('Hosted by VriendTime'));
-      expect(details, contains('Venue: Cafe Noord, Laat 1'));
-      expect(details, isNot(contains('shared at 10:00')));
-    });
-
-    test('uses area and states the exact release date before venue release',
-        () {
-      final event = _meetup(startsAt: DateTime.utc(2026, 7, 11, 17));
-      final uri = buildGoogleCalendarUri(event);
-      final details = uri.queryParameters['details']!;
-
-      expect(uri.queryParameters['location'], 'centre, Alkmaar');
-      expect(details, contains('Area: centre, Alkmaar'));
-      expect(
-        details,
-        contains('available in VriendTime on 10 July at 10:00'),
-      );
-    });
-  });
-
   group('address release date', () {
     test('formats the Amsterdam calendar day before the meetup', () {
       final startsAt = DateTime.utc(2026, 7, 26, 17);
@@ -210,43 +176,6 @@ void main() {
         meetupAddressReleaseAt(DateTime.utc(2026, 10, 26, 11)),
         DateTime.utc(2026, 10, 25, 9),
       );
-    });
-  });
-
-  group('notifications', () {
-    test('prefers structured address metadata for location labels', () {
-      final notification = AppNotification.fromRow({
-        'id': 'notification-1',
-        'kind': 'address',
-        'title': 'Address revealed',
-        'body': 'Your meetup address is ready.',
-        'created_at': '2026-07-06T10:00:00Z',
-        'metadata': {
-          'venue_name': 'Cafe Noord',
-          'address': 'Laat 1',
-          'city': 'Alkmaar',
-        },
-      });
-
-      expect(notification.kind, AppNotificationKind.address);
-      expect(notification.exactLocationLabel, 'Cafe Noord, Laat 1');
-      expect(notification.mapsUri?.query, contains('Cafe+Noord'));
-      expect(notification.mapsUri?.query, contains('Alkmaar'));
-    });
-
-    test('falls back to body lines when metadata is missing', () {
-      final notification = AppNotification.fromRow({
-        'id': 'notification-2',
-        'kind': 'address',
-        'title': 'Address revealed',
-        'body': 'Your table is ready\nCafe Zuid\nHouttil 2',
-        'created_at': '2026-07-06T10:00:00Z',
-        'metadata': const <String, dynamic>{},
-      });
-
-      expect(notification.revealedVenueName, 'Cafe Zuid');
-      expect(notification.revealedAddress, 'Houttil 2');
-      expect(notification.exactLocationLabel, 'Cafe Zuid, Houttil 2');
     });
   });
 

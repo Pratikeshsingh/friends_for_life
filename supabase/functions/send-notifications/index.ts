@@ -15,7 +15,7 @@
 //   NOTIFICATION_FROM   e.g. "VriendTime <hallo@vriendtime.nl>"
 //   NOTIFICATION_CRON_SECRET                 (any long random string)
 //   APP_URL             e.g. "https://vriendtime.com"  (link back into the app)
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.117.2";
 
 const BATCH_SIZE = 50;
 

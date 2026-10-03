@@ -17,3 +17,17 @@ jobs:
         with:
           name: vriendtime-web
           path: build/web
+  database:
+    # Applies the schema and every migration to a throwaway database, then
+    # runs the access and security tests. No production credentials needed.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scripts/backend-tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: node run.mjs production_hardening_test.sql security_boundaries_test.sql security_fixes_test.sql circle_access_test.sql circle_experience_test.sql circle_release_test.sql

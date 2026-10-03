@@ -195,10 +195,22 @@ class CircleProfile extends StatelessWidget {
       const SizedBox(height: 22),
       _sectionLabel('Settings'),
       _card([
-        ListTile(
-            leading: _badge(Icons.translate_rounded, _violet),
-            title: const Text('App language'),
-            trailing: const LanguageToggle()),
+        // On the narrowest phones the toggle sits under the label, so the
+        // label never breaks mid-word.
+        LayoutBuilder(
+            builder: (context, box) => box.maxWidth < 340
+                ? ListTile(
+                    leading: _badge(Icons.translate_rounded, _violet),
+                    title: const Text('Language'),
+                    subtitle: const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: LanguageToggle())))
+                : ListTile(
+                    leading: _badge(Icons.translate_rounded, _violet),
+                    title: const Text('Language'),
+                    trailing: const LanguageToggle())),
         // The app tells people when their Circle is ready, where to go, and
         // when to turn up. None of that reaches someone who is not in the
         // app, so email is on by default, and this is the only place to stop it.

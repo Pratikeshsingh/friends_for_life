@@ -11,9 +11,3 @@
   Cache-Control: public, max-age=0, must-revalidate
 /sw.js
   Cache-Control: no-cache
-/oldapp/index.html
-  Cache-Control: public, max-age=0, must-revalidate
-/oldapp/flutter_bootstrap.js
-  Cache-Control: public, max-age=0, must-revalidate
-/oldapp/main.dart.js
-  Cache-Control: public, max-age=0, must-revalidate

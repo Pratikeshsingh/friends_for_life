@@ -34,6 +34,12 @@
 
   <title>VriendTime</title>
   <link rel="manifest" href="manifest.json">
+  <!-- Start the large downloads while the loading screen is on show, instead
+       of waiting for the app code to ask for them. -->
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preload" href="main.dart.js" as="script">
+  <link rel="preload" href="assets/assets/fonts/Manrope-Variable.ttf" as="fetch" crossorigin>
+  <link rel="preload" href="assets/assets/fonts/Newsreader-Variable.ttf" as="fetch" crossorigin>
   <style>
     :root { color-scheme: light; --canvas: #fffaf4; --navy: #062b55; --teal: #29b8aa; --coral: #ff7759; }
     html,body { height:100%; margin:0; background:var(--canvas); }
@@ -164,6 +170,9 @@
       }
     }, 20000);
   </script>
-  <script src="flutter_bootstrap.js" async></script>
+  <!-- Inlined so the app starts loading without another round trip. -->
+  <script>
+    {{flutter_bootstrap_js}}
+  </script>
 </body>
 </html>

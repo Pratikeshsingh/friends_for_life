@@ -1,3 +1,4 @@
-/oldapp  /oldapp/  301
-/oldapp/*  /oldapp/index.html  200
+# The old meetup app has been retired; old links go to the current app.
+/oldapp    /  301
+/oldapp/*  /  301
 /*  /index.html  200

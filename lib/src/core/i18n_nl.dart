@@ -1387,4 +1387,9 @@ const nlStrings = <String, String>{
   'EXTRA PLAN': 'EXTRA PLAN',
   'Last updated by {1}': 'Laatst bijgewerkt door {1}',
   'Details to be confirmed': 'Details volgen nog',
+  'Choose a photo from your own account.': 'Kies een foto uit je eigen account.',
+  'Plan extras up to three months ahead.': 'Plan extra afspraken tot drie maanden vooruit.',
+  'You have added a lot of plans today. Try again tomorrow.': 'Je hebt vandaag al veel plannen toegevoegd. Probeer het morgen opnieuw.',
+  'You already have three upcoming extra plans. Wait until one has happened, or cancel one.': 'Je hebt al drie geplande extra afspraken. Wacht tot er een is geweest, of annuleer er een.',
+  'Your Circle already has ten upcoming extra plans.': 'Je Circle heeft al tien geplande extra afspraken.',
 };

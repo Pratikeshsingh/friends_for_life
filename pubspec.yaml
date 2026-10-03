@@ -51,3 +51,9 @@ flutter:
     - family: Newsreader
       fonts:
         - asset: assets/fonts/Newsreader-Variable.ttf
+    # Flutter web downloads Roboto from Google as its default font unless the
+    # app ships a family with that name. Pointing it at Manrope keeps any text
+    # without a font in the house style and saves a request to Google.
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Manrope-Variable.ttf
