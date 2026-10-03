@@ -9,6 +9,9 @@ import 'circle_widgets.dart';
 
 const _muted = Color(0xFF4F5D66);
 const _line = Color(0xFFDDE7E3);
+const _violet = Color(0xFF6B5BD2);
+const _gold = Color(0xFFD08A12);
+const _green = Color(0xFF1F9D55);
 
 class CircleProfile extends StatelessWidget {
   const CircleProfile(
@@ -62,15 +65,18 @@ class CircleProfile extends StatelessWidget {
   /// honest thing is to say plainly that the fee does not come back
   /// automatically.
   Future<void> _leave(BuildContext context) async {
-    if ((state['payment_agreement'] as Map?)?['can_cancel'] == true && state['refund'] == null) {
-      await _cancelAgreement(context); return;
+    if ((state['payment_agreement'] as Map?)?['can_cancel'] == true &&
+        state['refund'] == null) {
+      await _cancelAgreement(context);
+      return;
     }
     final reason = await showDialog<String>(
         context: context, builder: (c) => const _LeaveDialog());
     if (reason != null) await act!('leave_circle', {'reason': reason});
   }
 
-  Future<void> _cancelAgreement(BuildContext context, {String? paymentId}) async {
+  Future<void> _cancelAgreement(BuildContext context,
+      {String? paymentId}) async {
     final confirmed = await showDialog<bool>(
         context: context,
         builder: (c) => AlertDialog(
@@ -87,7 +93,9 @@ class CircleProfile extends StatelessWidget {
                     child: const Text('Confirm cancellation'))
               ],
             ));
-    if (confirmed == true) await act!('cancel_agreement', {if (paymentId != null) 'id': paymentId});
+    if (confirmed == true) {
+      await act!('cancel_agreement', {if (paymentId != null) 'id': paymentId});
+    }
   }
 
   @override
@@ -100,7 +108,7 @@ class CircleProfile extends StatelessWidget {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const CircleHeading('A familiar face.', eyebrow: 'Your profile'),
       _publicCard(context, app, name),
-      const SizedBox(height: 28),
+      const SizedBox(height: 22),
       _sectionLabel(applying ? 'Your application' : 'Your weekly rhythm'),
       _card([
         Padding(
@@ -112,16 +120,12 @@ class CircleProfile extends StatelessWidget {
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: _muted)),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               if (circleSlots(app).isEmpty)
                 const Text('Choose the days and times that fit your life.')
               else
-                Wrap(spacing: 8, runSpacing: 8, children: [
-                  for (final e in circleSlots(app).entries)
-                    CirclePill(
-                        '${circleDays[circleDayKeys.indexOf(e.key)].substring(0, 3)} · ${e.value.join(' / ')}')
-                ]),
-              const SizedBox(height: 14),
+                _slotGrid(circleSlots(app)),
+              const SizedBox(height: 12),
               Row(children: [
                 Icon(
                     app['commitment'] == true
@@ -137,7 +141,8 @@ class CircleProfile extends StatelessWidget {
         if (onEdit != null) ...[
           const Divider(height: 1, color: _line),
           _tile(Icons.edit_calendar_outlined, 'Edit my availability',
-              () => onEdit!(1)),
+              () => onEdit!(1),
+              color: circleTeal),
         ],
         const Divider(height: 1, color: _line),
         Padding(
@@ -177,7 +182,8 @@ class CircleProfile extends StatelessWidget {
         if (onEdit != null) ...[
           const Divider(height: 1, color: _line),
           _tile(Icons.tune_outlined, 'Edit my interests and goals',
-              () => onEdit!(2)),
+              () => onEdit!(2),
+              color: circleCoral),
         ],
         if (onWithdraw != null) ...[
           const Divider(height: 1, color: _line),
@@ -186,11 +192,11 @@ class CircleProfile extends StatelessWidget {
               subtitle: 'You’ll lose your place on the waiting list.'),
         ],
       ]),
-      const SizedBox(height: 28),
+      const SizedBox(height: 22),
       _sectionLabel('Settings'),
       _card([
         ListTile(
-            leading: const Icon(Icons.translate_rounded, color: circleTeal),
+            leading: _badge(Icons.translate_rounded, _violet),
             title: const Text('App language'),
             trailing: const LanguageToggle()),
         // The app tells people when their Circle is ready, where to go, and
@@ -198,31 +204,37 @@ class CircleProfile extends StatelessWidget {
         // app, so email is on by default, and this is the only place to stop it.
         if (onEmailNotifications != null) ...[
           const Divider(height: 1, color: _line),
-          if (state['email_notifications'] == null) const ListTile(title: Text('Email preference unavailable'), subtitle: Text('Refresh to load your saved choice.'))
-          else SwitchListTile(
-              value: state['email_notifications'] == true,
-              onChanged: onEmailNotifications,
-              secondary:
-                  const Icon(Icons.mail_outline_rounded, color: circleTeal),
-              title: const Text('Email me about my Circle'),
-              subtitle: const Text(
-                  'Your invitation, the venue and a day-before reminder.')),
+          if (state['email_notifications'] == null)
+            const ListTile(
+                title: Text('Email preference unavailable'),
+                subtitle: Text('Refresh to load your saved choice.'))
+          else
+            SwitchListTile(
+                value: state['email_notifications'] == true,
+                onChanged: onEmailNotifications,
+                secondary: _badge(Icons.mail_outline_rounded, _gold),
+                title: const Text('Email me about my Circle'),
+                subtitle: const Text(
+                    'Your invitation, the venue and a day-before reminder.')),
         ],
       ]),
       if (inCircle || onAdmin != null) ...[
-        const SizedBox(height: 28),
+        const SizedBox(height: 22),
         _sectionLabel('Your Circle'),
         _card([
           if (onBookings != null && inCircle)
-            _tile(Icons.history_rounded, 'Previous meetups', onBookings),
+            _tile(Icons.history_rounded, 'Previous meetups', onBookings,
+                color: circleTeal),
           if (onReport != null) ...[
             const Divider(height: 1, color: _line),
-            _tile(Icons.flag_outlined, 'Report a concern privately', onReport),
+            _tile(Icons.flag_outlined, 'Report a concern privately', onReport,
+                color: circleCoral),
           ],
           if (onAdmin != null) ...[
             if (inCircle) const Divider(height: 1, color: _line),
             _tile(Icons.admin_panel_settings_outlined, 'Circle organiser',
-                onAdmin),
+                onAdmin,
+                color: circleNavy),
           ],
         ]),
       ],
@@ -230,10 +242,12 @@ class CircleProfile extends StatelessWidget {
           ((inCircle && ['active', 'forming'].contains(stage)) ||
               ((state['payment_agreement'] as Map?)?['can_cancel'] == true &&
                   state['refund'] == null))) ...[
-        const SizedBox(height: 28),
+        const SizedBox(height: 22),
         _card([
           ExpansionTile(
-            title: const Text('Programme settings'),
+            leading: _badge(Icons.event_note_outlined, circleNavy),
+            title: const Text('Programme settings',
+                style: TextStyle(fontWeight: FontWeight.w600)),
             children: [
               if (inCircle && ['active', 'forming'].contains(stage))
                 _tile(Icons.logout_rounded, 'I need to leave this Circle',
@@ -249,42 +263,61 @@ class CircleProfile extends StatelessWidget {
         ]),
       ],
       if (rows(state['payment_history']).isNotEmpty) ...[
-        const SizedBox(height: 28),
-        _card([ExpansionTile(title: const Text('Payments & refunds'), children: [
-          for (final payment in rows(state['payment_history'])) ListTile(
-            title: Text('€19 · ${payment['refund'] ?? payment['status']}'),
-            subtitle: SelectableText('${payment['reference']}'),
-            trailing: payment['can_cancel'] == true && act != null
-              ? TextButton(onPressed: busy ? null : () => _cancelAgreement(context, paymentId: '${payment['id']}'), child: const Text('Cancel agreement')) : null),
-        ])]),
+        const SizedBox(height: 22),
+        _card([
+          ExpansionTile(
+              leading: _badge(Icons.receipt_long_outlined, _gold),
+              title: const Text('Payments & refunds',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+              children: [
+                for (final payment in rows(state['payment_history']))
+                  ListTile(
+                      title: Text(
+                          '€19 · ${payment['refund'] ?? payment['status']}'),
+                      subtitle: SelectableText('${payment['reference']}'),
+                      trailing: payment['can_cancel'] == true && act != null
+                          ? TextButton(
+                              onPressed: busy
+                                  ? null
+                                  : () => _cancelAgreement(context,
+                                      paymentId: '${payment['id']}'),
+                              child: const Text('Cancel agreement'))
+                          : null),
+              ])
+        ]),
       ],
       const SizedBox(height: 12),
-      Text('App version ${AppDiagnostics.build}', style: const TextStyle(fontSize: 11)),
-      const SizedBox(height: 28),
+      Text('App version ${AppDiagnostics.build}',
+          style: const TextStyle(fontSize: 11)),
+      const SizedBox(height: 22),
       _sectionLabel('Help & account'),
       _card([
         if (onHelp != null)
           _tile(Icons.chat_outlined, 'Help & contact', onHelp,
-              subtitle: 'Chat with our team on WhatsApp'),
+              subtitle: 'Chat with our team on WhatsApp', color: _green),
         if (onAccount != null) ...[
           const Divider(height: 1, color: _line),
-          _tile(Icons.manage_accounts_outlined, 'Account details', onAccount),
+          _tile(Icons.manage_accounts_outlined, 'Account details', onAccount,
+              color: circleNavy),
         ],
         if (onExport != null) ...[
           const Divider(height: 1, color: _line),
-          _tile(Icons.download_outlined, 'Download my data', onExport),
+          _tile(Icons.download_outlined, 'Download my data', onExport,
+              color: _violet),
         ],
       ]),
       if (onSignOut != null) ...[
         const SizedBox(height: 20),
         SizedBox(
             width: double.infinity,
-            child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(52),
-                    foregroundColor: circleNavy,
-                    backgroundColor: Colors.white,
-                    side: const BorderSide(color: _line)),
+            child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                    foregroundColor: const Color(0xFFC2452A),
+                    backgroundColor: const Color(0xFFFFE6DF),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16))),
                 onPressed: onSignOut,
                 icon: const Icon(Icons.logout_rounded, size: 20),
                 label: const Text('Sign out'))),
@@ -316,36 +349,46 @@ class CircleProfile extends StatelessWidget {
       child: Container(
           color: const Color(0xFFE0EEE8),
           child: Column(children: [
-            SizedBox(
-                height: 120,
-                width: double.infinity,
-                child: Image.asset(
-                    'assets/generated/profile-header-illustration.webp',
-                    fit: BoxFit.cover,
-                    alignment: Alignment.topCenter,
-                    excludeFromSemantics: true)),
+            Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                      height: 84,
+                      width: double.infinity,
+                      child: Image.asset(
+                          'assets/generated/profile-header-illustration.webp',
+                          fit: BoxFit.cover,
+                          alignment: Alignment.topCenter,
+                          excludeFromSemantics: true)),
+                  Positioned(
+                      bottom: -40,
+                      child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: const BoxDecoration(
+                              color: Colors.white, shape: BoxShape.circle),
+                          child: CircleMemberAvatar(name,
+                              photoUrl: app['photo_url'] as String?,
+                              photoPath: app['photo_path'] as String?,
+                              radius: 38))),
+                ]),
             Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+                padding: const EdgeInsets.fromLTRB(20, 46, 20, 12),
                 child: Column(children: [
-                  CircleMemberAvatar(name,
-                      photoUrl: app['photo_url'] as String?,
-                      photoPath: app['photo_path'] as String?,
-                      radius: 48),
-                  const SizedBox(height: 14),
                   Text(name,
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineMedium),
+                      style: Theme.of(context).textTheme.headlineSmall),
                   const SizedBox(height: 4),
                   Text(['Alkmaar', ...strings(app['languages'])].join(' · ')),
                   if ((app['intro'] as String? ?? '').isNotEmpty) ...[
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 10),
                     Text('“${app['intro']}”',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                             fontStyle: FontStyle.italic, height: 1.4)),
                   ],
                   if (strings(app['interests']).isNotEmpty) ...[
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 10),
                     Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -355,7 +398,7 @@ class CircleProfile extends StatelessWidget {
                             CirclePill(value)
                         ]),
                   ],
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
                   Wrap(
                       spacing: 8,
                       runSpacing: 4,
@@ -400,10 +443,62 @@ class CircleProfile extends StatelessWidget {
       child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch, children: children));
 
+  /// A tinted rounded square behind each icon, so every row has a colour and
+  /// related rows share one.
+  static Widget _badge(IconData icon, Color color) => Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+          color: color.withValues(alpha: .13),
+          borderRadius: BorderRadius.circular(11)),
+      child: Icon(icon, size: 20, color: color));
+
+  /// Seven days by three parts of the day. It stays the same size whether
+  /// someone picked one evening or every slot of the week.
+  Widget _slotGrid(Map<String, Set<String>> slots) {
+    const labels = ['Morning', 'Afternoon', 'Evening'];
+    Widget cell(bool on) => Expanded(
+        child: Container(
+            height: 22,
+            margin: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+                color: on ? circleTeal : const Color(0xFFEAF2EF),
+                borderRadius: BorderRadius.circular(6)),
+            child: on
+                ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
+                : null));
+    return Column(children: [
+      Row(children: [
+        const SizedBox(width: 76),
+        for (final day in circleDays)
+          Expanded(
+              child: Text(t(day).substring(0, 2),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _muted))),
+      ]),
+      const SizedBox(height: 2),
+      for (var p = 0; p < circlePeriods.length; p++)
+        Row(children: [
+          SizedBox(
+              width: 76,
+              child: Text(labels[p],
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12, color: _muted))),
+          for (final day in circleDayKeys)
+            cell(slots[day]?.contains(circlePeriods[p]) ?? false),
+        ]),
+    ]);
+  }
+
   Widget _tile(IconData icon, String title, VoidCallback? onTap,
-          {String? subtitle, bool destructive = false}) =>
+          {String? subtitle,
+          bool destructive = false,
+          Color color = circleTeal}) =>
       ListTile(
-          leading: Icon(icon, color: destructive ? destructiveRed : circleTeal),
+          leading: _badge(icon, destructive ? destructiveRed : color),
           title: Text(title,
               style: TextStyle(
                   fontWeight: FontWeight.w600,
@@ -416,12 +511,19 @@ class CircleProfile extends StatelessWidget {
   /// A labelled answer, so a question never reads as the answer's heading.
   Widget _row(BuildContext context, String label, String value) => Padding(
       padding: const EdgeInsets.only(top: 10),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label,
-            style: const TextStyle(
-                fontSize: 12, fontWeight: FontWeight.w700, color: _muted)),
-        const SizedBox(height: 2),
-        Text(value, style: Theme.of(context).textTheme.titleMedium),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        SizedBox(
+            width: 112,
+            child: Text(label,
+                style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w600, color: _muted))),
+        const SizedBox(width: 8),
+        Expanded(
+            child: Text(value,
+                style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: circleNavy))),
       ]));
 }
 

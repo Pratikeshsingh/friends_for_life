@@ -1379,4 +1379,12 @@ const nlStrings = <String, String>{
   'Choose a plan.': 'Kies een plan.',
   'You can still cancel your agreement and request a refund. Use Cancel my programme agreement in Profile.': 'Je kunt je afspraak nog annuleren en je geld terugvragen. Gebruik Mijn programma-afspraak annuleren in je Profiel.',
   'This request was already saved. Refresh before changing it.': 'Dit verzoek is al opgeslagen. Vernieuw voordat je het wijzigt.',
+  'Dates and times are fixed. We plan weeks 1 to 3; from week 4 your group picks the activity and place. Netherlands time.': 'Data en tijden liggen vast. Wij plannen week 1 tot en met 3; vanaf week 4 kiest je groep de activiteit en plek. Nederlandse tijd.',
+  'Say hello': 'Zeg hallo',
+  'Plan it': 'Plannen',
+  'Check in': 'Inchecken',
+  'Checked in ✓': 'Ingecheckt ✓',
+  'EXTRA PLAN': 'EXTRA PLAN',
+  'Last updated by {1}': 'Laatst bijgewerkt door {1}',
+  'Details to be confirmed': 'Details volgen nog',
 };
