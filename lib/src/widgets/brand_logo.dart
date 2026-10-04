@@ -36,34 +36,46 @@ class BrandLockup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
+    final style = Theme.of(context).textTheme.headlineSmall?.copyWith(
+          fontFamily: 'Manrope',
+          color: foregroundColor,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0,
+        );
+    final name = TextSpan(style: style, children: [
+      TextSpan(
+          text: 'Vriend',
+          style: TextStyle(
+              color: foregroundColor == Colors.white
+                  ? Colors.white
+                  : const Color(0xFF145247))),
+      const TextSpan(text: 'Time', style: TextStyle(color: Color(0xFFF56853))),
+    ]);
+    // When the full name does not fit next to the header's actions, show
+    // the mark on its own instead of a clipped "VriendT…".
+    return LayoutBuilder(builder: (context, box) {
+      final painter = TextPainter(
+          text: name,
+          maxLines: 1,
+          textDirection: TextDirection.ltr,
+          textScaler: MediaQuery.textScalerOf(context))
+        ..layout();
+      final fits = box.maxWidth >= logoSize + 14 + painter.width;
+      painter.dispose();
+      if (!fits) {
+        // Keep the mark square even when the header hands over its full
+        // width.
+        return Align(
+            alignment: AlignmentDirectional.centerStart,
+            widthFactor: 1,
+            heightFactor: 1,
+            child: BrandLogoMark(size: logoSize));
+      }
+      return Row(mainAxisSize: MainAxisSize.min, children: [
         ExcludeSemantics(child: BrandLogoMark(size: logoSize)),
         const SizedBox(width: 14),
-        Flexible(
-          child: Text.rich(
-            TextSpan(children: [
-              TextSpan(
-                  text: 'Vriend',
-                  style: TextStyle(
-                      color: foregroundColor == Colors.white
-                          ? Colors.white
-                          : const Color(0xFF145247))),
-              const TextSpan(
-                  text: 'Time', style: TextStyle(color: Color(0xFFF56853))),
-            ]),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontFamily: 'Manrope',
-                  color: foregroundColor,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0,
-                ),
-          ),
-        ),
-      ],
-    );
+        Text.rich(name, maxLines: 1),
+      ]);
+    });
   }
 }

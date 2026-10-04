@@ -13,8 +13,11 @@ flutter config --no-analytics >/dev/null
 flutter --version
 
 flutter pub get
-flutter build web --release --pwa-strategy=none
+# Stamp the build with its commit, so the version in Profile and in error
+# reports tells releases apart. Netlify provides COMMIT_REF.
+APP_BUILD="1.0.0+$(printf '%s' "${COMMIT_REF:-local}" | cut -c1-7)"
+flutter build web --release --pwa-strategy=none --dart-define=APP_BUILD="$APP_BUILD"
 
 test -f build/web/index.html
 test -f build/web/_redirects
-echo "Netlify build ready in build/web"
+echo "Netlify build $APP_BUILD ready in build/web"

@@ -374,7 +374,7 @@ class _StoryPainter extends CustomPainter {
               text: String.fromCharCode(icon.codePoint),
               style: TextStyle(
                   fontSize: 34,
-                  color: circleTeal,
+                  color: circleTealText,
                   fontFamily: icon.fontFamily)),
           textDirection: TextDirection.ltr)
         ..layout();

@@ -304,61 +304,24 @@ class CircleHome extends StatelessWidget {
           if (_replyBy(circle) != null)
             _info(Icons.hourglass_bottom_rounded,
                 'Please reply by ${_replyBy(circle)}'),
-          const SizedBox(height: 20),
-          ElevatedButton(
-              onPressed: busy || agreed
-                  ? null
-                  : credit
-                      ? () => act('join')
-                      : () => _checkout(context),
-              child: Text(agreed
-                  ? 'Invitation accepted'
-                  : credit
-                      ? 'Accept invitation — already paid'
-                      : 'Accept invitation — €19')),
-          const SizedBox(height: 12),
-          Text(credit
-              ? 'Your €19 from your previous Circle covers this one. Food and drinks are paid at the venue.'
-              : 'One payment for all six weeks. Food and drinks are paid at the venue. Cancel up to 48 hours before your first meetup for a full refund. Not the right group after your first meetup? Move to another group once, free of charge, before the second one starts.'),
-          if (!demo && !credit) ...[
+          // Before deciding, people look at the group and the six dates
+          // first; the answer comes after them. Once accepted, paying is the
+          // next step, so it stays here at the top.
+          if (agreed)
+            ..._decision(context, agreed, credit)
+          else ...[
+            // Saying yes is the next step, so it is right here; the full
+            // price and refund terms sit with the second button below, next
+            // to the group and dates.
+            const SizedBox(height: 16),
+            _acceptButton(context, agreed, credit),
             const SizedBox(height: 10),
             Text(
-                agreed
-                    ? PaymentConfig.hasCircleFeeLink
-                        ? 'Pay the one-off €19 with iDEAL. Use the name on your account so we can match your payment. Your place and group chat open once it arrives.'
-                        : 'You’ve agreed to the one-off €19 fee. The organiser will send your payment link on WhatsApp. Your place and group chat open once payment is received.'
-                    : PaymentConfig.hasCircleFeeLink
-                        ? 'Accept first, then pay the €19 with iDEAL.'
-                        : 'No online checkout. If you accept, the organiser will send your payment link on WhatsApp.',
-                style: const TextStyle(fontWeight: FontWeight.w700)),
-            if (agreed &&
-                PaymentConfig.hasCircleFeeLink &&
-                (state['payment_agreement'] as Map?)?['payment_reported_at'] ==
-                    null) ...[
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                  onPressed: busy ? null : () => _pay(context),
-                  icon: const Icon(Icons.account_balance_outlined),
-                  label: const Text('Pay €19 with iDEAL'))
-            ],
+                credit
+                    ? 'Already paid from your previous Circle. The group and all six dates are below.'
+                    : '€19 for all six weeks. The group, all six dates and the refund terms are below.',
+                style: const TextStyle(fontSize: 13, color: Color(0xFF4F5D66))),
           ],
-          if (agreed) ...[
-            SelectableText(
-                'Payment reference: ${(state['payment_agreement'] as Map?)?['reference'] ?? 'Contact the organiser'}'),
-            const Text(
-                'Use this reference with your payment. Paying does not immediately unlock your Circle; the organiser verifies receipt.'),
-            if ((state['payment_agreement'] as Map?)?['payment_reported_at'] !=
-                null)
-              const Text(
-                  'Payment sent · awaiting organiser verification. Please do not pay again. Contact us if it is still pending after 2 working days.')
-            else
-              TextButton(
-                  onPressed: busy ? null : () => act('payment_sent'),
-                  child: const Text('I’ve sent the payment')),
-          ],
-          TextButton(
-              onPressed: busy ? null : () => _decline(context),
-              child: const Text('This schedule doesn’t work for me'))
         ]),
       if (graduated) ...[
         CirclePanel(tint: true, children: [
@@ -404,6 +367,14 @@ class CircleHome extends StatelessWidget {
               if (m['week'] != null) m
           ],
           nextId: upcoming?['id']),
+      if (invited && !agreed) ...[
+        const SizedBox(height: 20),
+        CirclePanel(tint: true, children: [
+          Text('Does this group work for you?',
+              style: Theme.of(context).textTheme.headlineSmall),
+          ..._decision(context, agreed, credit),
+        ]),
+      ],
       if (meetups.any((m) => m['week'] == null && !circleMeetupPast(m))) ...[
         const SizedBox(height: 20),
         Text('Extra plans', style: Theme.of(context).textTheme.headlineSmall),
@@ -482,6 +453,68 @@ class CircleHome extends StatelessWidget {
                 style: const TextStyle(color: circleNavy)))
       ]));
 
+  Widget _acceptButton(BuildContext context, bool agreed, bool credit) =>
+      ElevatedButton(
+          onPressed: busy || agreed
+              ? null
+              : credit
+                  ? () => act('join')
+                  : () => _checkout(context),
+          child: Text(agreed
+              ? 'Invitation accepted'
+              : credit
+                  ? 'Accept invitation — already paid'
+                  : 'Accept invitation — €19'));
+
+  /// Accepting, paying and declining an invitation.
+  List<Widget> _decision(BuildContext context, bool agreed, bool credit) => [
+        const SizedBox(height: 20),
+        _acceptButton(context, agreed, credit),
+        const SizedBox(height: 12),
+        Text(credit
+            ? 'Your €19 from your previous Circle covers this one. Food and drinks are paid at the venue.'
+            : 'One payment for all six weeks. Food and drinks are paid at the venue. Cancel up to 48 hours before your first meetup for a full refund. Not the right group after your first meetup? Move to another group once, free of charge, before the second one starts.'),
+        if (!demo && !credit) ...[
+          const SizedBox(height: 10),
+          Text(
+              agreed
+                  ? PaymentConfig.hasCircleFeeLink
+                      ? 'Pay the one-off €19 with iDEAL. Use the name on your account so we can match your payment. Your place and group chat open once it arrives.'
+                      : 'You’ve agreed to the one-off €19 fee. The organiser will send your payment link on WhatsApp. Your place and group chat open once payment is received.'
+                  : PaymentConfig.hasCircleFeeLink
+                      ? 'Accept first, then pay the €19 with iDEAL.'
+                      : 'No online checkout. If you accept, the organiser will send your payment link on WhatsApp.',
+              style: const TextStyle(fontWeight: FontWeight.w700)),
+          if (agreed &&
+              PaymentConfig.hasCircleFeeLink &&
+              (state['payment_agreement'] as Map?)?['payment_reported_at'] ==
+                  null) ...[
+            const SizedBox(height: 12),
+            FilledButton.icon(
+                onPressed: busy ? null : () => _pay(context),
+                icon: const Icon(Icons.account_balance_outlined),
+                label: const Text('Pay €19 with iDEAL'))
+          ],
+        ],
+        if (agreed) ...[
+          SelectableText(
+              'Payment reference: ${(state['payment_agreement'] as Map?)?['reference'] ?? 'Contact the organiser'}'),
+          const Text(
+              'Use this reference with your payment. Paying does not immediately unlock your Circle; the organiser verifies receipt.'),
+          if ((state['payment_agreement'] as Map?)?['payment_reported_at'] !=
+              null)
+            const Text(
+                'Payment sent · awaiting organiser verification. Please do not pay again. Contact us if it is still pending after 2 working days.')
+          else
+            TextButton(
+                onPressed: busy ? null : () => act('payment_sent'),
+                child: const Text('I’ve sent the payment')),
+        ],
+        TextButton(
+            onPressed: busy ? null : () => _decline(context),
+            child: const Text('This schedule doesn’t work for me'))
+      ];
+
   /// One row of faces, scrolling sideways if the Circle is bigger than the
   /// screen, with the nudge to say hello right underneath.
   Widget _peopleCard(BuildContext context, List<Json> members, bool invited) =>
@@ -497,7 +530,10 @@ class CircleHome extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                         onTap: () => _member(context, members[i]),
                         child: SizedBox(
-                            width: 64,
+                            width: 64 *
+                                (MediaQuery.textScalerOf(context).scale(13) /
+                                        13)
+                                    .clamp(1.0, 1.6),
                             child: Column(children: [
                               const SizedBox(height: 4),
                               CircleMemberAvatar(members[i]['name'] as String,
@@ -517,22 +553,34 @@ class CircleHome extends StatelessWidget {
                             ])))),
             ])),
         const Divider(height: 24),
-        Row(children: [
-          Expanded(
-              child: Text(
-                  invited
-                      ? 'The same faces every week.'
-                      : 'You don’t need a perfect opener. A simple “how’s your week?” works.',
-                  style: const TextStyle(
-                      fontSize: 13, color: Color(0xFF4F5D66), height: 1.4))),
-          if (!invited) ...[
-            const SizedBox(width: 8),
-            FilledButton.tonalIcon(
-                onPressed: onMessages,
-                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                label: const Text('Say hello')),
-          ],
-        ]),
+        // Side by side when there is room; stacked on narrow phones or with
+        // large text, so the tip reads as sentences instead of a sliver.
+        LayoutBuilder(builder: (context, box) {
+          final tip = Text(
+              invited
+                  ? 'The same faces every week.'
+                  : 'You don’t need a perfect opener. A simple “how’s your week?” works.',
+              style: const TextStyle(
+                  fontSize: 13, color: Color(0xFF4F5D66), height: 1.4));
+          if (invited) return tip;
+          final hello = FilledButton.tonalIcon(
+              onPressed: onMessages,
+              icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+              label: const Text('Say hello'));
+          final stacked = box.maxWidth < 320 ||
+              MediaQuery.textScalerOf(context).scale(14) > 18;
+          return stacked
+              ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  tip,
+                  const SizedBox(height: 10),
+                  hello,
+                ])
+              : Row(children: [
+                  Expanded(child: tip),
+                  const SizedBox(width: 8),
+                  hello,
+                ]);
+        }),
       ]);
 
   /// The six programme weeks as one compact list: a row per week that opens
@@ -602,8 +650,9 @@ class CircleHome extends StatelessWidget {
                           ].join(' · '),
                           style: TextStyle(
                               fontSize: 13,
-                              color:
-                                  next ? circleCoral : const Color(0xFF66727C),
+                              color: next
+                                  ? circleCoralText
+                                  : const Color(0xFF66727C),
                               fontWeight:
                                   next ? FontWeight.w700 : FontWeight.w500)),
                     ])),
@@ -646,7 +695,7 @@ class CircleHome extends StatelessWidget {
                     fontSize: 11,
                     letterSpacing: 1.6,
                     fontWeight: FontWeight.w800,
-                    color: circleTeal))),
+                    color: circleTealText))),
         if (done)
           const Icon(Icons.check_circle_rounded, color: circleTeal, size: 21)
       ]),
@@ -840,7 +889,7 @@ class CircleHome extends StatelessWidget {
                                 fontSize: 11,
                                 letterSpacing: 1.4,
                                 fontWeight: FontWeight.w800,
-                                color: circleTeal)),
+                                color: circleTealText)),
                         const SizedBox(height: 8),
                         Wrap(spacing: 8, runSpacing: 8, children: [
                           for (final interest in interests)

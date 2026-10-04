@@ -119,6 +119,27 @@ DateTime? circleMeetupStart(Json meetup) {
 DateTime? circleMeetupEnd(Json meetup) =>
     DateTime.tryParse('${meetup['ends_at']}')?.toUtc() ??
     circleMeetupStart(meetup)?.add(const Duration(hours: 2));
+
+/// Plain words for Circle and payment states, so nobody reads
+/// "awaiting_payment" on screen.
+String circleStatusLabel(Object? status) => switch ('$status') {
+      'offered' => 'Invitations sent',
+      'active' => 'Active',
+      'completed' => 'Finished',
+      'cancelled' => 'Cancelled',
+      'forming' => 'Forming',
+      'awaiting_payment' => 'Awaiting payment',
+      'paid' => 'Paid · place confirmed',
+      'requested' => 'Refund requested',
+      'refunded' => 'Refund completed',
+      _ => '$status',
+    };
+
+/// One line for a payment in Profile: a refund, once there is one, says
+/// more about where things stand than the original payment does.
+String circlePaymentLabel(Json payment) =>
+    circleStatusLabel(payment['refund'] ?? payment['status']);
+
 bool circleMeetupPast(Json meetup, {DateTime? now}) =>
     meetup['completed'] == true ||
     (circleMeetupEnd(meetup)?.isBefore((now ?? DateTime.now()).toUtc()) ??

@@ -10,7 +10,9 @@ ThemeData buildTheme() {
   const primarySoft = Color(0xFFE7F4F2);
   const outline = Color(0xFFDDE7E3);
   const success = Color(0xFF36B8A5);
-  const danger = Color(0xFFD85F4D);
+  // Field errors are small text, so this is the readable red used for
+  // destructive actions (about 6:1 on white).
+  const danger = Color(0xFFB33A3A);
 
   final base = ThemeData(
     useMaterial3: true,
@@ -137,7 +139,8 @@ ThemeData buildTheme() {
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFF138B8A),
+        // Darker than the brand teal so small link text stays readable.
+        foregroundColor: const Color(0xFF0D6E6D),
         disabledForegroundColor: muted.withValues(alpha: 0.64),
         minimumSize: const Size(44, 44),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

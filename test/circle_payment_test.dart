@@ -34,7 +34,7 @@ void main() {
       action = a;
       payload = p;
     }));
-    await tester.tap(find.text('Accept invitation — €19'));
+    await tester.tap(find.text('Accept invitation — €19').first);
     await tester.pumpAndSettle();
     expect(
         tester

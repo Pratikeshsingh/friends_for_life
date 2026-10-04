@@ -622,12 +622,32 @@ class _CircleApplicationState extends State<CircleApplication> {
             // which is why almost nobody filled it in — and it is one of the
             // better matching signals we have. People who arrived in the
             // city the same way tend to have the same week.
-            _choices('What brings you here? (optional)', circleContexts,
-                lifeContext),
-            const SizedBox(height: 10),
-            const Text(
-                'Private. Never shown to your Circle. We use it to put you with people in a similar moment.',
-                style: TextStyle(fontSize: 13, color: Color(0xFF4F5D66))),
+            // Optional, so it sits in its own quieter box with a label,
+            // after the required questions, rather than looking like one.
+            Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                    color: const Color(0xFFF8F5EE),
+                    borderRadius: BorderRadius.circular(18)),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('OPTIONAL',
+                          style: TextStyle(
+                              fontSize: 11,
+                              letterSpacing: 1.4,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF66727C))),
+                      const SizedBox(height: 6),
+                      _choices(
+                          'What brings you here?', circleContexts, lifeContext),
+                      const SizedBox(height: 10),
+                      const Text(
+                          'Private. Never shown to your Circle. We use it to put you with people in a similar moment.',
+                          style: TextStyle(
+                              fontSize: 13, color: Color(0xFF4F5D66))),
+                    ])),
           ],
           if (step == 3) ...[
             Center(
@@ -692,7 +712,8 @@ class _CircleApplicationState extends State<CircleApplication> {
           if (saved != null)
             Padding(
                 padding: const EdgeInsets.only(top: 14),
-                child: Text(saved!, style: const TextStyle(color: circleTeal))),
+                child: Text(saved!,
+                    style: const TextStyle(color: circleTealText))),
           const SizedBox(height: 24),
           SizedBox(
               width: double.infinity,
@@ -908,7 +929,7 @@ class _CommitmentCard extends StatelessWidget {
                           fontSize: 11,
                           letterSpacing: 1.2,
                           fontWeight: FontWeight.w800,
-                          color: circleTeal.withValues(alpha: .9))),
+                          color: circleTealText.withValues(alpha: .9))),
                 ]),
                 const SizedBox(height: 16),
                 Text(

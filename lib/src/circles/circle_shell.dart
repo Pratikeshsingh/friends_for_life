@@ -16,7 +16,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/account_deletion_service.dart';
 import '../screens/auth_flow_screen.dart';
 import '../screens/legal_document_screen.dart';
-import '../screens/profile_screen.dart';
+import '../screens/account_screen.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/circle_loading.dart';
 import '../widgets/continuous_immersive_scene.dart';
@@ -266,10 +266,7 @@ class _CircleShellState extends State<CircleShell> {
                           child: ClipRRect(
                               borderRadius: BorderRadius.circular(28),
                               child: AuthFlowScreen(
-                                  circleMode: true,
                                   presentedAsModal: true,
-                                  initialEvents: const [],
-                                  initialCityOptions: const ['Alkmaar'],
                                   startInSignIn: signIn,
                                   onClose: () =>
                                       Navigator.of(dialogContext).pop()))))))
@@ -287,11 +284,7 @@ class _CircleShellState extends State<CircleShell> {
     if (repo == null) {
       if (auth && !_authAsModal) {
         return AuthFlowScreen(
-            circleMode: true,
-            initialEvents: const [],
-            initialCityOptions: const ['Alkmaar'],
-            startInSignIn: signIn,
-            onClose: () => setState(() => auth = false));
+            startInSignIn: signIn, onClose: () => setState(() => auth = false));
       }
       return CircleLanding(
           onApply: () => _openAuth(signIn: false),
@@ -707,7 +700,7 @@ class _CircleShellState extends State<CircleShell> {
                                 if (!own)
                                   Text(m['name'] as String? ?? 'Circle member',
                                       style: const TextStyle(
-                                          color: circleTeal,
+                                          color: circleTealText,
                                           fontSize: 12,
                                           fontWeight: FontWeight.w800)),
                                 SelectableText(m['body'] as String? ?? ''),
@@ -843,26 +836,14 @@ class _CircleShellState extends State<CircleShell> {
   }
 
   Future<void> _openAccount() async {
-    final app = state!['application'] as Map? ?? {};
-    final original = widget.session!.user;
-    final user = User.fromJson({
-      ...original.toJson(),
-      'user_metadata': {
-        ...original.userMetadata ?? {},
-        'first_name': app['name'],
-        'date_of_birth': app['date_of_birth'],
-        'profile_photo_path': app['photo_path'],
-        'has_profile_photo': app['photo_path'] != null,
-      }
-    })!;
+    final user = widget.session!.user;
     await Navigator.push(
         context,
         MaterialPageRoute<void>(
             builder: (_) => Scaffold(
                   appBar: AppBar(title: const Text('Account & support')),
                   body: SafeArea(
-                      child: ProfileScreen(
-                          circleMode: true,
+                      child: AccountScreen(
                           user: user,
                           onSignOut: () async {
                             await Supabase.instance.client.auth.signOut();
@@ -873,10 +854,7 @@ class _CircleShellState extends State<CircleShell> {
                                     Supabase.instance.client)
                                 .deleteCurrentAccount();
                             if (mounted) Navigator.pop(context);
-                          },
-                          isSigningOut: false,
-                          unreadNotificationCount: 0,
-                          onOpenNotifications: () => _notifications(context))),
+                          })),
                 )));
     if (mounted && repo != null) await load(silent: true);
   }
@@ -885,8 +863,8 @@ class _CircleShellState extends State<CircleShell> {
     String? uploaded;
     final client = Supabase.instance.client;
     try {
-      final result = await FilePicker.platform.pickFiles(
-          type: FileType.image, withData: true);
+      final result = await FilePicker.platform
+          .pickFiles(type: FileType.image, withData: true);
       if (result == null || result.files.isEmpty) return null;
       final file = result.files.single;
       if (file.bytes == null) {

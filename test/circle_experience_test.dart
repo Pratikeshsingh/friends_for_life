@@ -130,7 +130,7 @@ void main() {
         theme: buildTheme(),
         home: CircleShell(session: null, repository: repository)));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Accept invitation — €19'));
+    await tester.tap(find.text('Accept invitation — €19').first);
     await tester.pumpAndSettle();
     expect(find.text('Confirm demo payment'), findsOneWidget);
     await tester.tap(find.text('Confirm demo payment'));

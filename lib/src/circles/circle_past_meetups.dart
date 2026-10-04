@@ -57,7 +57,7 @@ class CirclePastMeetups extends StatelessWidget {
                                   fontSize: 11,
                                   letterSpacing: 1.6,
                                   fontWeight: FontWeight.w800,
-                                  color: circleTeal))),
+                                  color: circleTealText))),
                       const Icon(Icons.check_circle_rounded,
                           color: circleTeal, size: 20),
                     ]),

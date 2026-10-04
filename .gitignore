@@ -55,3 +55,6 @@ supabase/.temp/
 
 # Disposable backend test dependencies
 scripts/backend-tests/node_modules/
+
+# Supabase CLI working files
+supabase/.temp/

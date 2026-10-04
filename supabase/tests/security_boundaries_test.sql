@@ -68,7 +68,7 @@ select public.circle_action('admin_create',payload) from matching_payload;
 select 'PASS shared language, availability, group size, exclusion and atomic creation' finding,true passed;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
 select pg_temp.expect_error($q$select public.circle_action('schedule',jsonb_build_object('title','Unpaid plan','venue','Cafe','date',current_date+2,'time','12:00'))$q$,'active paid membership');
-select pg_temp.expect_error(format('select public.reserve_event(%L::uuid)',public.circle_snapshot()->'meetups'->0->>'id'),'Circle');
+select pg_temp.expect_error(format('select public.reserve_event(%L::uuid)',public.circle_snapshot()->'meetups'->0->>'id'),'does not exist');
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000007',true);
 select pg_temp.assert_true(not(public.circle_snapshot() ? 'members'),'outsider has no member list');
 select pg_temp.expect_error($q$select public.circle_messages_before(now(),'ffffffff-ffff-ffff-ffff-ffffffffffff')$q$,'active paid membership');

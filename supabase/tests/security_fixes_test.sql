@@ -85,17 +85,16 @@ reset role;
 select pg_temp.assert_true((select count(*) from public.events where circle_week is null)=3,'refused plans leave nothing behind');
 select pg_temp.assert_true((select count(*) from public.notifications where title='Your Circle has a plan update')=9,'only accepted plans notify the Circle');
 
--- SEC-05: after a refund, no venue through the old API, and attendance is cleaned up.
+-- SEC-05: the old venue API is gone, and a refund cleans up attendance.
 update public.events set starts_at=now()+interval '12 hours',ends_at=now()+interval '14 hours',venue_address='Private venue' where circle_week=1;
 insert into public.event_attendees(event_id,profile_id,status) values('20000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000003','joined'),('20000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002','joined');
 insert into public.circle_refund_requests(profile_id,circle_id) values('00000000-0000-0000-0000-000000000003','10000000-0000-0000-0000-000000000001');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000002',true);
-select pg_temp.assert_true(exists(select 1 from public.get_revealed_event_venues('20000000-0000-0000-0000-000000000001')),'a current member still gets the venue');
+select pg_temp.assert_true(to_regproc('public.get_revealed_event_venues') is null,'the old venue lookup is gone');
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000008',true);
 select public.circle_action('admin_confirm_refund',jsonb_build_object('id',public.circle_admin_snapshot()->'refunds'->0->>'id','returned',true));
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000003',true);
-select pg_temp.assert_true(not exists(select 1 from public.get_revealed_event_venues('20000000-0000-0000-0000-000000000001')),'a refunded member gets no venue');
 reset role;
 select pg_temp.assert_true(not exists(select 1 from public.event_attendees where profile_id='00000000-0000-0000-0000-000000000003'),'refund removes future attendance');
 select pg_temp.assert_true(not exists(select 1 from public.chat_participants where profile_id='00000000-0000-0000-0000-000000000003'),'refund removes the chat seat');

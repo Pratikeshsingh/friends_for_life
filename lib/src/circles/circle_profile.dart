@@ -152,7 +152,7 @@ class CircleProfile extends StatelessWidget {
                   style: TextStyle(
                       fontSize: 11,
                       letterSpacing: 1.5,
-                      color: circleTeal,
+                      color: circleTealText,
                       fontWeight: FontWeight.w800)),
               _row(
                   context,
@@ -290,8 +290,7 @@ class CircleProfile extends StatelessWidget {
               children: [
                 for (final payment in rows(state['payment_history']))
                   ListTile(
-                      title: Text(
-                          '€19 · ${payment['refund'] ?? payment['status']}'),
+                      title: Text('€19 · ${t(circlePaymentLabel(payment))}'),
                       subtitle: SelectableText('${payment['reference']}'),
                       trailing: payment['can_cancel'] == true && act != null
                           ? TextButton(
@@ -437,7 +436,7 @@ class CircleProfile extends StatelessWidget {
                               label: const Text('Edit my introduction')),
                       ]),
                   const Text('This is what your Circle sees.',
-                      style: TextStyle(fontSize: 13, color: circleTeal)),
+                      style: TextStyle(fontSize: 13, color: circleTealText)),
                 ])),
           ])));
 

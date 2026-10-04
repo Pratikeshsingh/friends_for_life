@@ -80,6 +80,12 @@ const circleNavy = Color(0xFF062B55);
 const circleTeal = Color(0xFF138B8A);
 const circleCoral = Color(0xFFFF7759);
 
+/// Text versions of the brand accents. The bright teal and coral are for
+/// icons, fills and large graphics; small text needs these darker shades to
+/// stay readable (at least 4.5:1 on every surface the app uses).
+const circleTealText = Color(0xFF0D6E6D);
+const circleCoralText = Color(0xFFB3412F);
+
 class CirclePanel extends StatelessWidget {
   const CirclePanel({super.key, required this.children, this.tint = false});
   final List<Widget> children;
@@ -108,7 +114,7 @@ class CircleHeading extends StatelessWidget {
                   fontSize: 11,
                   letterSpacing: 2,
                   fontWeight: FontWeight.w800,
-                  color: circleTeal)),
+                  color: circleTealText)),
           const SizedBox(height: 12)
         ],
         Text(title, style: Theme.of(context).textTheme.displayMedium),

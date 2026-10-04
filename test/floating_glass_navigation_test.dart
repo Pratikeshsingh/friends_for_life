@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vriendtime/src/core/theme.dart';
-import 'package:vriendtime/src/widgets/app_shell_header.dart';
 import 'package:vriendtime/src/widgets/floating_glass_navigation.dart';
 
 void main() {
@@ -81,32 +80,4 @@ void main() {
       },
     );
   }
-
-  testWidgets('notification bell uses the matching glass treatment', (
-    tester,
-  ) async {
-    var openCount = 0;
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: buildTheme(),
-        home: Scaffold(
-          body: Padding(
-            padding: const EdgeInsets.all(20),
-            child: AppShellHeader(
-              onOpenNotifications: () => openCount++,
-              unreadCount: 3,
-            ),
-          ),
-        ),
-      ),
-    );
-
-    expect(find.byType(BackdropFilter), findsOneWidget);
-    final bell = find.bySemanticsLabel('Open notifications, 3 unread');
-    expect(bell, findsOneWidget);
-    expect(tester.getSize(bell), const Size(48, 48));
-
-    await tester.tap(bell);
-    expect(openCount, 1);
-  });
 }

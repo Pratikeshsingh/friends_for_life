@@ -120,8 +120,8 @@ void main() {
         for (var i = 0; i < 6; i++) applicant('p$i'),
         applicant('spare'),
       ];
-      final group = suggestCircles(people,
-          exclusions: {exclusionKey('p0', 'p3')}).first;
+      final group =
+          suggestCircles(people, exclusions: {exclusionKey('p0', 'p3')}).first;
       final ids = group.members.map((m) => m['profile_id']).toList();
       expect(ids, contains('p0'));
       expect(ids, isNot(contains('p3')));

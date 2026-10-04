@@ -507,7 +507,7 @@ class _CircleAdminState extends State<CircleAdmin>
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
                 side: BorderSide(
-                    color: attention && value > 0 ? circleCoral : _line)),
+                    color: attention && value > 0 ? circleCoralText : _line)),
             child: InkWell(
                 borderRadius: BorderRadius.circular(16),
                 onTap: onTap,
@@ -522,8 +522,10 @@ class _CircleAdminState extends State<CircleAdmin>
                                   height: 1.1,
                                   fontWeight: FontWeight.w800,
                                   color: attention && value > 0
-                                      ? circleCoral
-                                      : circleNavy)),
+                                      ? circleCoralText
+                                      : value == 0
+                                          ? _muted
+                                          : circleNavy)),
                           const SizedBox(height: 4),
                           Text(label,
                               style: const TextStyle(
@@ -644,7 +646,7 @@ class _CircleAdminState extends State<CircleAdmin>
       Text('${p['name'] ?? 'Member'} · ${p['circle_name'] ?? 'Circle'}',
           style: Theme.of(context).textTheme.titleMedium),
       Text(
-          '€19 · ${p['status'].toString().replaceAll('_', ' ')} · agreed ${circleDate(p['agreed_at']?.toString())}',
+          '€19 · ${t(circleStatusLabel(p['status']))} · ${t('agreed')} ${circleDate(p['agreed_at']?.toString())}',
           style: const TextStyle(color: _muted)),
       SelectableText(p['email']?.toString() ?? 'Account removed'),
       ...contactLines(contact?['phone'] as String?,
@@ -699,7 +701,7 @@ class _CircleAdminState extends State<CircleAdmin>
       ]);
 
   Widget _refundCard(Json r) => _card([
-        Text('${r['name'] ?? 'Member'} · ${r['status']}',
+        Text('${r['name'] ?? 'Member'} · ${t(circleStatusLabel(r['status']))}',
             style: const TextStyle(fontWeight: FontWeight.w700)),
         if (r['email'] != null) SelectableText('${r['email']}'),
         if (r['status'] == 'requested')
@@ -1049,7 +1051,8 @@ class _CircleAdminState extends State<CircleAdmin>
               Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton(
-                      style: TextButton.styleFrom(foregroundColor: circleCoral),
+                      style: TextButton.styleFrom(
+                          foregroundColor: circleCoralText),
                       onPressed: busy || a['move_id'] == null
                           ? null
                           : () async {
@@ -1295,9 +1298,12 @@ class _CircleAdminState extends State<CircleAdmin>
                 style: const TextStyle(
                     fontWeight: FontWeight.w800, color: circleNavy))),
         const SizedBox(width: 8),
+        // Tappable as well as hoverable: on a phone there is no hover.
         Tooltip(
+            triggerMode: TooltipTriggerMode.tap,
+            showDuration: const Duration(seconds: 6),
             message: t(
-                'Fit score out of 100: interests, goals, age, social mix, shared situation and waiting time'),
+                'A guide for your judgement, not a verdict. Out of 100: interests, goals, age, social mix, shared situation and waiting time.'),
             child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -1306,9 +1312,14 @@ class _CircleAdminState extends State<CircleAdmin>
                         ? const Color(0xFFE3F4F1)
                         : const Color(0xFFF3F1EC),
                     borderRadius: BorderRadius.circular(20)),
-                child: Text('Fit ${m.score}',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w800, fontSize: 12)))),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text('Match fit ${m.score}/100',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800, fontSize: 12)),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.info_outline_rounded,
+                      size: 14, color: _muted),
+                ]))),
       ]),
       const SizedBox(height: 6),
       Wrap(spacing: 10, runSpacing: 8, children: [
@@ -1422,7 +1433,8 @@ class _CircleAdminState extends State<CircleAdmin>
       ]),
       if (explained != null) ...[
         const SizedBox(height: 12),
-        Text('Fit ${explained.score} · ${explained.reasons.join(' · ')}',
+        Text(
+            'Match fit ${explained.score}/100 · ${explained.reasons.join(' · ')}',
             style: const TextStyle(fontSize: 13)),
         if (common.slots.length > 1)
           Text('Also all free: ${common.slots.skip(1).join(', ')}',
@@ -1437,7 +1449,8 @@ class _CircleAdminState extends State<CircleAdmin>
               Expanded(
                   child: Text(p,
                       style: const TextStyle(
-                          fontWeight: FontWeight.w700, color: circleCoral))),
+                          fontWeight: FontWeight.w700,
+                          color: circleCoralText))),
             ])),
       if (fillers.isNotEmpty) ...[
         const SizedBox(height: 12),
@@ -1541,7 +1554,7 @@ class _CircleAdminState extends State<CircleAdmin>
           Text('${p['name'] ?? 'Member'} · ${p['circle_name'] ?? 'Circle'}',
               style: const TextStyle(fontWeight: FontWeight.w700)),
           Text(
-              '€19 · ${p['status'].toString().replaceAll('_', ' ')} · agreed ${circleDate(p['agreed_at']?.toString())}',
+              '€19 · ${t(circleStatusLabel(p['status']))} · ${t('agreed')} ${circleDate(p['agreed_at']?.toString())}',
               style: const TextStyle(color: _muted)),
         ]),
       _sectionTitle(context, 'Refunds'),
@@ -1557,7 +1570,7 @@ class _CircleAdminState extends State<CircleAdmin>
           Text(
               '${c['paid_members']}/5 paid places. Confirm enough people are joining before the first meetup.',
               style: const TextStyle(color: Colors.deepOrange)),
-        Text('${c['schedule']} · ${c['status']}',
+        Text('${c['schedule']} · ${t(circleStatusLabel(c['status']))}',
             style: const TextStyle(color: _muted)),
         if (['offered', 'active'].contains(c['status']))
           Align(
@@ -1594,17 +1607,23 @@ class _CircleAdminState extends State<CircleAdmin>
                                 action('admin_schedule', d, true),
                             organiser: true,
                             meetup: m)),
-              if (m['completed'] != true)
+              if (m['completed'] != true && circleMeetupPast(m))
                 TextButton.icon(
                     icon: const Icon(Icons.task_alt, size: 18),
                     label: const Text('Mark completed'),
                     onPressed: busy
                         ? null
                         : () => action('complete_meetup', {'id': m['id']})),
-              TextButton.icon(
-                  icon: const Icon(Icons.people_outline, size: 18),
-                  label: const Text('Attendance'),
-                  onPressed: () => attendance(m)),
+              if (circleMeetupPast(m))
+                TextButton.icon(
+                    icon: const Icon(Icons.people_outline, size: 18),
+                    label: const Text('Attendance'),
+                    onPressed: () => attendance(m))
+              else
+                const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Text('Attendance after the meetup',
+                        style: TextStyle(fontSize: 12, color: _muted))),
             ]),
           ]),
       ]);

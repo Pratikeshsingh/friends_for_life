@@ -69,8 +69,8 @@ void main() {
       'meetups': [],
     }, calls));
     final accept = find.text('Accept invitation — already paid');
-    await tester.ensureVisible(accept);
-    await tester.tap(accept);
+    expect(accept, findsNWidgets(2));
+    await tester.tap(accept.first);
     await tester.pumpAndSettle();
     expect(calls, ['join']);
     expect(find.textContaining('No online checkout'), findsNothing);

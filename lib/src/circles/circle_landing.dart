@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart' hide Text;
 import '../core/i18n.dart';
 import '../widgets/brand_logo.dart';
-import '../widgets/meetup_media.dart';
+import '../core/image_assets.dart';
 import '../widgets/motion.dart';
 import '../screens/legal_document_screen.dart';
 import 'circle_widgets.dart';
@@ -255,7 +255,7 @@ class _CircleLandingState extends State<CircleLanding> {
                                               fontSize: 15,
                                               fontWeight: FontWeight.w700,
                                               height: 1.5,
-                                              color: circleTeal)),
+                                              color: circleTealText)),
                                       const SizedBox(height: 26),
                                       ConstrainedBox(
                                           constraints: const BoxConstraints(

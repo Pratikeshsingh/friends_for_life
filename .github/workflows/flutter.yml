@@ -30,4 +30,4 @@ jobs:
         with:
           node-version: 22
       - run: npm ci --no-audit --no-fund
-      - run: node run.mjs production_hardening_test.sql security_boundaries_test.sql security_fixes_test.sql refund_move_test.sql circle_access_test.sql circle_experience_test.sql circle_release_test.sql
+      - run: node run.mjs production_hardening_test.sql security_boundaries_test.sql security_fixes_test.sql refund_move_test.sql restore_photos_test.sql old_app_removed_test.sql circle_access_test.sql circle_experience_test.sql circle_release_test.sql

@@ -4,15 +4,24 @@
 // Generated; edit the entries, keep the English keys exactly as in code.
 
 const nlStrings = <String, String>{
-  "We could not read this photo. Please choose it again.": "We konden deze foto niet lezen. Kies hem opnieuw.",
-  "This original photo is over 40 MB. Choose a smaller photo or a standard camera photo instead of RAW.": "Deze originele foto is groter dan 40 MB. Kies een kleinere foto of een gewone camerafoto in plaats van RAW.",
-  "This photo has unusually large dimensions. Please choose a standard camera photo.": "Deze foto heeft uitzonderlijk grote afmetingen. Kies een gewone camerafoto.",
-  "This browser could not open the iPhone photo. Try opening VriendTime in Safari, or choose a JPEG copy.": "Deze browser kon de iPhone-foto niet openen. Open VriendTime in Safari of kies een JPEG-kopie.",
-  "We could not open this photo. It may be incomplete or unsupported. Please choose another photo.": "We konden deze foto niet openen. Hij is mogelijk onvolledig of wordt niet ondersteund. Kies een andere foto.",
-  "We could not prepare this photo. Please try another photo.": "We konden deze foto niet voorbereiden. Probeer een andere foto.",
-  "We couldn't upload your photo. Please try again. Your current photo has not changed.": "We konden je foto niet uploaden. Probeer het opnieuw. Je huidige foto is niet gewijzigd.",
-  "We could not reduce this photo enough to upload it. Please choose another photo.": "We konden deze foto niet voldoende verkleinen om te uploaden. Kies een andere foto.",
-  "Photo storage could not accept the prepared image. Please try again or contact support.": "De foto-opslag kon de voorbereide afbeelding niet accepteren. Probeer het opnieuw of neem contact op.",
+  "We could not read this photo. Please choose it again.":
+      "We konden deze foto niet lezen. Kies hem opnieuw.",
+  "This original photo is over 40 MB. Choose a smaller photo or a standard camera photo instead of RAW.":
+      "Deze originele foto is groter dan 40 MB. Kies een kleinere foto of een gewone camerafoto in plaats van RAW.",
+  "This photo has unusually large dimensions. Please choose a standard camera photo.":
+      "Deze foto heeft uitzonderlijk grote afmetingen. Kies een gewone camerafoto.",
+  "This browser could not open the iPhone photo. Try opening VriendTime in Safari, or choose a JPEG copy.":
+      "Deze browser kon de iPhone-foto niet openen. Open VriendTime in Safari of kies een JPEG-kopie.",
+  "We could not open this photo. It may be incomplete or unsupported. Please choose another photo.":
+      "We konden deze foto niet openen. Hij is mogelijk onvolledig of wordt niet ondersteund. Kies een andere foto.",
+  "We could not prepare this photo. Please try another photo.":
+      "We konden deze foto niet voorbereiden. Probeer een andere foto.",
+  "We couldn't upload your photo. Please try again. Your current photo has not changed.":
+      "We konden je foto niet uploaden. Probeer het opnieuw. Je huidige foto is niet gewijzigd.",
+  "We could not reduce this photo enough to upload it. Please choose another photo.":
+      "We konden deze foto niet voldoende verkleinen om te uploaden. Kies een andere foto.",
+  "Photo storage could not accept the prepared image. Please try again or contact support.":
+      "De foto-opslag kon de voorbereide afbeelding niet accepteren. Probeer het opnieuw of neem contact op.",
 
   'Go beyond “what do you do?”': 'Meer dan “wat doe je voor werk?”',
   'Find out who’s secretly competitive.':
@@ -143,8 +152,6 @@ const nlStrings = <String, String>{
       'Het sluiten van een account heft geen verplichtingen of rechten op die naar hun aard doorlopen, waaronder bepalingen over intellectueel eigendom, aansprakelijkheid, geschillen en bedragen die al verschuldigd zijn.',
   'Account created. Confirm your email, then sign in to finish setup.':
       'Account aangemaakt. Bevestig je e-mailadres en log daarna in om verder te gaan.',
-  'Account data: email address, password authentication records, first and last name, account identifiers, and account timestamps.':
-      'Accountgegevens: e-mailadres, gegevens voor inloggen met wachtwoord, voor- en achternaam, account-ID’s en tijdstempels van je account.',
   'Account deletion is not available yet. Deploy the delete-account function and try again.':
       'Account verwijderen is nog niet beschikbaar. Probeer het later opnieuw.',
   'Account details': 'Accountgegevens',
@@ -208,8 +215,6 @@ const nlStrings = <String, String>{
       'Iemand wacht niet meer. Vernieuw eerst.',
   'An invitation is required.': 'Hiervoor heb je een uitnodiging nodig.',
   'Any': 'Alle',
-  'Any price or payment information shown for a meetup will be presented before you reserve. Venue purchases and services supplied directly by a third party may be governed by that third party’s own terms.':
-      'Prijs- of betaalinformatie voor een meetup zie je voordat je reserveert. Aankopen bij locaties en diensten die rechtstreeks door een derde worden geleverd, kunnen onder de eigen voorwaarden van die derde vallen.',
   'Anyone you’d like to spend more time with? (Optional)':
       'Iemand met wie je meer tijd wilt doorbrengen? (Optioneel)',
   'Anything you want us to know? (Optional)':
@@ -342,8 +347,6 @@ const nlStrings = <String, String>{
   'Choose your first meetup': 'Kies je eerste meetup',
   'Choose your gender': 'Kies je gender',
   'Circle': 'Circle',
-  'Circle data: birthday-based age, matching goals, optional life context, availability, interests, your six-week commitment, membership, RSVPs, private meetup check-ins and optional connection choices, programme outcomes, and the optional 90-day follow-up. Organisers use matching answers to form groups. Other members cannot see your private check-ins or payment agreements.':
-      'Circle-gegevens: leeftijd op basis van je geboortedatum, doelen voor het matchen, optionele levenssituatie, beschikbaarheid, interesses, je toezegging voor zes weken, lidmaatschap, aanmeldingen voor meetups, privé check-ins na meetups en optionele keuzes over contact, programma-uitkomsten en de optionele follow-up na 90 dagen. Organisatoren gebruiken antwoorden voor het matchen om groepen te vormen. Andere leden kunnen je privé check-ins en betaalafspraken niet zien.',
   'Circle invitation': 'Circle-uitnodiging',
   'Circle meetup not found.': 'Circle-meetup niet gevonden.',
   'Circle member': 'Circle-lid',
@@ -375,8 +378,6 @@ const nlStrings = <String, String>{
   'Come as you are and be kind. Keeping the meetup phone-free gives everyone more room to connect.':
       'Kom zoals je bent en wees vriendelijk. Zonder telefoons op tafel is er meer ruimte voor contact.',
   'Common questions about meetups': 'Veelgestelde vragen over meetups',
-  'Communication and safety data: messages sent through available group or support features, reports, support enquiries, and information needed to investigate safety or policy concerns.':
-      'Communicatie- en veiligheidsgegevens: berichten via beschikbare groeps- of hulpfuncties, meldingen, hulpvragen en informatie die nodig is om zorgen over veiligheid of beleid te onderzoeken.',
   'Complete your matching answers and six-week commitment.':
       'Vul je antwoorden voor het matchen en je toezegging voor zes weken in.',
   'Completed': 'Afgerond',
@@ -611,8 +612,6 @@ const nlStrings = <String, String>{
   'If your first meetup ended within the last 48 hours, we’ll review your refund request. Your feedback stays private.':
       'Is je eerste meetup in de afgelopen 48 uur afgelopen, dan bekijken we je terugbetalingsverzoek. Je feedback blijft privé.',
   'In progress': 'Bezig',
-  'Information is shared with other members only where needed for social and meetup features. Depending on the feature, this may include your first name, profile photo, short introduction, interests, and messages you send to a meetup group.':
-      'Informatie wordt alleen met andere leden gedeeld als dat nodig is voor sociale functies en meetups. Afhankelijk van de functie kan dat je voornaam, profielfoto, korte introductie, interesses en berichten aan een meetupgroep zijn.',
   'Interest': 'Interesse',
   'Interests': 'Interesses',
   'Intro': 'Intro',
@@ -688,10 +687,6 @@ const nlStrings = <String, String>{
   'Meeting people involves real-world risk. Other attendees are people who have also registered with VriendTime and may otherwise be unknown to us. Unless we explicitly state otherwise, we do not conduct criminal-background, identity, health, or character checks. We cannot guarantee any attendee’s identity, intentions, behaviour, health status, or compatibility with you.':
       'Mensen ontmoeten brengt risico’s in de echte wereld met zich mee. Andere deelnemers zijn mensen die zich ook bij VriendTime hebben aangemeld en verder mogelijk onbekend voor ons zijn. Tenzij we uitdrukkelijk iets anders zeggen, voeren we geen controles uit op strafblad, identiteit, gezondheid of karakter. We kunnen de identiteit, bedoelingen, het gedrag, de gezondheid of de klik met jou van geen enkele deelnemer garanderen.',
   'Meetup': 'Meetup',
-  'Meetup availability, capacity, venue, timing, and other details may change. A reservation is not transferable unless VriendTime agrees. Exact venue information may be shared shortly before a meetup and must not be used to disrupt the venue or compromise another member’s safety.':
-      'Beschikbaarheid, capaciteit, locatie, tijden en andere details van meetups kunnen veranderen. Een reservering is niet overdraagbaar, tenzij VriendTime daarmee instemt. De precieze locatie kan kort voor een meetup worden gedeeld en mag niet worden gebruikt om de locatie te verstoren of de veiligheid van een ander lid in gevaar te brengen.',
-  'Meetup data: meetup selections, reservations, cancellations, attendance status, calendar actions you initiate, and notifications associated with your meetups.':
-      'Meetup-gegevens: gekozen meetups, reserveringen, annuleringen, aanwezigheid, agenda-acties die je zelf start en meldingen over je meetups.',
   'Meetup not found in your Circle.': 'Meetup niet gevonden in je Circle.',
   'Meetup not found.': 'Meetup niet gevonden.',
   'Meetups': 'Meetups',
@@ -742,8 +737,8 @@ const nlStrings = <String, String>{
   'Need a number, photo or times': 'Nummer, foto of tijden ontbreken',
   'Netherlands time': 'Nederlandse tijd',
   'New': 'Nieuw',
-  'New Circle applications require a primary profile photo for recognition. A profile photo is not identity verification. That photo is available to your assigned Circle and authorised matching organisers, not the public activity feed.':
-      'Voor nieuwe aanmeldingen voor een Circle is een profielfoto nodig, zodat mensen je herkennen. Een profielfoto is geen identiteitscontrole. Die foto is zichtbaar voor je eigen Circle en bevoegde organisatoren die matchen, niet in een openbaar overzicht.',
+  'New Circle applications require a primary profile photo for recognition. A profile photo is not identity verification. That photo is available only to your assigned Circle and authorised matching organisers. It is never shown publicly.':
+      'Voor een nieuwe Circle-aanmelding is een duidelijke profielfoto nodig, zodat anderen je herkennen. Een profielfoto is geen identiteitscontrole. Alleen je eigen Circle en bevoegde organisatoren kunnen die foto zien. Hij wordt nooit openbaar getoond.',
   'New Circle is full': 'Nieuwe Circle is vol',
   'New job or studies': 'Nieuwe baan of studie',
   'New options will appear here as soon as they are available.':
@@ -954,8 +949,6 @@ const nlStrings = <String, String>{
   'Private. Never shown to your Circle. We use it to put you with people in a similar moment.':
       'Privé. Je Circle ziet dit nooit. We gebruiken het om je te koppelen aan mensen in een vergelijkbare fase.',
   'Profile': 'Profiel',
-  'Profile and preference data: city, date of birth, gender, language, phone number, availability, energy and group preferences, conversation goals, dietary notes, interests, and profile photos. Optional fields are identified in the app.':
-      'Profiel- en voorkeursgegevens: woonplaats, geboortedatum, gender, taal, telefoonnummer, beschikbaarheid, energie- en groepsvoorkeuren, gespreksdoelen, dieetwensen, interesses en profielfoto’s. Optionele velden zijn in de app aangegeven.',
   'Profile changes are being saved': 'Profielwijzigingen worden opgeslagen',
   'Profile details': 'Profielgegevens',
   'Profile photo': 'Profielfoto',
@@ -1156,8 +1149,8 @@ const nlStrings = <String, String>{
   'Sundays': 'Zondagen',
   'Support': 'Hulp',
   'THE ALKMAAR FOUNDING PILOT': 'DE FOUNDING PILOT IN ALKMAAR',
-  'Takes a minute. After this, four short questions about you, your week and your kind of company. No payment.':
-      'Duurt een minuutje. Daarna vier korte vragen over jou, je week en jouw soort gezelschap. Je betaalt niets.',
+  'Takes a minute. After this, four short questions about you, your week and your kind of company, plus a photo so your group can recognise you. No payment.':
+      'Duurt een minuutje. Daarna vier korte vragen over jou, je week en jouw soort mensen, plus een foto zodat je groep je herkent. Je betaalt niets.',
   'Tap a week to see the plan. We plan weeks 1 to 3. From week 4, your group plans together.':
       'Tik op een week om het plan te zien. Wij plannen week 1 tot en met 3. Vanaf week 4 plant je groep samen.',
   'Tap or swipe to see each week. We plan weeks 1 to 3. From week 4, your group plans together.':
@@ -1190,8 +1183,6 @@ const nlStrings = <String, String>{
   'The Thursday Circle': 'De donderdag-Circle',
   'The area is shown before you reserve. The exact venue appears in your VriendTime notifications at 10:00 on the date shown in your reservation.':
       'De buurt zie je voordat je reserveert. De precieze locatie verschijnt om 10:00 in je VriendTime-meldingen op de datum in je reservering.',
-  'The cancellation deadline displayed in the app applies to your reservation. If a meetup is cancelled or materially changed, we will try to notify affected members using the contact details associated with their accounts.':
-      'De annuleringstermijn die in de app staat, geldt voor je reservering. Als een meetup wordt geannuleerd of wezenlijk verandert, proberen we betrokken leden te informeren via de contactgegevens van hun account.',
   'The founding Circle programme costs €19 once for six weeks. Food, drinks, travel, and activity purchases are separate. There is no subscription or further programme fee after graduation. Your group and schedule are shown before you accept the invitation.':
       'Het founding Circle-programma kost eenmalig €19 voor zes weken. Eten, drinken, reiskosten en aankopen voor activiteiten zijn apart. Er is geen abonnement en na de afronding geen verdere programmabijdrage. Je ziet je groep en schema voordat je de uitnodiging accepteert.',
   'The full six-week programme costs €19 once. Food, drinks and activities are separate and paid at the venue. After you accept, you can pay straight away with iDEAL. Your place is confirmed when payment is received.':
@@ -1275,11 +1266,9 @@ const nlStrings = <String, String>{
   'To be arranged': 'Nog te regelen',
   'To do': 'Te doen',
   'To do · {1}': 'Te doen · {1}',
-  'To the fullest extent permitted by law, VriendTime is not responsible for the acts or omissions of attendees, venues, hosts, transport providers, or other independent third parties, or for indirect or unforeseeable loss. Nothing in these terms excludes or limits liability that cannot legally be excluded, including liability for our own intent or deliberate recklessness, death or personal injury caused by negligence where applicable, or your mandatory rights as a consumer.':
-      'Voor zover de wet dat toestaat, is VriendTime niet verantwoordelijk voor het handelen of nalaten van deelnemers, locaties, gastheren en -vrouwen, vervoerders of andere onafhankelijke derden, of voor indirecte of onvoorzienbare schade. Niets in deze voorwaarden sluit aansprakelijkheid uit of beperkt die als dat wettelijk niet kan, waaronder aansprakelijkheid voor onze eigen opzet of bewuste roekeloosheid, overlijden of letsel door nalatigheid waar van toepassing, of je dwingende rechten als consument.',
+  'To the fullest extent permitted by law, VriendTime is not responsible for the acts or omissions of attendees, venues, transport providers, or other independent third parties, or for indirect or unforeseeable loss. Nothing in these terms excludes or limits liability that cannot legally be excluded, including liability for our own intent or deliberate recklessness, death or personal injury caused by negligence where applicable, or your mandatory rights as a consumer.':
+      'Voor zover de wet dat toestaat, is VriendTime niet verantwoordelijk voor het handelen of nalaten van deelnemers, locaties, vervoerders of andere onafhankelijke derden, of voor indirecte of onvoorzienbare schade. Niets in deze voorwaarden sluit aansprakelijkheid uit of beperkt die als dat wettelijk niet kan, waaronder aansprakelijkheid voor onze eigen opzet of bewuste roekeloosheid, overlijden of letsel door nalatigheid waar van toepassing, of je dwingende rechten als consument.',
   'Travel': 'Reizen',
-  'Treat other members, hosts, venue staff, and the public with respect. Harassment, discrimination, threats, violence, unwanted sexual conduct, stalking, fraud, spam, illegal activity, and conduct that puts anyone at risk are prohibited.':
-      'Behandel andere leden, gastheren en -vrouwen, personeel van locaties en het publiek met respect. Intimidatie, discriminatie, bedreigingen, geweld, ongewenst seksueel gedrag, stalking, fraude, spam, illegale activiteiten en gedrag dat iemand in gevaar brengt, zijn verboden.',
   'Trust your instincts': 'Vertrouw op je gevoel',
   'Try again': 'Opnieuw proberen',
   'Try again later.': 'Probeer het later opnieuw.',
@@ -1327,8 +1316,6 @@ const nlStrings = <String, String>{
   'VriendTime and its software, branding, design, and original content are protected by intellectual-property laws. We give you a personal, limited, revocable, non-transferable right to use the service for its intended purpose.':
       'VriendTime en de bijbehorende software, merkuitingen, vormgeving en originele inhoud zijn beschermd door intellectuele-eigendomsrechten. We geven je een persoonlijk, beperkt, herroepbaar en niet-overdraagbaar recht om de dienst voor het bedoelde doel te gebruiken.',
   'VriendTime could not start': 'VriendTime kon niet starten',
-  'VriendTime helps adults join a small Friendship Circle that meets weekly for six weeks, and discover local social meetups. VriendTime may provide meetup information, reminders, group communication, and links that help you add an event to your calendar.':
-      'VriendTime helpt volwassenen om mee te doen aan een kleine Friendship Circle die zes weken lang wekelijks samenkomt, en om sociale meetups in de buurt te ontdekken. VriendTime kan informatie over meetups, herinneringen, groepscommunicatie en links aanbieden waarmee je een afspraak aan je agenda toevoegt.',
   'VriendTime is a facilitator. Unless we expressly say otherwise, venues and other attendees are independent third parties and are not our employees or agents.':
       'VriendTime is een bemiddelaar. Tenzij we uitdrukkelijk iets anders zeggen, zijn locaties en andere deelnemers onafhankelijke derden en geen medewerkers of vertegenwoordigers van ons.',
   'VriendTime is currently available in 1 city. More cities are coming soon.':
@@ -1395,8 +1382,6 @@ const nlStrings = <String, String>{
   'We found your group for {1}.': 'We hebben je groep voor {1} gevonden.',
   'We may process information to comply with legal obligations and to establish, exercise, or defend legal claims. Where a separate consent is legally required, we will ask for it and you may withdraw it for future processing.':
       'We kunnen informatie verwerken om aan wettelijke verplichtingen te voldoen en om rechtsvorderingen in te stellen, uit te oefenen of te verdedigen. Als aparte toestemming wettelijk verplicht is, vragen we daarom en kun je die voor toekomstige verwerking intrekken.',
-  'We may share relevant details with meetup venues, hosts, professional advisers, authorities, or safety partners when necessary to deliver a meetup, respond to an incident, protect rights and safety, or comply with law. We do not sell your personal data.':
-      'We kunnen relevante gegevens delen met meetuplocaties, gastheren en -vrouwen, professionele adviseurs, autoriteiten of veiligheidspartners als dat nodig is om een meetup te laten doorgaan, op een incident te reageren, rechten en veiligheid te beschermen of de wet na te leven. We verkopen je persoonsgegevens niet.',
   'We may update the service or these terms. If a change materially affects your rights, we will provide reasonable notice in the app, by email, or through another appropriate channel. Where required, we will ask you to accept updated terms before continuing to use the service.':
       'We kunnen de dienst of deze voorwaarden aanpassen. Als een wijziging je rechten wezenlijk raakt, laten we dat op redelijke termijn weten in de app, per e-mail of via een ander passend kanaal. Waar nodig vragen we je de nieuwe voorwaarden te accepteren voordat je de dienst verder gebruikt.',
   'We may update this policy as the service or law changes. We will post the new version and update its effective date. We will provide additional notice when a change is material or when the law requires it.':
@@ -1407,8 +1392,6 @@ const nlStrings = <String, String>{
   'We plan weeks 1 to 3': 'Wij plannen week 1 tot en met 3',
   'We plan weeks 1 to 3. From week 4, your group plans together. All times are Netherlands time.':
       'Wij plannen week 1 tot en met 3. Vanaf week 4 plant je groep samen. Alle tijden zijn Nederlandse tijd.',
-  'We process account, profile, reservation, and communication data to provide the service you request and perform our contract with you. This includes creating your account, matching your preferences to meetups, managing reservations, revealing meetup details, enabling participant communication, and providing support.':
-      'We verwerken account-, profiel-, reserverings- en communicatiegegevens om de dienst te leveren die je vraagt en onze overeenkomst met jou uit te voeren. Daaronder valt het aanmaken van je account, het koppelen van je voorkeuren aan meetups, het beheren van reserveringen, het bekendmaken van meetupdetails, communicatie tussen deelnemers mogelijk maken en hulp bieden.',
   'We process age information to enforce the adults-only eligibility rule and to support safety. We use security, diagnostic, and limited service-usage information for our legitimate interests in preventing misuse, protecting members, fixing problems, and improving VriendTime, balanced against your rights.':
       'We verwerken leeftijdsgegevens om de regel te handhaven dat alleen volwassenen mogen meedoen en om de veiligheid te ondersteunen. We gebruiken beveiligings-, diagnose- en beperkte gebruiksgegevens voor ons gerechtvaardigd belang om misbruik te voorkomen, leden te beschermen, problemen op te lossen en VriendTime te verbeteren, afgewogen tegen jouw rechten.',
   'We retain personal data only for as long as needed for the purposes described above. Account and active profile data are generally retained while your account is open. Operational, safety, transaction, or dispute records may be retained longer where reasonably necessary or legally required.':
@@ -1523,16 +1506,14 @@ const nlStrings = <String, String>{
       'Je kunt altijd weggaan. Voelt iets niet goed, ga dan naar een veilige plek en neem contact met ons op.',
   'You can only do this for someone from one of your Circles.':
       'Dit kan alleen voor iemand uit een van je Circles.',
-  'You can permanently delete your account from the Account section of your Profile. When your account is deleted, we delete its profile, reservations, messages, notifications, and profile photos unless we must retain specific information for legal, fraud-prevention, safety, accounting, or dispute purposes. Backup copies are removed on their normal secure rotation schedule.':
-      'Je kunt je account voorgoed verwijderen via het onderdeel Account in je Profiel. Als je account wordt verwijderd, verwijderen we het profiel, reserveringen, berichten, meldingen en profielfoto’s, tenzij we bepaalde informatie moeten bewaren om wettelijke redenen, ter voorkoming van fraude, voor veiligheid, de boekhouding of bij geschillen. Back-ups worden volgens hun normale, beveiligde schema opgeschoond.',
-  'You can review or update many profile fields in the app. Depending on applicable law, you may request access, correction, deletion, restriction, portability, or object to certain processing. You may withdraw consent without affecting earlier lawful processing.':
-      'Veel profielvelden kun je in de app bekijken of aanpassen. Afhankelijk van de toepasselijke wet kun je vragen om inzage, correctie, verwijdering, beperking of overdraagbaarheid, of bezwaar maken tegen bepaalde verwerking. Je kunt toestemming intrekken zonder dat dit eerdere rechtmatige verwerking raakt.',
+  'You can review or update your profile and matching answers in the app. Depending on applicable law, you may request access, correction, deletion, restriction, portability, or object to certain processing. You may withdraw consent without affecting earlier lawful processing.':
+      'Je profiel en matchingantwoorden kun je in de app bekijken of aanpassen. Afhankelijk van de toepasselijke wet kun je vragen om inzage, correctie, verwijdering, beperking of overdraagbaarheid, of bezwaar maken tegen bepaalde verwerking. Je kunt toestemming intrekken zonder dat dit eerdere rechtmatige verwerking raakt.',
   'You can update optional answers later from Profile.':
       'Optionele antwoorden kun je later in je Profiel aanpassen.',
   'You can update your profile details anytime.':
       'Je kunt je profielgegevens altijd aanpassen.',
-  'You choose voluntarily whether to reserve, attend, stay at, eat or drink at, travel to, or interact with people at a meetup. To the fullest extent permitted by law, you accept responsibility for those choices and for your own health, allergies, dietary decisions, personal safety, belongings, conduct, conversations, expectations, and enjoyment. A disappointing experience, personal incompatibility, illness caused by an independent venue, loss of property, or harm caused by another attendee or third party is not something VriendTime can guarantee against.':
-      'Je kiest zelf of je reserveert, meegaat, blijft, daar eet of drinkt, ernaartoe reist of met mensen op een meetup omgaat. Voor zover de wet dat toestaat, neem je verantwoordelijkheid voor die keuzes en voor je eigen gezondheid, allergieën, dieetkeuzes, persoonlijke veiligheid, spullen, gedrag, gesprekken, verwachtingen en plezier. Een tegenvallende ervaring, geen klik, ziekte door een onafhankelijke locatie, verlies van spullen, of schade door een andere deelnemer of derde is niet iets waartegen VriendTime garanties kan geven.',
+  'You choose voluntarily whether to join a Circle and whether to attend, stay at, eat or drink at, travel to, or interact with people at a meetup. To the fullest extent permitted by law, you accept responsibility for those choices and for your own health, allergies, dietary decisions, personal safety, belongings, conduct, conversations, expectations, and enjoyment. A disappointing experience, personal incompatibility, illness caused by an independent venue, loss of property, or harm caused by another attendee or third party is not something VriendTime can guarantee against.':
+      'Je kiest zelf of je meedoet aan een Circle en of je meegaat, blijft, daar eet of drinkt, ernaartoe reist of met mensen op een meetup omgaat. Voor zover de wet dat toestaat, neem je verantwoordelijkheid voor die keuzes en voor je eigen gezondheid, allergieën, dieetkeuzes, persoonlijke veiligheid, spullen, gedrag, gesprekken, verwachtingen en plezier. Een tegenvallende ervaring, geen klik, ziekte door een onafhankelijke locatie, verlies van spullen, of schade door een andere deelnemer of derde is niet iets waartegen VriendTime garanties kan geven.',
   'You confirm that you have the rights needed to submit your content and that it does not violate another person’s rights or these terms.':
       'Je bevestigt dat je de rechten hebt om je inhoud in te sturen en dat die geen inbreuk maakt op de rechten van een ander of op deze voorwaarden.',
   'You don’t need a perfect opener. A simple “how’s your week?” works.':
@@ -1577,8 +1558,6 @@ const nlStrings = <String, String>{
   'Your details stay private. Learn why we ask.':
       'Je gegevens blijven privé. Lees waarom we het vragen.',
   'Your details.': 'Je gegevens.',
-  'Your email address, date of birth, phone number, dietary notes, and private account details are not intended to appear on your public member profile. Avoid placing private information in free-text fields or messages that other members can view.':
-      'Je e-mailadres, geboortedatum, telefoonnummer, dieetwensen en privé accountgegevens zijn niet bedoeld om op je openbare ledenprofiel te verschijnen. Zet geen privé-informatie in vrije tekstvelden of berichten die andere leden kunnen zien.',
   'Your first hello': 'Je eerste hallo',
   'Your first hello.': 'Je eerste hallo.',
   'Your first meetup is ready': 'Je eerste meetup staat klaar',
@@ -1592,7 +1571,7 @@ const nlStrings = <String, String>{
   'Your invitation': 'Je uitnodiging',
   'Your invitation, the venue and a day-before reminder.':
       'Je uitnodiging, de locatie en een herinnering de dag ervoor.',
-  'Your kind of company.': 'Jouw soort gezelschap.',
+  'Your kind of company.': 'Jouw soort mensen.',
   'Your meetups are ready': 'Je meetups staan klaar',
   'Your meetups so far': 'Je meetups tot nu toe',
   'Your new Circle · {1}/6': 'Je nieuwe Circle · {1}/6',
@@ -1892,11 +1871,13 @@ const nlStrings = <String, String>{
   'Accept invitation — already paid': 'Uitnodiging accepteren — al betaald',
   'Your €19 from your previous Circle covers this one. Food and drinks are paid at the venue.':
       'Je €19 van je vorige Circle dekt deze ook. Eten en drinken betaal je zelf op locatie.',
-  'One payment for all six weeks. Food and drinks are paid at the venue. Cancel up to 48 hours before your first meetup for a full refund. Not the right group after your first meetup? Move to another group once, free of charge, before the second one starts.': 'Eén betaling voor alle zes weken. Eten en drinken betaal je op locatie. Annuleer tot 48 uur voor je eerste meetup en je krijgt alles terug. Niet de juiste groep na je eerste meetup? Ga één keer gratis naar een andere groep, voordat de tweede begint.',
+  'One payment for all six weeks. Food and drinks are paid at the venue. Cancel up to 48 hours before your first meetup for a full refund. Not the right group after your first meetup? Move to another group once, free of charge, before the second one starts.':
+      'Eén betaling voor alle zes weken. Eten en drinken betaal je op locatie. Annuleer tot 48 uur voor je eerste meetup en je krijgt alles terug. Niet de juiste groep na je eerste meetup? Ga één keer gratis naar een andere groep, voordat de tweede begint.',
   'Circle not feeling right? Move to another group':
       'Voelt de Circle niet goed? Ga naar een andere groep',
   'Move to another group?': 'Naar een andere groep?',
-  'You’ll leave this Circle and we’ll match you with a new group. Your €19 carries over, so you won’t pay again. You can do this once, until your second meetup starts. The others will only hear that someone stepped away.': 'Je verlaat deze Circle en we zoeken een nieuwe groep voor je. Je €19 gaat mee, dus je betaalt niet opnieuw. Dit kan één keer, tot je tweede meetup begint. De anderen horen alleen dat iemand is gestopt.',
+  'You’ll leave this Circle and we’ll match you with a new group. Your €19 carries over, so you won’t pay again. You can do this once, until your second meetup starts. The others will only hear that someone stepped away.':
+      'Je verlaat deze Circle en we zoeken een nieuwe groep voor je. Je €19 gaat mee, dus je betaalt niet opnieuw. Dit kan één keer, tot je tweede meetup begint. De anderen horen alleen dat iemand is gestopt.',
   'What would make the next group a better fit?':
       'Wat zou de volgende groep beter laten passen?',
   'Optional. Only the organiser sees this.':
@@ -1907,9 +1888,12 @@ const nlStrings = <String, String>{
       'Je gaat naar een nieuwe groep. Je €19 gaat mee.',
   'You can cancel up to 48 hours before your first meetup. If you have paid, the organiser will return your €19. Otherwise your payment agreement will be cancelled.':
       'Je kunt annuleren tot 48 uur voor je eerste meetup. Heb je al betaald, dan stort de organisator je €19 terug. Anders wordt je betalingsafspraak geannuleerd.',
-  'The €19 is no longer refundable at this point. If this group isn’t right for you and your second meetup hasn’t started yet, you can move to another group once, free of charge, from your Circle’s home screen.': 'De €19 wordt nu niet meer terugbetaald. Past deze groep niet bij je en is je tweede meetup nog niet begonnen? Dan kun je één keer gratis naar een andere groep, via het startscherm van je Circle.',
-  'Cancel up to 48 hours before your first meetup for a full refund. Not the right group after the first meetup? Move to another one once, free of charge.': 'Annuleer tot 48 uur voor je eerste meetup en je krijgt alles terug. Niet de juiste groep na de eerste meetup? Ga één keer gratis naar een andere.',
-  'Before your first meetup you can cancel for a full refund, up to 48 hours before it starts. Between your first and second meetup you can move to another group once, free of charge, from your Circle’s home screen. Your €19 carries over. Your reasons and private check-ins are never shared with other members.': 'Voor je eerste meetup kun je annuleren en alles terugkrijgen, tot 48 uur voordat die begint. Tussen je eerste en tweede meetup kun je één keer gratis naar een andere groep, via het startscherm van je Circle. Je €19 gaat mee. Je redenen en privé check-ins worden nooit met andere leden gedeeld.',
+  'The €19 is no longer refundable at this point. If this group isn’t right for you and your second meetup hasn’t started yet, you can move to another group once, free of charge, from your Circle’s home screen.':
+      'De €19 wordt nu niet meer terugbetaald. Past deze groep niet bij je en is je tweede meetup nog niet begonnen? Dan kun je één keer gratis naar een andere groep, via het startscherm van je Circle.',
+  'Cancel up to 48 hours before your first meetup for a full refund. Not the right group after the first meetup? Move to another one once, free of charge.':
+      'Annuleer tot 48 uur voor je eerste meetup en je krijgt alles terug. Niet de juiste groep na de eerste meetup? Ga één keer gratis naar een andere.',
+  'Before your first meetup you can cancel for a full refund, up to 48 hours before it starts. Between your first and second meetup you can move to another group once, free of charge, from your Circle’s home screen. Your €19 carries over. Your reasons and private check-ins are never shared with other members.':
+      'Voor je eerste meetup kun je annuleren en alles terugkrijgen, tot 48 uur voordat die begint. Tussen je eerste en tweede meetup kun je één keer gratis naar een andere groep, via het startscherm van je Circle. Je €19 gaat mee. Je redenen en privé check-ins worden nooit met andere leden gedeeld.',
   'Moving · already paid': 'Verhuist · al betaald',
   'Moving from another Circle': 'Komt uit een andere Circle',
   'Already paid: their next Circle is free. Place them first. If no group fits in time, refund them instead.':
@@ -1920,15 +1904,18 @@ const nlStrings = <String, String>{
       'Diegene verlaat de wachtlijst en verschijnt onder Terug te betalen. Bevestig daar zodra je de €19 hebt teruggestort.',
   'Meet your Circle first. Before the first meetup you can still cancel for a refund.':
       'Ontmoet eerst je Circle. Voor de eerste meetup kun je nog annuleren en je geld terugkrijgen.',
-  'Refunds are possible until 48 hours before your first meetup. Between your first and second meetup you can move to another group once, free of charge.': 'Terugbetalen kan tot 48 uur voor je eerste meetup. Tussen je eerste en tweede meetup kun je één keer gratis naar een andere groep.',
-  'The refund window closed 48 hours before your first meetup. Between your first and second meetup you can move to another group once, free of charge.': 'Terugbetalen kon tot 48 uur voor je eerste meetup. Tussen je eerste en tweede meetup kun je wel één keer gratis naar een andere groep.',
+  'Refunds are possible until 48 hours before your first meetup. Between your first and second meetup you can move to another group once, free of charge.':
+      'Terugbetalen kan tot 48 uur voor je eerste meetup. Tussen je eerste en tweede meetup kun je één keer gratis naar een andere groep.',
+  'The refund window closed 48 hours before your first meetup. Between your first and second meetup you can move to another group once, free of charge.':
+      'Terugbetalen kon tot 48 uur voor je eerste meetup. Tussen je eerste en tweede meetup kun je wel één keer gratis naar een andere groep.',
   'You have already used your free move. A new Circle means joining and paying again.':
       'Je hebt je gratis verhuizing al gebruikt. Voor een nieuwe Circle meld je je opnieuw aan en betaal je opnieuw.',
   'You can still cancel for a refund. Use Cancel my programme agreement in Profile.':
       'Je kunt nog annuleren en je geld terugkrijgen. Gebruik Mijn programma-afspraak annuleren in Profiel.',
   'Only members of an active Circle can move.':
       'Alleen leden van een actieve Circle kunnen verhuizen.',
-  'A move is possible until your second meetup starts.': 'Verhuizen kan tot je tweede meetup begint.',
+  'A move is possible until your second meetup starts.':
+      'Verhuizen kan tot je tweede meetup begint.',
   'No agreement to cancel. Contact the organiser for help.':
       'Geen afspraak om te annuleren. Neem contact op met de organisator.',
   'Your cancellation is already being handled.':
@@ -1942,8 +1929,58 @@ const nlStrings = <String, String>{
       'Elke Circle is een vrijetijdsdienst op vaste data. Voor dit soort diensten geldt het wettelijke herroepingsrecht van 14 dagen bij online aankopen niet. In plaats daarvan gelden de volgende annuleringsregels.',
   'Before your first meetup: you can cancel your programme agreement in the app until 48 hours before the first meetup starts. If you have paid, we refund the full €19.':
       'Voor je eerste meetup: je kunt je programma-afspraak in de app annuleren tot 48 uur voordat de eerste meetup begint. Heb je al betaald, dan betalen we de volledige €19 terug.',
-  'After that: the €19 is not refunded. If your Circle does not feel right, you can move to another group once, free of charge, between the start of your first meetup and the start of your second meetup. You keep your place on the waiting list and your €19 covers the new Circle. If we cannot offer you a new group within a reasonable time, we refund your €19. After your second meetup has started, no move or refund is possible, and joining a further Circle means paying again.': 'Daarna: de €19 wordt niet terugbetaald. Voelt je Circle niet goed, dan kun je één keer gratis naar een andere groep, tussen het begin van je eerste meetup en het begin van je tweede meetup. Je houdt je plek op de wachtlijst en je €19 dekt de nieuwe Circle. Kunnen we je niet binnen een redelijke termijn een nieuwe groep bieden, dan betalen we je €19 terug. Is je tweede meetup begonnen, dan is verhuizen of terugbetalen niet meer mogelijk en betaal je voor een volgende Circle opnieuw.',
+  'After that: the €19 is not refunded. If your Circle does not feel right, you can move to another group once, free of charge, between the start of your first meetup and the start of your second meetup. You keep your place on the waiting list and your €19 covers the new Circle. If we cannot offer you a new group within a reasonable time, we refund your €19. After your second meetup has started, no move or refund is possible, and joining a further Circle means paying again.':
+      'Daarna: de €19 wordt niet terugbetaald. Voelt je Circle niet goed, dan kun je één keer gratis naar een andere groep, tussen het begin van je eerste meetup en het begin van je tweede meetup. Je houdt je plek op de wachtlijst en je €19 dekt de nieuwe Circle. Kunnen we je niet binnen een redelijke termijn een nieuwe groep bieden, dan betalen we je €19 terug. Is je tweede meetup begonnen, dan is verhuizen of terugbetalen niet meer mogelijk en betaal je voor een volgende Circle opnieuw.',
   'If VriendTime cancels your Circle, received programme fees are always refunded. If you leave because of a safety concern you have reported to us, we will look at a refund or a free move with you, separately from the rules above. Refunds are arranged manually and these terms do not limit any rights you have under mandatory consumer law. Contact the organiser for other cancellation or payment concerns.':
       'Als VriendTime je Circle annuleert, worden ontvangen programmakosten altijd terugbetaald. Stop je vanwege een veiligheidszorg die je bij ons hebt gemeld, dan bekijken we samen met je een terugbetaling of een gratis verhuizing, los van de regels hierboven. Terugbetalingen worden handmatig geregeld en deze voorwaarden beperken geen rechten die je hebt onder dwingend consumentenrecht. Neem contact op met de organisator voor andere vragen over annuleren of betalen.',
-  'A move is possible between your first and second meetup.': 'Verhuizen kan tussen je eerste en tweede meetup.',
+  'A move is possible between your first and second meetup.':
+      'Verhuizen kan tussen je eerste en tweede meetup.',
+  'OPTIONAL': 'OPTIONEEL',
+  'What brings you here?': 'Wat brengt je hier?',
+  'Match fit {1}/100': 'Match {1}/100',
+  'A guide for your judgement, not a verdict. Out of 100: interests, goals, age, social mix, shared situation and waiting time.':
+      'Een hulpmiddel voor je eigen oordeel, geen eindoordeel. Uit 100: interesses, doelen, leeftijd, sociale mix, gedeelde situatie en wachttijd.',
+  'Attendance after the meetup': 'Aanwezigheid na de meetup',
+  'Invitations sent': 'Uitnodigingen verstuurd',
+  'Active': 'Actief',
+  'Finished': 'Afgerond',
+  'Paid · place confirmed': 'Betaald · plek bevestigd',
+  'Refund requested': 'Terugbetaling aangevraagd',
+  'Refund completed': 'Terugbetaling voltooid',
+  'Meet the group and check all six dates below. You can answer at the bottom.':
+      'Bekijk hieronder de groep en alle zes de data. Onderaan geef je je antwoord.',
+  'Does this group work for you?': 'Past deze groep bij jou?',
+  'Already paid from your previous Circle. The group and all six dates are below.':
+      'Al betaald via je vorige Circle. De groep en alle zes de data staan hieronder.',
+  '€19 for all six weeks. The group, all six dates and the refund terms are below.':
+      '€19 voor alle zes weken. De groep, alle zes de data en de terugbetaalregels staan hieronder.',
+  'We couldn’t reach VriendTime. Check your connection and try again.':
+      'We konden VriendTime niet bereiken. Controleer je verbinding en probeer het opnieuw.',
+  'agreed': 'afgesproken',
+  'VriendTime helps adults join a small Friendship Circle that meets weekly for six weeks. VriendTime forms the group, sets the schedule, and provides meetup details, reminders, a group chat, and links that help you add a meetup to your calendar.':
+      'VriendTime helpt volwassenen mee te doen aan een kleine Friendship Circle die zes weken lang wekelijks samenkomt. VriendTime stelt de groep samen, legt het schema vast en zorgt voor meetupdetails, herinneringen, een groepschat en links waarmee je een meetup aan je agenda toevoegt.',
+  'Meetup details such as the venue, time or activity may change. For the weeks we plan, the exact venue is shared shortly before the meetup. Venue details must not be used to disrupt the venue or compromise another member’s safety. If a meetup is cancelled or materially changed, we tell your Circle in the app.':
+      'Meetupdetails zoals de locatie, tijd of activiteit kunnen veranderen. Voor de weken die wij plannen, delen we de precieze locatie kort voor de meetup. Locatiegegevens mogen niet worden gebruikt om de locatie te verstoren of de veiligheid van een ander lid in gevaar te brengen. Wordt een meetup geannuleerd of wezenlijk gewijzigd, dan laten we dat je Circle weten in de app.',
+  'Venue purchases and services supplied directly by a third party may be governed by that third party’s own terms.':
+      'Aankopen bij een locatie en diensten die rechtstreeks door een derde worden geleverd, kunnen onder de eigen voorwaarden van die derde vallen.',
+  'Treat other members, venue staff, and the public with respect. Harassment, discrimination, threats, violence, unwanted sexual conduct, stalking, fraud, spam, illegal activity, and conduct that puts anyone at risk are prohibited.':
+      'Behandel andere leden, medewerkers van locaties en het publiek met respect. Intimidatie, discriminatie, bedreiging, geweld, ongewenst seksueel gedrag, stalking, fraude, spam, illegale activiteiten en gedrag dat iemand in gevaar brengt, zijn verboden.',
+  'Account data: email address, password authentication records, first name, account identifiers, and account timestamps.':
+      'Accountgegevens: e-mailadres, gegevens voor inloggen met je wachtwoord, voornaam, account-ID’s en tijdstempels van je account.',
+  'Profile data: first name, date of birth, WhatsApp number, profile photo, a short introduction, the languages you speak, your interests, and the days and times you are free. Optional fields are identified in the app.':
+      'Profielgegevens: voornaam, geboortedatum, WhatsApp-nummer, profielfoto, een korte introductie, de talen die je spreekt, je interesses en de dagen en tijden waarop je vrij bent. Optionele velden staan als zodanig in de app.',
+  'Circle data: age based on your birthday, matching goals, social style, optional life context, your six-week commitment, membership, RSVPs, extra plans you add, private meetup check-ins and optional connection choices, people you would rather not be matched with again, requests to move to another group, programme outcomes, and the optional 90-day follow-up. Organisers use matching answers to form groups. Other members cannot see your private check-ins, matching choices or payment agreements.':
+      'Circlegegevens: leeftijd op basis van je geboortedatum, wat je zoekt, je sociale stijl, optionele levenssituatie, je zesweekse toezegging, lidmaatschap, RSVP’s, extra plannen die je toevoegt, privé check-ins na meetups en optionele connecties, mensen met wie je liever niet opnieuw wordt gematcht, verzoeken om naar een andere groep te gaan, programma-uitkomsten en de optionele check-in na 90 dagen. Organisatoren gebruiken je matchingantwoorden om groepen te vormen. Andere leden zien je privé check-ins, matchingkeuzes en betalingsafspraken niet.',
+  'Communication and safety data: messages you send in your Circle’s group chat, reports, support enquiries, and information needed to investigate safety or policy concerns.':
+      'Communicatie- en veiligheidsgegevens: berichten die je in de groepschat van je Circle stuurt, meldingen, vragen aan support en informatie die nodig is om zorgen over veiligheid of regels te onderzoeken.',
+  'We process account, profile, Circle, payment and communication data to provide the service you request and perform our contract with you. This includes creating your account, matching you with a Circle, sharing meetup details with your Circle, enabling the group chat, handling payments, refunds and moves, and providing support.':
+      'We verwerken account-, profiel-, Circle-, betalings- en communicatiegegevens om de dienst te leveren waar je om vraagt en onze overeenkomst met je uit te voeren. Dat omvat het aanmaken van je account, je matchen met een Circle, meetupdetails delen met je Circle, de groepschat mogelijk maken, betalingen, terugbetalingen en verhuizingen afhandelen, en support bieden.',
+  'Information is shared with the other members of your Circle only where needed for the programme: your first name, profile photo, short introduction, interests, and the messages you send to your Circle. The organiser also sees your WhatsApp number so they can contact you.':
+      'Met de andere leden van je Circle delen we alleen wat nodig is voor het programma: je voornaam, profielfoto, korte introductie, interesses en de berichten die je naar je Circle stuurt. De organisator ziet ook je WhatsApp-nummer, zodat die contact met je kan opnemen.',
+  'Your email address, date of birth, WhatsApp number, matching answers and private account details are never shown to other members. Avoid placing private information in your introduction or in messages that other members can read.':
+      'Je e-mailadres, geboortedatum, WhatsApp-nummer, matchingantwoorden en privé accountgegevens worden nooit aan andere leden getoond. Zet geen privé-informatie in je introductie of in berichten die andere leden kunnen lezen.',
+  'We may share relevant details with meetup venues, professional advisers, authorities, or safety partners when necessary to deliver a meetup, respond to an incident, protect rights and safety, or comply with law. We do not sell your personal data.':
+      'We kunnen relevante gegevens delen met meetuplocaties, professionele adviseurs, autoriteiten of veiligheidspartners als dat nodig is om een meetup te laten doorgaan, op een incident te reageren, rechten en veiligheid te beschermen of aan de wet te voldoen. We verkopen je persoonsgegevens niet.',
+  'You can permanently delete your account from Account details in your Profile. When your account is deleted, we delete its profile, Circle application, messages, notifications, and profile photos unless we must retain specific information for legal, fraud-prevention, safety, accounting, or dispute purposes. Backup copies are removed on their normal secure rotation schedule.':
+      'Je kunt je account permanent verwijderen via Accountgegevens in je Profiel. Als je account wordt verwijderd, verwijderen we het profiel, je Circle-aanmelding, berichten, meldingen en profielfoto’s, tenzij we bepaalde informatie moeten bewaren voor wettelijke verplichtingen, fraudepreventie, veiligheid, boekhouding of geschillen. Back-ups worden volgens het normale, beveiligde schema verwijderd.',
 };

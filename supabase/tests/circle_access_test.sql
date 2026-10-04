@@ -36,7 +36,7 @@ select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001'
 select pg_temp.assert_true(public.circle_snapshot()->>'stage'='invited','assigned member sees invitation');
 select pg_temp.assert_true(jsonb_array_length(public.circle_snapshot()->'meetups')=6,'six weekly meetups generated');
 select pg_temp.assert_true((select bool_and(item->>'time'='19:30') from jsonb_array_elements(public.circle_snapshot()->'meetups') item),'DST preserves local meeting hour');
-select pg_temp.assert_true((select count(*)=0 from public.event_catalog),'public catalog excludes Circle events');
+select pg_temp.assert_true(to_regclass('public.event_catalog') is null,'the old public meetup list is gone');
 do $$ declare blocked boolean:=false; eid uuid:=(public.circle_snapshot()->'meetups'->0->>'id')::uuid; begin
  begin perform public.circle_action('rsvp',jsonb_build_object('id',eid,'going',true)); exception when others then blocked:=true; end;
  perform pg_temp.assert_true(blocked,'unpaid invitee cannot RSVP');
