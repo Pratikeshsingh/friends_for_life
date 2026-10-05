@@ -1983,4 +1983,11 @@ const nlStrings = <String, String>{
       'We kunnen relevante gegevens delen met meetuplocaties, professionele adviseurs, autoriteiten of veiligheidspartners als dat nodig is om een meetup te laten doorgaan, op een incident te reageren, rechten en veiligheid te beschermen of aan de wet te voldoen. We verkopen je persoonsgegevens niet.',
   'You can permanently delete your account from Account details in your Profile. When your account is deleted, we delete its profile, Circle application, messages, notifications, and profile photos unless we must retain specific information for legal, fraud-prevention, safety, accounting, or dispute purposes. Backup copies are removed on their normal secure rotation schedule.':
       'Je kunt je account permanent verwijderen via Accountgegevens in je Profiel. Als je account wordt verwijderd, verwijderen we het profiel, je Circle-aanmelding, berichten, meldingen en profielfoto’s, tenzij we bepaalde informatie moeten bewaren voor wettelijke verplichtingen, fraudepreventie, veiligheid, boekhouding of geschillen. Back-ups worden volgens het normale, beveiligde schema verwijderd.',
+  'Your session has expired. Sign in again, then retry; your current photo is unchanged.':
+      'Je sessie is verlopen. Log opnieuw in en probeer het nog eens; je huidige foto blijft staan.',
+  'Photo storage didn’t accept this upload. Your current photo is unchanged. If it keeps happening, contact us through Help & contact.':
+      'De fotoopslag accepteerde deze upload niet. Je huidige foto blijft staan. Gebeurt het vaker, neem dan contact met ons op via Hulp en contact.',
+  'Open-source licences': 'Opensourcelicenties',
+  'Fonts and software VriendTime is built with':
+      'Lettertypen en software waarmee VriendTime is gebouwd',
 };

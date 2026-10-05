@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'src/app.dart';
@@ -37,6 +38,14 @@ Future<void> main() async {
 
 Future<void> _startApp() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // The bundled fonts are under the SIL Open Font License, which asks for
+  // the licence to travel with the app. It shows in the licences page.
+  LicenseRegistry.addLicense(() async* {
+    for (final font in const ['Manrope', 'Newsreader']) {
+      yield LicenseEntryWithLineBreaks(
+          [font], await rootBundle.loadString('assets/fonts/OFL-$font.txt'));
+    }
+  });
   await loadSavedLanguage();
 
   final configurationError = SupabaseConfig.configurationErrorMessage;

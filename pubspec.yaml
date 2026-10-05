@@ -33,6 +33,8 @@ flutter:
     - assets/generated/landing-open-seat-mobile-v1.webp
     - assets/generated/onboarding-account-immersive-v2.webp
     - assets/generated/profile-header-illustration.webp
+    - assets/fonts/OFL-Manrope.txt
+    - assets/fonts/OFL-Newsreader.txt
   fonts:
     - family: Manrope
       fonts:

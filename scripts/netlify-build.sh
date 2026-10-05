@@ -16,7 +16,10 @@ flutter pub get
 # Stamp the build with its commit, so the version in Profile and in error
 # reports tells releases apart. Netlify provides COMMIT_REF.
 APP_BUILD="1.0.0+$(printf '%s' "${COMMIT_REF:-local}" | cut -c1-7)"
-flutter build web --release --pwa-strategy=none --dart-define=APP_BUILD="$APP_BUILD"
+# EMAIL_DELIVERY=true (a Netlify environment variable) shows the email
+# preference in Profile; set it only once the email worker is deployed.
+flutter build web --release --pwa-strategy=none --dart-define=APP_BUILD="$APP_BUILD" \
+  --dart-define=EMAIL_DELIVERY="${EMAIL_DELIVERY:-false}"
 
 test -f build/web/index.html
 test -f build/web/_redirects

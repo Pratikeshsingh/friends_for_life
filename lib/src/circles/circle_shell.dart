@@ -746,7 +746,11 @@ class _CircleShellState extends State<CircleShell> {
               },
         // safeAct, not act: a failed toggle should leave the switch where it
         // was with a message, not throw out of a callback that returns void.
-        onEmailNotifications: repo!.isDemo
+        // Hidden until the email worker is deployed; offering the switch
+        // would promise emails nobody receives. Build with
+        // --dart-define=EMAIL_DELIVERY=true once email is live.
+        onEmailNotifications: repo!.isDemo ||
+                !const bool.fromEnvironment('EMAIL_DELIVERY')
             ? null
             : (enabled) => safeAct('email_notifications', {'enabled': enabled}),
         onAccount: repo!.isDemo ? null : _openAccount,

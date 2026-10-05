@@ -1,26 +1,24 @@
-# VriendTime prototype
+# VriendTime · Friendship Circles
 
-A Flutter prototype for small, planned meetups in Alkmaar.
+A web app (Flutter) for six-week Friendship Circles in Alkmaar: five or six
+people meet once a week for six weeks. Members apply, the organiser forms the
+groups, members accept and pay €19 by a manual WhatsApp payment link, and the
+Circle gets a group chat, the six meetup dates and extra plans.
 
-## Prototype scope
+- Live site: https://vriendtime.com (Netlify, built from `main`)
+- Backend: Supabase project `sageyiqyvzgoayehahyq` (Postgres, Auth, Storage,
+  Edge Functions, scheduled jobs)
+- How to run, deploy, back up and handle problems: **[docs/RUNBOOK.md](docs/RUNBOOK.md)**
 
-- Onboarding for account setup, meetup selection, and profile photo upload
-- Home flow for browsing small coffee, lunch, and dinner meetups
-- Meetup detail screen with area shown upfront and exact address timing
-- Profile and preference management UI
+## Run it locally
 
-## Notes
+```bash
+flutter pub get
+flutter run -d chrome          # talks to the production backend by default
+```
 
-This repository includes Supabase authentication and a starter backend schema.
-
-## Supabase setup
-
-The app is currently wired to this Supabase project URL by default:
-
-- `https://sageyiqyvzgoayehahyq.supabase.co`
-
-All build modes use the bundled defaults. Override them with `--dart-define`
-when building against a different Supabase project, such as staging or test.
+To use another Supabase project (recommended for testing anything that
+writes data):
 
 ```bash
 flutter run -d chrome \
@@ -28,73 +26,31 @@ flutter run -d chrome \
   --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_your_key
 ```
 
-Example release build using a different Supabase project:
+A preview with example people and no backend writes:
+`flutter run -d chrome --dart-define=CIRCLES_ENABLE_PREVIEW=true`, then open
+the app with `?preview=1`. Real builds ignore this.
+
+## Checks
 
 ```bash
-flutter build web --release \
-  --dart-define=SUPABASE_URL=https://your-project-ref.supabase.co \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_your_key
+./scripts/check-release.sh                      # analyse, format check, app tests, web build
+cd scripts/backend-tests && npm ci && node run.mjs production_hardening_test.sql   # database tests
 ```
 
-## Database bootstrap
+GitHub runs the app checks, every database test suite and the server-function
+tests on each push. See `.github/workflows/flutter.yml`.
 
-Run the SQL in [supabase/schema.sql](supabase/schema.sql) inside the Supabase
-SQL editor before testing sign-up fully. It creates:
+## Layout
 
-- `profiles`
-- `events`
-- `event_attendees`
-- `chat_threads`
-- `chat_participants`
-- `messages`
+| Path | What it is |
+|---|---|
+| `lib/src/circles/` | The Circles app: landing, application, home, profile, chat, organiser panel |
+| `lib/src/screens/` | Sign-in, account & support, legal documents, password reset |
+| `lib/src/core/` | Translations (EN/NL), theme, Supabase config, photo handling, diagnostics |
+| `supabase/migrations/` | Database changes, applied in date order |
+| `supabase/functions/` | Edge Functions: account deletion and the notification email worker |
+| `supabase/tests/` | Database test suites (run in an isolated database) |
+| `scripts/` | Release check, Netlify build, backup |
 
-It also enables Row Level Security and adds a trigger that creates a profile row automatically when a user signs up.
-
-Then run [supabase/release_hardening.sql](supabase/release_hardening.sql). It
-adds the release-safe catalog view/RPCs/policies used by the app for
-reservation safety, address privacy, attendance writes, and storage limits.
-
-## Account deletion function
-
-Profile → Account → Delete account calls the authenticated Supabase Edge
-Function in
-[supabase/functions/delete-account/index.ts](supabase/functions/delete-account/index.ts).
-Deploy it to each Supabase project used by the app:
-
-```bash
-supabase functions deploy delete-account --project-ref your-project-ref
-```
-
-The function verifies the signed-in user, removes their profile photos, and
-then hard-deletes their Auth user. Foreign-key cascades in the schema remove
-their profile-linked reservations, notifications, chat participation, and
-messages. Never put the Supabase service-role key in the Flutter app; the Edge
-Function receives it from Supabase's server environment.
-
-## Auth redirects
-
-Configure these URLs in Supabase Auth before tester launch:
-
-- Site URL: `https://vriendtime.com`
-- Password recovery redirect: `https://vriendtime.com/#/reset-password`
-- Mobile email callback/deep link: `vriendtime://auth/callback`
-
-For web hosting, keep [web/_redirects.txt](web/_redirects.txt) or an equivalent
-SPA fallback so routes resolve to `index.html`.
-
-## Tester launch checklist
-
-- Run `flutter analyze`.
-- Run `flutter test`.
-- Run both SQL files in Supabase in order.
-- Confirm the `profile-photos` bucket accepts only JPG, PNG, and WebP under the configured size limit.
-- Deploy and smoke test the `delete-account` Edge Function with a disposable account.
-- For staging/test builds, pass that environment's Supabase values with
-  `--dart-define`.
-- Smoke test sign-up, email confirmation, password reset, reservation, cancellation, notification address reveal, profile edit, photo upload, logout, and app resume.
-
-## Friendship Circles release
-
-The default app is the six-week Friendship Circles experience with real accounts and manual payment agreements. See [release notes and deployment instructions](docs/release-1.0.md). Run `scripts/check-release.sh` to analyze, test and build the web app.
-
-The public build never enables example members. An isolated internal demo is available only when explicitly compiled with `--dart-define=CIRCLES_ENABLE_PREVIEW=true`.
+Older documents in `docs/` (July–September 2026) describe earlier versions
+and are kept for history only.

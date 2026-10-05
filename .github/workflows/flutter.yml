@@ -30,4 +30,15 @@ jobs:
         with:
           node-version: 22
       - run: npm ci --no-audit --no-fund
-      - run: node run.mjs production_hardening_test.sql security_boundaries_test.sql security_fixes_test.sql refund_move_test.sql restore_photos_test.sql old_app_removed_test.sql circle_access_test.sql circle_experience_test.sql circle_release_test.sql
+      - run: node run.mjs production_hardening_test.sql security_boundaries_test.sql security_fixes_test.sql refund_move_test.sql restore_photos_test.sql old_app_removed_test.sql go_live_fixes_test.sql circle_access_test.sql circle_experience_test.sql circle_release_test.sql
+  edge-functions:
+    # Type-checks both server functions and runs the email worker's tests
+    # against mocked services. No network or secrets needed.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno check supabase/functions/delete-account/index.ts supabase/functions/send-notifications/index.ts
+      - run: deno test --allow-env --allow-net supabase/functions/send-notifications/index_test.ts

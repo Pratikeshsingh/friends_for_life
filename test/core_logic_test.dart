@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:vriendtime/src/core/app_diagnostics.dart';
 import 'package:vriendtime/src/core/auth_redirects.dart';
 import 'package:vriendtime/src/core/profile_photo_service.dart';
 
@@ -34,9 +35,20 @@ void main() {
     });
 
     test('turns permission and format failures into actionable guidance', () {
+      // A storage-rule refusal comes with a valid session: no sign-in loop.
       expect(
         ProfilePhotoService.uploadErrorMessage(
-          const StorageException('Unauthorized', statusCode: '403'),
+          const StorageException(
+            'new row violates row-level security policy',
+            statusCode: '403',
+            error: 'Unauthorized',
+          ),
+        ),
+        allOf(contains('didn’t accept'), isNot(contains('Sign in'))),
+      );
+      expect(
+        ProfilePhotoService.uploadErrorMessage(
+          const StorageException('jwt expired', statusCode: '400'),
         ),
         contains('Sign in again'),
       );
@@ -61,5 +73,17 @@ void main() {
         isNot(contains('connection')),
       );
     });
+  });
+
+  test('error reports name the failure and code, never the message', () {
+    expect(
+        AppDiagnostics.kindOf(
+            const StorageException('private detail', statusCode: '403')),
+        'storage:403');
+    expect(
+        AppDiagnostics.kindOf(
+            const PostgrestException(message: 'secret', code: '42501')),
+        'database:42501');
+    expect(AppDiagnostics.kindOf(StateError('x')), 'state');
   });
 }

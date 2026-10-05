@@ -18,7 +18,23 @@ class AppDiagnostics {
       return;
     }
     _lastSent = now;
-    unawaited(_send(area, error.runtimeType.toString(), lastReference!));
+    unawaited(_send(area, kindOf(error), lastReference!));
+  }
+
+  /// A short, privacy-safe label: the kind of failure and its status or
+  /// error code, never the message (which can contain personal details).
+  /// Release builds minify type names, so the known types are named here.
+  static String kindOf(Object error) {
+    final label = switch (error) {
+      StorageException e => 'storage:${e.statusCode ?? '-'}',
+      PostgrestException e => 'database:${e.code ?? '-'}',
+      AuthException e => 'auth:${e.statusCode ?? '-'}',
+      TimeoutException _ => 'timeout',
+      FormatException _ => 'format',
+      StateError _ => 'state',
+      _ => error.runtimeType.toString(),
+    };
+    return label.length > 80 ? label.substring(0, 80) : label;
   }
 
   static Future<void> _send(String area, String kind, String ref) async {

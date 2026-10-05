@@ -261,6 +261,14 @@ class _ProfileHelpCard extends StatelessWidget {
             value: 'How VriendTime handles your data',
             onTap: onOpenPrivacy,
           ),
+          _NavigationTile(
+            label: t('Open-source licences'),
+            value: 'Fonts and software VriendTime is built with',
+            onTap: () => showLicensePage(
+              context: context,
+              applicationName: 'VriendTime',
+            ),
+          ),
         ],
       ),
     );

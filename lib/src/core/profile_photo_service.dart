@@ -175,13 +175,24 @@ class ProfilePhotoService {
     final statusCode = int.tryParse(error.statusCode ?? '');
     final details = '${error.message} ${error.error ?? ''}'.toLowerCase();
 
+    // A refusal by the storage rules (row-level security) arrives with a
+    // perfectly good session, so it must not tell people to sign in again;
+    // that sent them in a loop. Only an expired or invalid session does.
+    if (details.contains('row-level security') || details.contains('policy')) {
+      return 'Photo storage didn’t accept this upload. Your current photo is unchanged. If it keeps happening, contact us through Help & contact.';
+    }
+
     if (statusCode == 401 ||
-        statusCode == 403 ||
-        details.contains('unauthorized') ||
         details.contains('jwt') ||
-        details.contains('row-level security') ||
+        details.contains('expired') ||
+        details.contains('invalid token')) {
+      return 'Your session has expired. Sign in again, then retry; your current photo is unchanged.';
+    }
+
+    if (statusCode == 403 ||
+        details.contains('unauthorized') ||
         details.contains('permission')) {
-      return 'Your photo upload permission has expired. Sign in again, then retry; your current photo is unchanged.';
+      return 'Photo storage didn’t accept this upload. Your current photo is unchanged. If it keeps happening, contact us through Help & contact.';
     }
 
     if (statusCode == 415 ||

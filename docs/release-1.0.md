@@ -1,3 +1,5 @@
+> **Historical (September 2026).** This describes the first Circles release. For how VriendTime runs today, see [RUNBOOK.md](RUNBOOK.md).
+
 # VriendTime 1.0 release
 
 ## What is implemented
