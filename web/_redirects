@@ -1,4 +1,7 @@
 # The old meetup app has been retired; old links go to the current app.
 /oldapp    /  301
 /oldapp/*  /  301
+# Uptime of the website and backend (UptimeRobot status page).
+/status   https://stats.uptimerobot.com/WCEukH75DK  302
+/uptime   https://stats.uptimerobot.com/WCEukH75DK  302
 /*  /index.html  200

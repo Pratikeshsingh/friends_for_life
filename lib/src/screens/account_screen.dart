@@ -242,6 +242,12 @@ class _ProfileHelpCard extends StatelessWidget {
             onTap: onOpenWhatsAppSupport,
           ),
           _NavigationTile(
+            label: t('Email us'),
+            value: 'support@vriendtime.com',
+            semanticHint: 'Opens your email app',
+            onTap: () => launchUrl(Uri.parse('mailto:support@vriendtime.com')),
+          ),
+          _NavigationTile(
             label: t('Safety'),
             value: 'Guidance for feeling comfortable and getting help',
             onTap: onOpenSafetyPage,

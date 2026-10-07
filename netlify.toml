@@ -3,6 +3,10 @@
 [build]
   command = "bash scripts/netlify-build.sh"
   publish = "build/web"
+  # Skip the build (and its build minutes) when nothing that affects the
+  # website changed, e.g. a push with only docs, tests or database files.
+  # Exit code 0 means "skip"; 1 means "build".
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- lib web assets pubspec.yaml pubspec.lock netlify.toml scripts/netlify-build.sh"
 
 [build.environment]
   # Keep in step with the Flutter version used locally.

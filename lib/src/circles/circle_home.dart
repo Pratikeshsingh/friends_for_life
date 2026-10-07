@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart' hide Text;
 import '../core/i18n.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -103,7 +104,7 @@ class CircleHome extends StatelessWidget {
                 ]),
                 const SizedBox(height: 8),
                 const Text(
-                    'We can’t put you in a group until we have your WhatsApp number, birthday, photo and times.'),
+                    'We can’t put you in a group until we have your birthday, photo and times.'),
                 const SizedBox(height: 12),
                 FilledButton(
                     onPressed: () => onEdit(0),
@@ -301,9 +302,41 @@ class CircleHome extends StatelessWidget {
           _info(Icons.schedule_rounded,
               circle['schedule']?.toString() ?? 'Schedule to be confirmed'),
           _info(Icons.place_outlined, circle['city']?.toString() ?? 'Alkmaar'),
-          if (_replyBy(circle) != null)
+          if (state['pay_by'] != null && !credit)
+            _info(Icons.hourglass_bottom_rounded,
+                'Accept and pay by ${circleDate(state['pay_by']?.toString())}')
+          else if (state['pay_by'] != null)
+            _info(Icons.hourglass_bottom_rounded,
+                'Please reply by ${circleDate(state['pay_by']?.toString())}')
+          else if (_replyBy(circle) != null)
             _info(Icons.hourglass_bottom_rounded,
                 'Please reply by ${_replyBy(circle)}'),
+          // Past the pay-by date without payment: say plainly that the
+          // payment is the only thing holding the place back.
+          if (!credit && _payOverdue(state)) ...[
+            const SizedBox(height: 8),
+            Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                    color: const Color(0xFFFFEDE7),
+                    borderRadius: BorderRadius.circular(14)),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                          agreed
+                              ? 'Your €19 has not arrived yet'
+                              : 'Your invitation is still open',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: circleCoralText)),
+                      const SizedBox(height: 4),
+                      Text(agreed
+                          ? 'Your place is confirmed only once your €19 arrives, nothing else. The pay-by date has passed, so the organiser may now offer your place to someone on the waiting list. Pay now to keep it. If you have already paid, tap “I’ve sent the payment”.'
+                          : 'The pay-by date has passed, so the organiser may now offer your place to someone on the waiting list. Accept and pay now to keep it.'),
+                    ])),
+          ],
           // Before deciding, people look at the group and the six dates
           // first; the answer comes after them. Once accepted, paying is the
           // next step, so it stays here at the top.
@@ -421,6 +454,14 @@ class CircleHome extends StatelessWidget {
   /// offering the button again is a control that does not do anything.
   /// The last day a "yes" is accepted: the database takes replies until the
   /// day before the Circle starts.
+  /// The pay-by date (end of that day) has passed and the place is not paid.
+  static bool _payOverdue(Json state, {DateTime? now}) {
+    final due = DateTime.tryParse('${state['pay_by'] ?? ''}');
+    if (due == null || state['payment'] == 'paid') return false;
+    final today = now ?? DateTime.now();
+    return DateTime(today.year, today.month, today.day).isAfter(due);
+  }
+
   static String? _replyBy(Map circle) {
     final start = DateTime.tryParse('${circle['start_date']}');
     if (start == null) return null;
@@ -478,29 +519,29 @@ class CircleHome extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
               agreed
-                  ? PaymentConfig.hasCircleFeeLink
-                      ? 'Pay the one-off €19 with iDEAL. Use the name on your account so we can match your payment. Your place and group chat open once it arrives.'
-                      : 'You’ve agreed to the one-off €19 fee. The organiser will send your payment link on WhatsApp. Your place and group chat open once payment is received.'
-                  : PaymentConfig.hasCircleFeeLink
+                  ? _payLink != null
+                      ? 'Pay the one-off €19 with iDEAL. Pay from a bank account in your own name so we can match your payment. Your place and group chat open once the organiser has checked it arrived. We hold your place until the pay-by date; if your €19 has not arrived by then, your place may go to someone on the waiting list.'
+                      : 'You’ve agreed to the one-off €19 fee. The organiser will send you the payment link. Your place and group chat open once payment is received.'
+                  : _payLink != null
                       ? 'Accept first, then pay the €19 with iDEAL.'
-                      : 'No online checkout. If you accept, the organiser will send your payment link on WhatsApp.',
+                      : 'No online checkout. If you accept, the organiser will send you the payment link.',
               style: const TextStyle(fontWeight: FontWeight.w700)),
           if (agreed &&
-              PaymentConfig.hasCircleFeeLink &&
+              _payLink != null &&
               (state['payment_agreement'] as Map?)?['payment_reported_at'] ==
                   null) ...[
             const SizedBox(height: 12),
             FilledButton.icon(
                 onPressed: busy ? null : () => _pay(context),
                 icon: const Icon(Icons.account_balance_outlined),
-                label: const Text('Pay €19 with iDEAL'))
+                label: const Text('Pay €19'))
           ],
         ],
         if (agreed) ...[
           SelectableText(
               'Payment reference: ${(state['payment_agreement'] as Map?)?['reference'] ?? 'Contact the organiser'}'),
           const Text(
-              'Use this reference with your payment. Paying does not immediately unlock your Circle; the organiser verifies receipt.'),
+              'Keep this reference in case the organiser asks about your payment. Paying does not immediately unlock your Circle; the organiser checks the payment arrived.'),
           if ((state['payment_agreement'] as Map?)?['payment_reported_at'] !=
               null)
             const Text(
@@ -811,7 +852,7 @@ class CircleHome extends StatelessWidget {
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Text(demo
                       ? 'Preview checkout · €19 one-off. No money is collected in this preview.'
-                      : 'The full six-week programme costs €19 once. Food, drinks and activities are separate and paid at the venue. ${PaymentConfig.hasCircleFeeLink ? 'After you accept, you can pay straight away with iDEAL.' : 'The organiser will send a payment link to your WhatsApp number. During this pilot the link comes from the organiser’s own bunq or Tikkie, so you’ll see their name when you pay.'} Your place is confirmed when payment is received. You can cancel for a full refund up to 48 hours before your first meetup. Between your first and second meetup, you can move to another group once, free of charge.'),
+                      : 'The full six-week programme costs €19 once. Food, drinks and activities are separate and paid at the venue. ${_payLink != null ? 'After you accept, you can pay straight away with iDEAL.' : 'The organiser will send you a payment link. During this pilot the link comes from the organiser’s own bunq or Tikkie, so you’ll see their name when you pay.'} Your place is confirmed when payment is received. You can cancel for a full refund up to 48 hours before your first meetup. Between your first and second meetup, you can move to another group once, free of charge.'),
                   if (!demo)
                     CheckboxListTile(
                         contentPadding: EdgeInsets.zero,
@@ -922,11 +963,22 @@ class CircleHome extends StatelessWidget {
   /// Opens the organiser's payment request. Receipt is still confirmed by
   /// hand, so nothing about the member's state changes here — this only saves
   /// them waiting for an email with the link in it.
+  /// This Circle's payment link, or the general one if it has none.
+  String? get _payLink => PaymentConfig.linkFor(state['circle'] as Map?);
+
+  /// Opens the payment link. The tap is recorded first so the organiser can
+  /// match the incoming payment by name and time; a failure to record never
+  /// stops someone paying.
   Future<void> _pay(BuildContext context) async {
     final messenger = ScaffoldMessenger.maybeOf(context);
+    final link = _payLink;
+    if (link == null) return;
+    if (!demo) {
+      unawaited(Future(() => act('payment_opened')).catchError((_) {}));
+    }
     var launched = false;
     try {
-      launched = await launchUrl(Uri.parse(PaymentConfig.circleFeeLink),
+      launched = await launchUrl(Uri.parse(link),
           mode: LaunchMode.externalApplication);
     } catch (_) {
       launched = false;

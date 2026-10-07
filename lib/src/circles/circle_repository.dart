@@ -352,6 +352,25 @@ class SupabaseCircleRepository implements CircleRepository {
           'active': data['active'] ?? true
         });
         return;
+      case 'payment_opened':
+        await client.rpc('circle_payment_opened');
+        return;
+      case 'admin_release_place':
+        await client.rpc('circle_admin_release_place', params: {
+          'target_circle': data['circle_id'],
+          'member': data['profile_id']
+        });
+        return;
+      case 'admin_invite':
+        await client.rpc('circle_admin_invite', params: {
+          'target_circle': data['circle_id'],
+          'member': data['profile_id']
+        });
+        return;
+      case 'admin_payment_link':
+        await client.rpc('circle_set_payment_link',
+            params: {'target': data['id'], 'link': data['link']});
+        return;
       case 'email_notifications':
         final uid = client.auth.currentUser?.id;
         if (uid == null) throw StateError('Sign in first.');
@@ -614,6 +633,20 @@ class DemoCircleRepository implements CircleRepository {
           excluded.add('${data['target']}');
         }
         state['exclusions'] = excluded.toList();
+        break;
+      case 'admin_release_place':
+      case 'admin_invite':
+        throw StateError('Not available in the preview.');
+      case 'admin_payment_link':
+        if (state['circle'] is Map) {
+          final link = '${data['link'] ?? ''}'.trim();
+          state['circle'] = {
+            ...state['circle'] as Map,
+            'payment_link': link.isEmpty ? null : link
+          };
+        }
+        break;
+      case 'payment_opened':
         break;
       case 'email_notifications':
         state['email_notifications'] = data['enabled'] == true;

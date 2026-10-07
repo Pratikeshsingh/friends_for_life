@@ -12,7 +12,7 @@ const circleDays = [
 ];
 const circleDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const circlePeriods = ['morning', 'afternoon', 'evening'];
-const circlePeriodTimes = ['09:00–12:00', '12:00–17:00', '17:00–22:00'];
+const circlePeriodTimes = ['09:00–12:00', '12:00–17:00', '18:00–22:00'];
 
 /// Answers to the old "A plan you'd say yes to" question, mapped onto the
 /// interests they now live in. Unknown answers are dropped.

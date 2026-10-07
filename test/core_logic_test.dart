@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vriendtime/src/core/app_diagnostics.dart';
 import 'package:vriendtime/src/core/auth_redirects.dart';
+import 'package:vriendtime/src/core/payment_config.dart';
 import 'package:vriendtime/src/core/profile_photo_service.dart';
 
 void main() {
@@ -85,5 +86,15 @@ void main() {
             const PostgrestException(message: 'secret', code: '42501')),
         'database:42501');
     expect(AppDiagnostics.kindOf(StateError('x')), 'state');
+  });
+
+  test('members pay with their own Circle\'s link, only over https', () {
+    expect(PaymentConfig.linkFor({'payment_link': 'https://tikkie.me/pay/abc'}),
+        'https://tikkie.me/pay/abc');
+    // No Circle link and no build-time link: no Pay button.
+    expect(PaymentConfig.linkFor({'payment_link': null}), isNull);
+    expect(
+        PaymentConfig.linkFor({'payment_link': 'javascript:alert(1)'}), isNull);
+    expect(PaymentConfig.linkFor(null), isNull);
   });
 }

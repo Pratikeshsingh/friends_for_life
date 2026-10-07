@@ -104,6 +104,10 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
         widget.startInSignIn ? _AccountMode.signIn : _AccountMode.signUp;
     _emailController.addListener(_refreshValidation);
     _passwordController.addListener(_refreshValidation);
+    // A new attempt is being typed: the old "does not match" message must
+    // not sit there as if it were about what is in the field now.
+    _emailController.addListener(_clearStaleError);
+    _passwordController.addListener(_clearStaleError);
     _confirmPasswordController.addListener(_refreshValidation);
     _firstNameController.addListener(_refreshValidation);
   }
@@ -529,10 +533,20 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
     }
 
     final succeeded = await _runAuthAction(() async {
-      final response = await _supabase.auth.signInWithPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+      final AuthResponse response;
+      try {
+        response = await _supabase.auth.signInWithPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+      } on AuthException catch (error) {
+        // Not confirmed yet (perhaps the link expired): offer a new link.
+        if (error.code == 'email_not_confirmed' ||
+            error.message.toLowerCase().contains('email not confirmed')) {
+          if (mounted) setState(() => _awaitingConfirmation = true);
+        }
+        rethrow;
+      }
       await _ensureProfileForUser(response.user);
       final signedInUser = response.user;
       if (signedInUser != null) {
@@ -632,6 +646,14 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
         message.contains('timeout')) {
       return 'We couldn’t reach VriendTime. Check your connection and try again.';
     }
+    // The one-minute wait between emails to the same address.
+    if (message.contains('for security purposes')) {
+      return 'Please wait a minute before requesting another email.';
+    }
+    // Too many emails or attempts across everyone in a short time.
+    if (error.statusCode == '429' || message.contains('rate limit')) {
+      return 'Many people are signing up right now. Please try again in a few minutes.';
+    }
 
     if (message.contains('invalid login credentials')) {
       return 'That email and password do not match our records. Check for typos or create an account first.';
@@ -661,6 +683,17 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
 
   void _setStatus(String message) {
     setState(() => _statusMessage = message);
+  }
+
+  String? _lastEmail, _lastPassword;
+  void _clearStaleError() {
+    final changed = _emailController.text != _lastEmail ||
+        _passwordController.text != _lastPassword;
+    _lastEmail = _emailController.text;
+    _lastPassword = _passwordController.text;
+    if (changed && !_isSubmitting && _statusMessage != null && mounted) {
+      setState(() => _statusMessage = null);
+    }
   }
 
   void _refreshValidation() {

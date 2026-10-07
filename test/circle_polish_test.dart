@@ -27,13 +27,16 @@ void main() {
     repository = DemoCircleRepository(await SharedPreferences.getInstance());
   });
 
-  testWidgets('the chat tab only appears once someone is in a Circle',
+  testWidgets('the chat tab is locked until someone is in a Circle',
       (tester) async {
     await repository.act('preview', {'stage': 'waiting'});
     await _pumpShell(tester, repository);
-    expect(find.text('Messages'), findsNothing);
+    expect(find.text('Messages'), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('You’re on the list.'), findsOneWidget);
+    await tester.tap(find.text('Messages'));
+    await tester.pumpAndSettle();
+    expect(find.text('Opens when your place is confirmed'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
     await repository.act('preview', {'stage': 'active'});

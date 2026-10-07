@@ -43,7 +43,8 @@ class CircleApplication extends StatefulWidget {
       this.onDone,
       this.onCancel,
       this.initialStep = 0,
-      this.focusedEdit = false});
+      this.focusedEdit = false,
+      this.resume = false});
   final Json initial;
   final Future<void> Function(Json) onSave, onSubmit;
   final Future<Json?> Function()? onPhoto;
@@ -66,6 +67,10 @@ class CircleApplication extends StatefulWidget {
   /// the "2 of 4" counter and the walk to the end all belong to the first
   /// run; someone changing their availability wants to change it and leave.
   final bool focusedEdit;
+
+  /// Continuing an application: open at the first step that still needs an
+  /// answer instead of walking again through steps that are already done.
+  final bool resume;
   @override
   State<CircleApplication> createState() => _CircleApplicationState();
 }
@@ -120,6 +125,34 @@ class _CircleApplicationState extends State<CircleApplication> {
     style = (((d['energy'] as num?)?.toDouble() ?? 2) / 2).round().clamp(0, 2);
     commitment = d['commitment'] == true;
     step = widget.initialStep.clamp(0, 3);
+    if (widget.resume && widget.initialStep == 0 && !widget.focusedEdit) {
+      step = _firstIncompleteStep();
+    }
+  }
+
+  int _firstIncompleteStep() {
+    final asked = step;
+    for (var s = 0; s < 3; s++) {
+      step = s;
+      if (validate() != null) {
+        step = asked;
+        return s;
+      }
+    }
+    step = asked;
+    return 3;
+  }
+
+  // The form stays alive (off-screen) while the Profile tab is open; a
+  // photo added there must show up here too.
+  @override
+  void didUpdateWidget(covariant CircleApplication old) {
+    super.didUpdateWidget(old);
+    final path = widget.initial['photo_path'] as String?;
+    if (path != null && path != old.initial['photo_path']) {
+      photoPath = path;
+      photoUrl = widget.initial['photo_url'] as String?;
+    }
   }
 
   @override
@@ -187,10 +220,7 @@ class _CircleApplicationState extends State<CircleApplication> {
       if (age == null || age < 18 || age > 120) {
         return 'Add your date of birth. Circles are for adults 18+.';
       }
-      if (phone.text.trim().isEmpty) {
-        return 'Add your WhatsApp number so we can send your payment link and meetup updates.';
-      }
-      if (!isValidPhone(phone.text)) {
+      if (phone.text.trim().isNotEmpty && !isValidPhone(phone.text)) {
         return 'Check your WhatsApp number, for example 06 12345678.';
       }
       if (languages.isEmpty) return 'Choose English, Dutch, or both.';
@@ -287,16 +317,34 @@ class _CircleApplicationState extends State<CircleApplication> {
       'January', 'February', 'March', 'April', 'May', 'June', //
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
+    // Shown in the closed box; the open list keeps the full month names.
+    const shortMonths = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
     Widget pick<T>(String label, T? value, List<(T, String)> options,
-            ValueChanged<T?> onChanged) =>
+            ValueChanged<T?> onChanged, {List<String>? closedLabels}) =>
         DropdownButtonFormField<T>(
             initialValue: value,
             isExpanded: true,
             menuMaxHeight: 320,
+            iconSize: 20,
+            selectedItemBuilder: closedLabels == null
+                ? null
+                : (context) => [
+                      for (final text in closedLabels)
+                        Text(text, overflow: TextOverflow.ellipsis)
+                    ],
+            // Three boxes share one phone-width row: a slightly smaller font
+            // and short month names keep "30" and the month whole.
+            style: Theme.of(context)
+                .textTheme
+                .bodyLarge
+                ?.copyWith(fontSize: 16, color: circleNavy),
             decoration: InputDecoration(
                 labelText: t(label),
                 contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 14)),
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 14)),
             items: [
               for (final (v, text) in options)
                 DropdownMenuItem<T>(
@@ -308,35 +356,50 @@ class _CircleApplicationState extends State<CircleApplication> {
       const Text('Date of birth',
           style: TextStyle(fontWeight: FontWeight.w800, color: circleNavy)),
       const SizedBox(height: 10),
-      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Expanded(
-            flex: 2,
-            child: pick<int>(
-                'Day',
-                bDay,
-                [for (var d = 1; d <= 31; d++) (d, '$d')],
-                (v) => _setBirthdayPart(day: v))),
-        const SizedBox(width: 8),
-        Expanded(
-            flex: 4,
-            child: pick<int>(
-                'Month',
-                bMonth,
-                [for (var m = 1; m <= 12; m++) (m, months[m - 1])],
-                (v) => _setBirthdayPart(month: v))),
-        const SizedBox(width: 8),
-        Expanded(
-            flex: 3,
-            // Newest first, starting at the youngest age allowed (18).
-            child: pick<int>(
-                'Year',
-                bYear,
-                [
-                  for (var y = now.year - 18; y >= now.year - 100; y--)
-                    (y, '$y')
-                ],
-                (v) => _setBirthdayPart(year: v))),
-      ]),
+      LayoutBuilder(builder: (context, box) {
+        final dayBox = pick<int>(
+            'Day',
+            bDay,
+            [for (var d = 1; d <= 31; d++) (d, '$d')],
+            (v) => _setBirthdayPart(day: v));
+        // Newest first, starting at the youngest age allowed (18).
+        final yearBox = pick<int>(
+            'Year',
+            bYear,
+            [for (var y = now.year - 18; y >= now.year - 100; y--) (y, '$y')],
+            (v) => _setBirthdayPart(year: v));
+        // On a phone three boxes in one row leave too little room: "30"
+        // and the month were cut off. Day and month share a row there,
+        // with the year underneath; wider screens keep one row.
+        final oneRow = box.maxWidth >= 380;
+        final monthBox = pick<int>(
+            'Month',
+            bMonth,
+            [for (var m = 1; m <= 12; m++) (m, months[m - 1])],
+            (v) => _setBirthdayPart(month: v),
+            closedLabels: oneRow || box.maxWidth < 300 ? shortMonths : null);
+        if (oneRow) {
+          return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(flex: 4, child: dayBox),
+            const SizedBox(width: 8),
+            Expanded(flex: 4, child: monthBox),
+            const SizedBox(width: 8),
+            Expanded(flex: 5, child: yearBox),
+          ]);
+        }
+        return Column(children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(flex: 2, child: dayBox),
+            const SizedBox(width: 8),
+            Expanded(flex: 3, child: monthBox),
+          ]),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: yearBox),
+            const Spacer(),
+          ]),
+        ]);
+      }),
       const SizedBox(height: 6),
       Text(
           _impossibleDate
@@ -467,10 +530,10 @@ class _CircleApplicationState extends State<CircleApplication> {
                 keyboardType: TextInputType.phone,
                 autofillHints: const [AutofillHints.telephoneNumber],
                 decoration: InputDecoration(
-                    labelText: t('WhatsApp number'),
+                    labelText: t('WhatsApp number (optional)'),
                     hintText: t('e.g. 06 12345678'),
-                    helperText:
-                        t('We send your payment link and meetup updates here.'),
+                    helperText: t(
+                        'Only for the organiser, if they need to reach you quickly. Updates come by email and in the app.'),
                     helperMaxLines: 2,
                     counterText: '')),
             const SizedBox(height: 20),
@@ -907,11 +970,13 @@ class _CommitmentCard extends StatelessWidget {
               children: [
                 Row(children: [
                   for (var i = 0; i < 6; i++) ...[
+                    // The connectors shrink on the narrowest phones (320px).
                     if (i > 0)
-                      Container(
-                          width: 14,
-                          height: 1.5,
-                          color: circleTeal.withValues(alpha: .28)),
+                      Flexible(
+                          child: Container(
+                              constraints: const BoxConstraints(maxWidth: 14),
+                              height: 1.5,
+                              color: circleTeal.withValues(alpha: .28))),
                     AnimatedContainer(
                       duration: Duration(milliseconds: 180 + i * 40),
                       width: 11,

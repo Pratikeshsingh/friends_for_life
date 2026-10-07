@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import '../core/app_diagnostics.dart';
+import '../core/email_links.dart';
 import 'circle_meetup_detail.dart';
 import 'circle_save_dialog.dart';
 import 'dart:typed_data';
@@ -76,6 +77,25 @@ class _CircleShellState extends State<CircleShell> {
     timer = Timer.periodic(const Duration(seconds: 25), (_) {
       if (repo != null && !busy && !_loading) load(silent: true);
     });
+    if (EmailLinks.outcome == EmailLinkOutcome.expired) {
+      EmailLinks.outcome = EmailLinkOutcome.none;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _linkExpired());
+    }
+  }
+
+  void _linkExpired() {
+    if (!mounted) return;
+    showDialog<void>(
+        context: context,
+        builder: (c) => AlertDialog(
+              title: const Text('This link has expired'),
+              content: const Text(
+                  'Email links work once and only for a short time. To reset your password, tap Sign in, then Forgot password, and use the newest email. To confirm your email, sign in and tap Resend confirmation email.'),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(c), child: const Text('OK')),
+              ],
+            ));
   }
 
   @override
@@ -462,7 +482,9 @@ class _CircleShellState extends State<CircleShell> {
                                   FloatingGlassNavigation(
                                       height: 70,
                                       circleMode: true,
-                                      showMessages: hasChat,
+                                      // Always shown, so people know a group
+                                      // chat is coming; locked until then.
+                                      showMessages: true,
                                       homeLabel: hasChat ? null : 'Home',
                                       selectedIndex: tab,
                                       onDestinationSelected: (v) {
@@ -548,7 +570,7 @@ class _CircleShellState extends State<CircleShell> {
       });
 
   Widget _body(BuildContext context) {
-    if (tab == 1 && hasChat) return _messages(context);
+    if (tab == 1) return hasChat ? _messages(context) : _messagesLocked();
     if (tab == 2) return _profile(context);
     return CircleHome(
         state: state!,
@@ -575,6 +597,7 @@ class _CircleShellState extends State<CircleShell> {
         busy: busy,
         initialStep: editing ? editStep : 0,
         focusedEdit: focused,
+        resume: !focused,
         onDone: () {
           showCircleToast(context, 'Saved.');
           setState(() {
@@ -618,6 +641,30 @@ class _CircleShellState extends State<CircleShell> {
     final sameDay =
         at.year == now.year && at.month == now.month && at.day == now.day;
     return sameDay ? hm : '${circleDate(at.toIso8601String())} · $hm';
+  }
+
+  /// The Messages tab before there is a group to talk to: what unlocks it.
+  Widget _messagesLocked() {
+    final invited = state?['stage'] == 'invited';
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const CircleHeading('Your group chat',
+          eyebrow: 'Messages',
+          subtitle: 'Talk with your Circle before the first meetup.'),
+      CirclePanel(tint: true, children: [
+        const Row(children: [
+          Icon(Icons.lock_outline_rounded, color: circleTeal),
+          SizedBox(width: 10),
+          Expanded(
+              child: Text('Opens when your place is confirmed',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w800, color: circleNavy))),
+        ]),
+        const SizedBox(height: 10),
+        Text(invited
+            ? 'Accept your invitation and pay the €19. As soon as the organiser confirms your payment, your Circle’s chat opens here.'
+            : 'Once we’ve matched you with a Circle and your place is confirmed, you can chat with your group here.'),
+      ]),
+    ]);
   }
 
   Widget _messages(BuildContext context) {
@@ -863,9 +910,43 @@ class _CircleShellState extends State<CircleShell> {
     if (mounted && repo != null) await load(silent: true);
   }
 
+  /// Shows what is happening while a photo is prepared and uploaded. A large
+  /// phone photo can take a while, and without this the old photo stays on
+  /// screen and it looks as if nothing happened.
+  void Function() _showPhotoProgress(ValueNotifier<String> step) {
+    var open = true;
+    showDialog<void>(
+        context: context,
+        useRootNavigator: true,
+        barrierDismissible: false,
+        builder: (c) => PopScope(
+            canPop: false,
+            child: AlertDialog(
+                content: Row(children: [
+              const SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(strokeWidth: 3)),
+              const SizedBox(width: 18),
+              Expanded(
+                  child: ValueListenableBuilder<String>(
+                      valueListenable: step,
+                      builder: (_, value, __) => Text(value,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: circleNavy)))),
+            ])))).whenComplete(() => open = false);
+    return () {
+      if (open && mounted) Navigator.of(context, rootNavigator: true).pop();
+      open = false;
+    };
+  }
+
   Future<Json?> _pickPhoto() async {
     String? uploaded;
     final client = Supabase.instance.client;
+    final step = ValueNotifier<String>(t('Preparing your photo…'));
+    void Function()? closeProgress;
     try {
       final result = await FilePicker.platform
           .pickFiles(type: FileType.image, withData: true);
@@ -875,7 +956,9 @@ class _CircleShellState extends State<CircleShell> {
         throw const PhotoPreparationException(
             'We could not read this photo. Please choose it again.');
       }
+      if (mounted) closeProgress = _showPhotoProgress(step);
       final prepared = await prepareProfilePhoto(file.bytes!);
+      step.value = t('Uploading your photo…');
       final oldPhoto =
           (state?['application'] as Map?)?['photo_path'] as String?;
       uploaded = await ProfilePhotoService.uploadPhoto(
@@ -889,6 +972,7 @@ class _CircleShellState extends State<CircleShell> {
         'has_profile_photo': true,
         'profile_photo_name': file.name
       }).eq('id', widget.session!.user.id);
+      step.value = t('Almost done…');
       final record = <String, dynamic>{'photo_path': uploaded};
       uploaded =
           null; // The profile owns this upload now; do not remove it on URL failure.
@@ -902,6 +986,12 @@ class _CircleShellState extends State<CircleShell> {
               ...record
             });
       }
+      closeProgress?.call();
+      closeProgress = null;
+      if (mounted) {
+        showCircleToast(context, t('Photo updated.'),
+            icon: Icons.check_circle_outline_rounded);
+      }
       if (oldPhoto != null && oldPhoto != record['photo_path']) {
         try {
           await client.storage
@@ -911,6 +1001,8 @@ class _CircleShellState extends State<CircleShell> {
       }
       return record;
     } catch (e) {
+      closeProgress?.call();
+      closeProgress = null;
       if (uploaded != null) {
         try {
           await client.storage
@@ -925,6 +1017,10 @@ class _CircleShellState extends State<CircleShell> {
         showCircleToast(context, message, icon: Icons.error_outline_rounded);
       }
       throw StateError(message);
+    } finally {
+      closeProgress?.call();
+      // Let the dialog finish closing before its text source goes away.
+      Future<void>.delayed(const Duration(milliseconds: 500), step.dispose);
     }
   }
 

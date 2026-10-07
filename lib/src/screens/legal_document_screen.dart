@@ -4,8 +4,8 @@ import '../core/i18n.dart';
 enum LegalDocumentType { terms, privacy }
 
 abstract final class LegalDocuments {
-  static const termsVersion = '2026-10-04-v5';
-  static const privacyVersion = '2026-10-04-v4';
+  static const termsVersion = '2026-10-07-v7';
+  static const privacyVersion = '2026-10-07-v6';
 
   static LegalDocument documentFor(LegalDocumentType type) {
     return switch (type) {
@@ -16,7 +16,7 @@ abstract final class LegalDocuments {
 
   static const _terms = LegalDocument(
     title: 'Terms & Conditions',
-    effectiveDate: '4 October 2026',
+    effectiveDate: '7 October 2026',
     introduction:
         'These Terms & Conditions govern your use of VriendTime. By creating an account, you agree to these terms.',
     sections: [
@@ -25,6 +25,7 @@ abstract final class LegalDocuments {
         paragraphs: [
           'VriendTime helps adults join a small Friendship Circle that meets weekly for six weeks. VriendTime forms the group, sets the schedule, and provides meetup details, reminders, a group chat, and links that help you add a meetup to your calendar.',
           'VriendTime is a facilitator. Unless we expressly say otherwise, venues and other attendees are independent third parties and are not our employees or agents.',
+          'VriendTime is run by Pratikesh Singh, a private individual in the Netherlands. You can reach us at support@vriendtime.com.',
         ],
       ),
       LegalSection(
@@ -38,7 +39,7 @@ abstract final class LegalDocuments {
         heading: '3. Friendship Circles, payments and meetups',
         paragraphs: [
           'The founding Circle programme costs €19 once for six weeks. Food, drinks, travel, and activity purchases are separate. There is no subscription or further programme fee after graduation. Your group and schedule are shown before you accept the invitation.',
-          'Accepting an invitation requires an explicit agreement to pay €19. The organiser contacts you on your WhatsApp number to arrange payment separately. Accepting does not collect money. Your place and group chat open when the organiser confirms receipt.',
+          'Accepting an invitation requires an explicit agreement to pay €19. You pay with the payment link shown in the app; during the pilot this is a Tikkie or bank payment link from the organiser. Accepting does not collect money. Your place and group chat open when the organiser confirms receipt.',
           'Each Circle is a leisure service on fixed dates. For this kind of service the statutory 14-day right of withdrawal for online purchases does not apply. Instead, the following cancellation rules apply.',
           'Before your first meetup: you can cancel your programme agreement in the app until 48 hours before the first meetup starts. If you have paid, we refund the full €19.',
           'After that: the €19 is not refunded. If your Circle does not feel right, you can move to another group once, free of charge, between the start of your first meetup and the start of your second meetup. You keep your place on the waiting list and your €19 covers the new Circle. If we cannot offer you a new group within a reasonable time, we refund your €19. After your second meetup has started, no move or refund is possible, and joining a further Circle means paying again.',
@@ -96,7 +97,7 @@ abstract final class LegalDocuments {
         heading: '10. Governing law and support',
         paragraphs: [
           'These terms are governed by Dutch law. If you are a consumer, this does not take away mandatory protections or courts available to you under the law of your country of residence. We encourage you to contact us first so we can try to resolve a concern informally.',
-          'Questions about these terms can be raised through Contact us in the Profile section of the app.',
+          'Questions about these terms: email support@vriendtime.com, or use Help & contact in the app.',
         ],
       ),
     ],
@@ -104,21 +105,21 @@ abstract final class LegalDocuments {
 
   static const _privacy = LegalDocument(
     title: 'Privacy Policy',
-    effectiveDate: '4 October 2026',
+    effectiveDate: '7 October 2026',
     introduction:
         'This policy explains how VriendTime collects, uses, shares, and protects personal data when you use the app and related services.',
     sections: [
       LegalSection(
         heading: '1. Who is responsible for your data',
         paragraphs: [
-          'VriendTime is the controller responsible for the processing described in this policy. You can raise privacy questions and data-rights requests through Contact us in the Profile section of the app.',
+          'VriendTime is run by Pratikesh Singh, a private individual in the Netherlands, who is the controller responsible for the processing described in this policy. You can raise privacy questions and data-rights requests by email at support@vriendtime.com or through Help & contact in the app.',
         ],
       ),
       LegalSection(
         heading: '2. Data we collect',
         paragraphs: [
           'Account data: email address, password authentication records, first name, account identifiers, and account timestamps.',
-          'Profile data: first name, date of birth, WhatsApp number, profile photo, a short introduction, the languages you speak, your interests, and the days and times you are free. Optional fields are identified in the app.',
+          'Profile data: first name, date of birth, profile photo, a short introduction, the languages you speak, your interests, the days and times you are free, and, if you choose to give it, a WhatsApp number. Optional fields are identified in the app.',
           'Circle data: age based on your birthday, matching goals, social style, optional life context, your six-week commitment, membership, RSVPs, extra plans you add, private meetup check-ins and optional connection choices, people you would rather not be matched with again, requests to move to another group, programme outcomes, and the optional 90-day follow-up. Organisers use matching answers to form groups. Other members cannot see your private check-ins, matching choices or payment agreements.',
           'Payment data: the €19 agreement and its version and timestamp, contact email, and organiser confirmations of payment or refund. Bank and card details are not collected through the app. Payment records and the contact email needed to resolve refunds may be retained after account deletion for accounting and dispute purposes.',
           'Communication and safety data: messages you send in your Circle’s group chat, reports, support enquiries, and information needed to investigate safety or policy concerns.',
@@ -137,14 +138,14 @@ abstract final class LegalDocuments {
         heading: '4. What other members can see',
         paragraphs: [
           'New Circle applications require a primary profile photo for recognition. A profile photo is not identity verification. That photo is available only to your assigned Circle and authorised matching organisers. It is never shown publicly.',
-          'Information is shared with the other members of your Circle only where needed for the programme: your first name, profile photo, short introduction, interests, and the messages you send to your Circle. The organiser also sees your WhatsApp number so they can contact you.',
+          'Information is shared with the other members of your Circle only where needed for the programme: your first name, profile photo, short introduction, interests, and the messages you send to your Circle. If you give a WhatsApp number, the organiser sees it so they can contact you.',
           'Your email address, date of birth, WhatsApp number, matching answers and private account details are never shown to other members. Avoid placing private information in your introduction or in messages that other members can read.',
         ],
       ),
       LegalSection(
         heading: '5. Service providers and other recipients',
         paragraphs: [
-          'We use Supabase to provide authentication, database, file-storage, and related backend services. Those providers process data on our instructions and under appropriate contractual safeguards.',
+          'We use Supabase for sign-in, the database and file storage (on servers in the EU), Netlify to host the website, and Resend to send account and app emails. These providers process data on our instructions and under appropriate contractual safeguards.',
           'We may share relevant details with meetup venues, professional advisers, authorities, or safety partners when necessary to deliver a meetup, respond to an incident, protect rights and safety, or comply with law. We do not sell your personal data.',
           'If you choose an external action, such as opening WhatsApp, a maps service, or a calendar service, that provider receives information under its own privacy policy. VriendTime does not control the provider’s independent processing.',
         ],
@@ -166,7 +167,7 @@ abstract final class LegalDocuments {
         heading: '8. Your choices and rights',
         paragraphs: [
           'You can review or update your profile and matching answers in the app. Depending on applicable law, you may request access, correction, deletion, restriction, portability, or object to certain processing. You may withdraw consent without affecting earlier lawful processing.',
-          'You can download your own account and Circle data from your Circle profile. Use Contact us in the Profile section to make other requests. We may need to verify your identity. You also have the right to complain to the Dutch Data Protection Authority (Autoriteit Persoonsgegevens) or the supervisory authority where you live or work.',
+          'You can download your own account and Circle data from your Circle profile. Email support@vriendtime.com to make other requests. We may need to verify your identity. You also have the right to complain to the Dutch Data Protection Authority (Autoriteit Persoonsgegevens) or the supervisory authority where you live or work.',
         ],
       ),
       LegalSection(
@@ -180,7 +181,7 @@ abstract final class LegalDocuments {
         heading: '10. Policy changes and support',
         paragraphs: [
           'We may update this policy as the service or law changes. We will post the new version and update its effective date. We will provide additional notice when a change is material or when the law requires it.',
-          'Use Contact us in the Profile section for privacy questions, requests, or complaints.',
+          'For privacy questions, requests or complaints, email support@vriendtime.com. This works even if you no longer have an account.',
         ],
       ),
     ],

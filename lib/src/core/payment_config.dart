@@ -1,11 +1,11 @@
 /// Where a member pays the one-off €19 programme fee.
 ///
-/// There is no company bank account yet, so the pilot collects the fee through
-/// a personal bunq.me request rather than a checkout: the app opens the link,
-/// the member pays with iDEAL, and the organiser confirms receipt by hand in
-/// the admin screen. Because one link serves everyone, a payment is matched to
-/// a member by the name on the transfer, which is why the app asks people to
-/// pay under the name on their account.
+/// The organiser sets a payment link per Circle (for example a Tikkie) in the
+/// organiser panel. The app opens it, the member pays with iDEAL, and the
+/// organiser confirms receipt by hand. With one link per Circle, a payment is
+/// matched among five or six names, helped by the time each member tapped
+/// Pay. A link passed at build time is only a fallback for Circles without
+/// their own.
 ///
 /// Until a link is set, every screen falls back to "the organiser will contact
 /// you", so an unset link is a quieter experience, never a broken one.
@@ -22,5 +22,16 @@ class PaymentConfig {
   static bool get hasCircleFeeLink {
     final uri = Uri.tryParse(circleFeeLink);
     return uri != null && uri.scheme == 'https' && uri.host.isNotEmpty;
+  }
+
+  /// The link a member of [circle] should pay with, or null if there is none.
+  static String? linkFor(Map? circle) {
+    for (final candidate in [circle?['payment_link'], circleFeeLink]) {
+      final uri = Uri.tryParse('${candidate ?? ''}'.trim());
+      if (uri != null && uri.scheme == 'https' && uri.host.isNotEmpty) {
+        return uri.toString();
+      }
+    }
+    return null;
   }
 }

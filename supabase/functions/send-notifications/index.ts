@@ -5,19 +5,24 @@
 // function those rows are only visible to people who happen to open the app,
 // which for a weekly programme means people miss meetups.
 //
-// Run it on a schedule (every 15 minutes is plenty). It claims a batch, sends
-// each one, and records the outcome so a failure is retried and a permanently
-// bad address is retired after three attempts.
+// A database schedule calls it every 10 minutes while something is waiting
+// (migration 20261012). It claims a batch, sends each one, and records the
+// outcome so a failure is retried and a permanently bad address is retired
+// after five attempts. When the email provider says "not now" (its daily cap),
+// the rest of the batch is handed back without using up an attempt.
 //
 // Required secrets:
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY  (set automatically by Supabase)
 //   RESEND_API_KEY                           (from resend.com)
-//   NOTIFICATION_FROM   e.g. "VriendTime <hallo@vriendtime.nl>"
+//   NOTIFICATION_FROM   e.g. "VriendTime <hello@vriendtime.com>"
+//   NOTIFICATION_REPLY_TO  optional, defaults to support@vriendtime.com
 //   NOTIFICATION_CRON_SECRET                 (any long random string)
 //   APP_URL             e.g. "https://vriendtime.com"  (link back into the app)
 import { createClient } from "npm:@supabase/supabase-js@2.117.2";
 
 const BATCH_SIZE = 50;
+// The email provider accepts a few requests per second; stay under it.
+const PAUSE_MS = 600;
 
 type Pending = {
   id: string;
@@ -37,6 +42,11 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/// The logo is served by the website itself (web/email/ in the app).
+export function logoUrl(appUrl: string): string {
+  return new URL("/email/vriendtime-logo.png", appUrl).toString();
+}
+
 /// The email says what happened and sends people to the app; it never repeats
 /// details like a venue or another member's name, so a forwarded or
 /// mis-delivered message gives nothing away.
@@ -50,14 +60,14 @@ export function render(row: Pending, appUrl: string): { html: string; text: stri
   const html = `<!doctype html>
 <html lang="en"><body style="margin:0;background:#FBF8F3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#12314B">
   <div style="max-width:520px;margin:0 auto;padding:32px 24px">
-    <div style="font-size:20px;font-weight:700;letter-spacing:-.2px;margin-bottom:28px">
-      <span style="color:#12314B">Vriend</span><span style="color:#F2765B">Time</span>
+    <div style="margin-bottom:28px">
+      <img src="${escapeHtml(logoUrl(appUrl))}" width="200" height="45" alt="VriendTime" style="display:block;border:0;width:200px;height:45px;font-size:22px;font-weight:700;color:#145247">
     </div>
     <div style="background:#fff;border-radius:20px;padding:28px 24px">
       <p style="margin:0 0 18px;font-size:15px;color:#4A6076">${escapeHtml(greeting)}</p>
       <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;font-weight:700">${title}</h1>
       <p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#33506B">${body}</p>
-      <a href="${escapeHtml(appUrl)}" style="display:inline-block;background:#14776A;color:#fff;text-decoration:none;padding:13px 22px;border-radius:999px;font-weight:700;font-size:15px">Open VriendTime</a>
+      <a href="${escapeHtml(appUrl)}" style="display:inline-block;background:#145247;color:#fff;text-decoration:none;padding:13px 22px;border-radius:999px;font-weight:700;font-size:15px">Open VriendTime</a>
     </div>
     <p style="margin:22px 4px 0;font-size:12px;line-height:1.5;color:#7A8B99">
       You are receiving this because you applied for a Friendship Circle in Alkmaar.
@@ -82,6 +92,8 @@ export async function handler(request: Request): Promise<Response> {
 
   const resendKey = Deno.env.get("RESEND_API_KEY");
   const from = Deno.env.get("NOTIFICATION_FROM");
+  // Replies to an app email reach a mailbox someone reads.
+  const replyTo = Deno.env.get("NOTIFICATION_REPLY_TO") ?? "support@vriendtime.com";
   if (!resendKey || !from) {
     return new Response("Email is not configured.", { status: 500 });
   }
@@ -104,9 +116,27 @@ export async function handler(request: Request): Promise<Response> {
   const pending = (data ?? []) as Pending[];
   let sent = 0;
   const started = Date.now();
-  for (const row of pending) {
-    // Return before the five-minute lease; unprocessed rows safely expire.
-    if (Date.now() - started > 90_000) break;
+
+  // Hand rows back unsent, without using up an attempt.
+  const deferRest = async (rows: Pending[], seconds: number, reason: string | null) => {
+    for (const row of rows) {
+      const result = await supabase.rpc("defer_notification_email", {
+        notification_id: row.id, lease_token: row.lease_token,
+        retry_in_seconds: seconds, reason,
+      });
+      // The lease then simply expires and the row is picked up again later.
+      if (result.error) console.error("Could not defer email", row.id);
+    }
+  };
+
+  for (let i = 0; i < pending.length; i++) {
+    const row = pending[i];
+    // Finish well before the five-minute lease; the rest waits for next time.
+    if (Date.now() - started > 90_000) {
+      await deferRest(pending.slice(i), 0, null);
+      break;
+    }
+    if (i > 0) await new Promise((resolve) => setTimeout(resolve, PAUSE_MS));
     const { html, text } = render(row, appUrl);
     let failure: string | null = null;
     try {
@@ -114,8 +144,16 @@ export async function handler(request: Request): Promise<Response> {
         method: "POST", signal: AbortSignal.timeout(10_000),
         headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json",
           "Idempotency-Key": `vriendtime-notification/${row.id}` },
-        body: JSON.stringify({ from, to: [row.email], subject: row.title, html, text }),
+        body: JSON.stringify({ from, to: [row.email], reply_to: replyTo, subject: row.title, html, text }),
       });
+      if (response.status === 429) {
+        // Daily or monthly cap: try again in an hour. Too many requests at
+        // once: in two minutes. Nothing was sent, so no attempt is used.
+        const detail = await response.text().catch(() => "");
+        const seconds = /quota/i.test(detail) ? 3600 : 120;
+        await deferRest(pending.slice(i), seconds, "Email provider limit reached; retrying later.");
+        break;
+      }
       if (!response.ok) failure = `Provider HTTP ${response.status}`;
     } catch { failure = "Delivery interrupted; retry with the same idempotency key."; }
     const ack = await supabase.rpc("ack_notification_email", {

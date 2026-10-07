@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/auth_redirects.dart';
+import 'core/email_links.dart';
 import 'core/i18n.dart' show LanguageScope, appLanguage;
 import 'core/responsive.dart';
 import 'core/theme.dart';
@@ -21,7 +22,12 @@ class _VriendTimeAppState extends State<VriendTimeApp> {
 
   @override
   Widget build(BuildContext context) {
-    final isResetPasswordRoute = AuthRedirects.isPasswordResetUri(Uri.base);
+    // A reset email link has already been checked in main(); a failed one
+    // also lands on the reset screen, which explains how to ask again.
+    final emailLink = EmailLinks.outcome;
+    final isResetPasswordRoute = AuthRedirects.isPasswordResetUri(Uri.base) ||
+        emailLink == EmailLinkOutcome.passwordReset ||
+        emailLink == EmailLinkOutcome.failed;
 
     // The whole app follows the chosen language, including Flutter's own
     // widgets such as the date picker.

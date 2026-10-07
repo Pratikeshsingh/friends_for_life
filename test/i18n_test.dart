@@ -52,4 +52,13 @@ void main() {
     await tester.pump();
     expect(find.text('Meld je aan'), findsOneWidget);
   });
+
+  test('payment messages from the server translate with the Circle name', () {
+    appLanguage.value = 'nl';
+    expect(
+        t('Your place in The Monday Circle is confirmed once your €19 arrives. Pay by the end of tomorrow to keep it.'),
+        'Je plek in De maandag-Circle is bevestigd zodra je €19 binnen is. Betaal uiterlijk morgen om je plek te houden.');
+    expect(t('Your place was released: payment not received'),
+        'Je plek is vrijgegeven: betaling niet ontvangen');
+  });
 }

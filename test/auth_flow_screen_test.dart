@@ -122,7 +122,7 @@ void main() {
 
     expect(find.byType(LegalDocumentScreen), findsOneWidget);
     expect(find.text('Terms & Conditions'), findsWidgets);
-    expect(find.text('Effective 4 October 2026'), findsOneWidget);
+    expect(find.text('Effective 7 October 2026'), findsOneWidget);
 
     await tester.pageBack();
     await tester.pumpAndSettle();

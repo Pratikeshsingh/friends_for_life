@@ -32,6 +32,8 @@ void main() {
     void Function(Json)? onSave,
     VoidCallback? onDone,
     Size size = const Size(390, 900),
+    Json? initial,
+    bool resume = false,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -45,10 +47,11 @@ void main() {
             body: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: CircleApplication(
-                  initial: applicant(),
+                  initial: initial ?? applicant(),
                   busy: false,
                   initialStep: step,
                   focusedEdit: focused,
+                  resume: resume,
                   onDone: onDone,
                   onSave: (d) async => onSave?.call(d),
                   onSubmit: (_) async {},
@@ -103,10 +106,53 @@ void main() {
 
     testWidgets('the first run keeps every step and the counter',
         (tester) async {
-      await pumpForm(tester, step: 0, focused: false);
+      await pumpForm(tester,
+          step: 0, focused: false, initial: {'name': 'Asha'});
       expect(find.textContaining('1 OF 4'), findsOneWidget);
       expect(find.text('Continue'), findsOneWidget);
       expect(find.text('Save changes'), findsNothing);
+    });
+  });
+
+  group('continuing an application', () {
+    testWidgets('opens at the first step that still needs an answer',
+        (tester) async {
+      await pumpForm(tester, step: 0, focused: false, resume: true, initial: {
+        'name': 'Asha',
+        'date_of_birth': '1990-01-01',
+        'languages': ['English'],
+      });
+      expect(find.textContaining('2 OF 4'), findsOneWidget);
+      expect(find.text('Back'), findsOneWidget);
+    });
+
+    testWidgets('a photo added on the Profile tab shows up in the form',
+        (tester) async {
+      Widget form(Json initial) => MaterialApp(
+          theme: buildTheme(),
+          home: Scaffold(
+              body: SingleChildScrollView(
+                  child: CircleApplication(
+                      initial: initial,
+                      busy: false,
+                      initialStep: 3,
+                      onPhoto: () async => null,
+                      onSave: (_) async {},
+                      onSubmit: (_) async {}))));
+      await tester.pumpWidget(form(applicant()));
+      await tester.pumpAndSettle();
+      expect(find.text('Add a clear photo'), findsOneWidget);
+      await tester
+          .pumpWidget(form(applicant()..['photo_path'] = 'own/profile.jpg'));
+      await tester.pumpAndSettle();
+      expect(find.text('Change photo'), findsOneWidget);
+    });
+
+    testWidgets('the last step fits at 320px', (tester) async {
+      await pumpForm(tester,
+          step: 0, focused: false, resume: true, size: const Size(320, 1400));
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('4 OF 4'), findsOneWidget);
     });
   });
 
@@ -139,7 +185,11 @@ void main() {
     for (final width in [320.0, 390.0]) {
       testWidgets('fits at ${width.toInt()}px on the first step',
           (tester) async {
-        await pumpForm(tester, step: 0, focused: false, size: Size(width, 900));
+        await pumpForm(tester,
+            step: 0,
+            focused: false,
+            size: Size(width, 900),
+            initial: {'name': 'Asha'});
         expect(tester.takeException(), isNull);
         expect(find.text('Save for later'), findsOneWidget);
         expect(find.text('Back'), findsNothing);

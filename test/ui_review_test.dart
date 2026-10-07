@@ -65,4 +65,60 @@ void main() {
         'Refund requested');
     expect(circlePaymentLabel({'status': 'paid'}), 'Paid · place confirmed');
   });
+
+  testWidgets('an invitation shows the date to accept and pay by',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+        theme: buildTheme(),
+        home: Scaffold(
+            body: SingleChildScrollView(
+                child: CircleHome(
+                    state: const {
+              'stage': 'invited',
+              'profile_id': 'me',
+              'pay_by': '2099-01-02',
+              'circle': {
+                'name': 'The Monday Circle',
+                'start_date': '2099-01-05'
+              },
+              'members': [],
+              'meetups': [],
+            },
+                    demo: false,
+                    busy: false,
+                    act: (_, [__ = const {}]) async {},
+                    onEdit: (_) {},
+                    onMessages: () {})))));
+    expect(find.textContaining('Accept and pay by'), findsOneWidget);
+    expect(find.textContaining('Please reply by'), findsNothing);
+  });
+
+  testWidgets('past the pay-by date, the only reason given is the payment',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+        theme: buildTheme(),
+        home: Scaffold(
+            body: SingleChildScrollView(
+                child: CircleHome(
+                    state: const {
+              'stage': 'invited',
+              'profile_id': 'me',
+              'pay_by': '2020-01-02',
+              'payment_agreement': {'status': 'awaiting_payment'},
+              'circle': {
+                'name': 'The Monday Circle',
+                'start_date': '2099-01-05'
+              },
+              'members': [],
+              'meetups': [],
+            },
+                    demo: false,
+                    busy: false,
+                    act: (_, [__ = const {}]) async {},
+                    onEdit: (_) {},
+                    onMessages: () {})))));
+    expect(find.text('Your €19 has not arrived yet'), findsOneWidget);
+    expect(find.textContaining('confirmed only once your €19 arrives'),
+        findsOneWidget);
+  });
 }

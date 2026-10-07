@@ -4,6 +4,18 @@
 // Generated; edit the entries, keep the English keys exactly as in code.
 
 const nlStrings = <String, String>{
+  'We use Supabase for sign-in, the database and file storage (on servers in the EU), Netlify to host the website, and Resend to send account and app emails. These providers process data on our instructions and under appropriate contractual safeguards.':
+      'We gebruiken Supabase voor inloggen, de database en bestandsopslag (op servers in de EU), Netlify voor het hosten van de website en Resend voor het versturen van account- en app-e-mails. Deze dienstverleners verwerken gegevens in onze opdracht en met passende contractuele waarborgen.',
+  'Information is shared with the other members of your Circle only where needed for the programme: your first name, profile photo, short introduction, interests, and the messages you send to your Circle. If you give a WhatsApp number, the organiser sees it so they can contact you.':
+      'Met de andere leden van je Circle delen we alleen wat nodig is voor het programma: je voornaam, profielfoto, korte introductie, interesses en de berichten die je naar je Circle stuurt. Als je een WhatsApp-nummer opgeeft, ziet de organisator dat, zodat die contact met je kan opnemen.',
+  'Profile data: first name, date of birth, profile photo, a short introduction, the languages you speak, your interests, the days and times you are free, and, if you choose to give it, a WhatsApp number. Optional fields are identified in the app.':
+      'Profielgegevens: voornaam, geboortedatum, profielfoto, een korte introductie, de talen die je spreekt, je interesses, de dagen en tijden waarop je vrij bent en, als je dat wilt, een WhatsApp-nummer. Optionele velden staan als zodanig in de app.',
+  'VriendTime is run by Pratikesh Singh, a private individual in the Netherlands, who is the controller responsible for the processing described in this policy. You can raise privacy questions and data-rights requests by email at support@vriendtime.com or through Help & contact in the app.':
+      'VriendTime wordt gerund door Pratikesh Singh, een particulier in Nederland, die verwerkingsverantwoordelijke is voor de verwerking die in dit beleid staat beschreven. Vragen over privacy en verzoeken over je rechten kun je stellen per e-mail via support@vriendtime.com of via Hulp en contact in de app.',
+  'Accepting an invitation requires an explicit agreement to pay €19. You pay with the payment link shown in the app; during the pilot this is a Tikkie or bank payment link from the organiser. Accepting does not collect money. Your place and group chat open when the organiser confirms receipt.':
+      'Voor het accepteren van een uitnodiging moet je uitdrukkelijk akkoord gaan met het betalen van €19. Je betaalt met de betaallink in de app; tijdens de pilot is dat een Tikkie- of bankbetaallink van de organisator. Bij het accepteren wordt geen geld geïnd. Je plek en groepschat gaan open zodra de organisator de ontvangst bevestigt.',
+  'VriendTime is run by Pratikesh Singh, a private individual in the Netherlands. You can reach us at support@vriendtime.com.':
+      'VriendTime wordt gerund door Pratikesh Singh, een particulier in Nederland. Je bereikt ons via support@vriendtime.com.',
   "We could not read this photo. Please choose it again.":
       "We konden deze foto niet lezen. Kies hem opnieuw.",
   "This original photo is over 40 MB. Choose a smaller photo or a standard camera photo instead of RAW.":
@@ -144,8 +156,6 @@ const nlStrings = <String, String>{
   'Accept invitation — €19': 'Uitnodiging accepteren — €19',
   'Accept your invitation': 'Accepteer je uitnodiging',
   'Accepted, not yet paid': 'Geaccepteerd, nog niet betaald',
-  'Accepting an invitation requires an explicit agreement to pay €19. The organiser contacts you using your account email to arrange payment separately. Accepting does not collect money. Your place and group chat open when the organiser confirms receipt.':
-      'Voor het accepteren van een uitnodiging moet je uitdrukkelijk akkoord gaan met het betalen van €19. De organisator neemt contact met je op via het e-mailadres van je account om de betaling apart te regelen. Bij het accepteren wordt geen geld geïnd. Je plek en groepschat gaan open zodra de organisator de ontvangst bevestigt.',
   'Account': 'Account',
   'Account & support': 'Account en hulp',
   'Account closure does not remove obligations or rights that by their nature continue, including provisions about intellectual property, liability, disputes, and amounts already due.':
@@ -174,8 +184,8 @@ const nlStrings = <String, String>{
   'Add to new Circle': 'Toevoegen aan nieuwe Circle',
   'Add your WhatsApp number so the organiser can reach you.':
       'Vul je WhatsApp-nummer in, zodat de organisator je kan bereiken.',
-  'Add your WhatsApp number so we can send your payment link and meetup updates.':
-      'Vul je WhatsApp-nummer in, zodat we je betaallink en meetup-updates kunnen sturen.',
+  'Only for the organiser, if they need to reach you quickly. Updates come by email and in the app.':
+      'Alleen voor de organisator, als die je snel moet bereiken. Updates krijg je per e-mail en in de app.',
   'Add your date of birth. Circles are for adults 18+.':
       'Vul je geboortedatum in. Circles zijn voor volwassenen van 18+.',
   'Add your first name to continue.': 'Vul je voornaam in om verder te gaan.',
@@ -578,8 +588,8 @@ const nlStrings = <String, String>{
       'Hoi {1}! Met de organisator van VriendTime. We vormen een Circle op {2} met mensen die jouw interesses delen. Zou dat tijdstip jou ook passen? Voeg het dan toe aan je beschikbaarheid in de app.',
   'Hi {1}! This is the VriendTime organiser. You’re nearly on the list for a Circle. Could you open the app and finish your profile? Then we can match you.':
       'Hoi {1}! Met de organisator van VriendTime. Je staat bijna op de lijst voor een Circle. Wil je de app openen en je profiel afmaken? Dan kunnen we je matchen.',
-  'Hi {1}! Welcome to your VriendTime Circle "{2}". Here is your link for the one-off €19 programme fee: ':
-      'Hoi {1}! Welkom in je VriendTime Circle "{2}". Hier is je link voor de eenmalige programmabijdrage van €19: ',
+  'Hi {1}! This is the VriendTime organiser, about your place in "{2}" and the one-off €19 fee. ':
+      'Hoi {1}! Je spreekt met de organisator van VriendTime, over je plek in "{2}" en de eenmalige bijdrage van €19. ',
   'Hide password': 'Wachtwoord verbergen',
   'Home': 'Home',
   'Home address (optional)': 'Woonadres (optioneel)',
@@ -708,8 +718,8 @@ const nlStrings = <String, String>{
   'Messages must be 1–2000 characters.':
       'Berichten moeten 1–2000 tekens lang zijn.',
   'Missing details': 'Gegevens ontbreken',
-  'Missing details: needs a WhatsApp number, birthday, photo or updated times before matching.':
-      'Gegevens ontbreken: eerst een WhatsApp-nummer, geboortedatum, foto of nieuwe tijden nodig.',
+  'Missing details: needs a birthday, photo or updated times before matching.':
+      'Gegevens ontbreken: eerst een geboortedatum, foto of nieuwe tijden nodig.',
   'Mixed groups': 'Gemengde groepen',
   'Mon': 'Ma',
   'Mon am': 'Ma ochtend',
@@ -749,7 +759,8 @@ const nlStrings = <String, String>{
   'New to the area': 'Nieuw in de buurt',
   'Next': 'Volgende',
   'No Circles yet.': 'Nog geen Circles.',
-  'No WhatsApp number yet': 'Nog geen WhatsApp-nummer',
+  'No WhatsApp number (optional). They get updates by email.':
+      'Geen WhatsApp-nummer (optioneel). Updates krijgt deze persoon per e-mail.',
   'No accepted invitations yet.': 'Nog geen geaccepteerde uitnodigingen.',
   'No active reservation found.': 'Geen actieve reservering gevonden.',
   'No address given': 'Geen adres opgegeven',
@@ -771,8 +782,8 @@ const nlStrings = <String, String>{
   'No meetups open right now': 'Er zijn nu geen meetups open',
   'No messages yet. Be the first to say hello.':
       'Nog geen berichten. Zeg als eerste hallo.',
-  'No online checkout. If you accept, the organiser will send your payment link on WhatsApp.':
-      'Geen online afrekenen. Als je accepteert, stuurt de organisator je betaallink via WhatsApp.',
+  'No online checkout. If you accept, the organiser will send you the payment link.':
+      'Geen online afrekenen. Als je accepteert, stuurt de organisator je de betaallink.',
   'No payment is due yet.': 'Je hoeft nog niets te betalen.',
   'No payment now. €19 once, only if you accept a Circle. Food, drinks and tickets are paid at the venue.':
       'Nu nog niets betalen. Eenmalig €19, alleen als je een Circle accepteert. Eten, drinken en tickets betaal je ter plekke.',
@@ -959,8 +970,6 @@ const nlStrings = <String, String>{
   'Pulling up chairs…': 'Stoelen bijschuiven…',
   'Putting the kettle on…': 'Water opzetten…',
   'Questions': 'Vragen',
-  'Questions about these terms can be raised through Contact us in the Profile section of the app.':
-      'Vragen over deze voorwaarden kun je stellen via Neem contact op in het onderdeel Profiel van de app.',
   'Quick answers about meetups, timing, and expectations.':
       'Snelle antwoorden over meetups, tijden en verwachtingen.',
   'Reach out when needed': 'Vraag hulp als het nodig is',
@@ -1070,11 +1079,11 @@ const nlStrings = <String, String>{
   'See your group and all six dates first. Only then accept for €19.':
       'Je ziet eerst je groep en alle zes data. Pas dan accepteer je voor €19.',
   'Send': 'Versturen',
-  'Send payment link on WhatsApp': 'Stuur betaallink via WhatsApp',
+  'WhatsApp number (optional)': 'WhatsApp-nummer (optioneel)',
   'Send private report': 'Privémelding versturen',
   'Send request': 'Verzoek versturen',
-  'Send the link on WhatsApp, then confirm once the money is in.':
-      'Stuur de link via WhatsApp en bevestig zodra het geld binnen is.',
+  'Members pay with the Circle’s payment link. Confirm once the money is in.':
+      'Leden betalen met de betaallink van de Circle. Bevestig zodra het geld binnen is.',
   'Sep': 'sep',
   'September': 'september',
   'Setting up your Circle…': 'Je Circle wordt klaargezet…',
@@ -1243,6 +1252,28 @@ const nlStrings = <String, String>{
   'This request is too large.': 'Dit verzoek is te groot.',
   'This reservation can no longer be cancelled. Cancellations close 12 hours before the meetup starts.':
       'Deze reservering kan niet meer worden geannuleerd. Annuleren kan tot 12 uur voor de meetup begint.',
+  "Check your email": "Check je e-mail",
+  "Open the confirmation link, then sign in. Check spam too. You can correct the email below if needed.":
+      "Open de bevestigingslink en log daarna in. Kijk ook in je spam. Je kunt het e-mailadres hieronder nog aanpassen.",
+  "Resend confirmation email": "Bevestigingsmail opnieuw sturen",
+  "If this address has an unconfirmed account, we’ve sent a new confirmation link.":
+      "Als dit adres een onbevestigd account heeft, hebben we een nieuwe bevestigingslink gestuurd.",
+  "Please wait a minute before requesting another email.":
+      "Wacht even een minuut voordat je nog een e-mail aanvraagt.",
+  "Many people are signing up right now. Please try again in a few minutes.":
+      "Er melden zich nu veel mensen aan. Probeer het over een paar minuten opnieuw.",
+  "Your group chat": "Je groepschat",
+  "Talk with your Circle before the first meetup.":
+      "Praat met je Circle voor de eerste meetup.",
+  "Opens when your place is confirmed": "Gaat open zodra je plek bevestigd is",
+  "Accept your invitation and pay the €19. As soon as the organiser confirms your payment, your Circle’s chat opens here.":
+      "Accepteer je uitnodiging en betaal de €19. Zodra de organisator je betaling bevestigt, gaat de chat van je Circle hier open.",
+  "Once we’ve matched you with a Circle and your place is confirmed, you can chat with your group here.":
+      "Zodra we je aan een Circle hebben gekoppeld en je plek bevestigd is, kun je hier met je groep chatten.",
+  "This link has expired": "Deze link is verlopen",
+  "OK": "OK",
+  "Email links work once and only for a short time. To reset your password, tap Sign in, then Forgot password, and use the newest email. To confirm your email, sign in and tap Resend confirmation email.":
+      "Links in e-mails werken één keer en maar korte tijd. Wil je je wachtwoord opnieuw instellen? Tik op Inloggen, dan op Wachtwoord vergeten, en gebruik de nieuwste e-mail. Wil je je e-mailadres bevestigen? Log in en tik op Bevestigingsmail opnieuw sturen.",
   'This reset link is not active yet or may have expired. Open the latest email and try again.':
       'Deze link is nog niet actief of verlopen. Open de nieuwste e-mail en probeer het opnieuw.',
   'This schedule doesn’t work for me': 'Dit schema past niet bij mij',
@@ -1294,8 +1325,6 @@ const nlStrings = <String, String>{
   'Type it again': 'Typ het nog een keer',
   'Unknown Circle action.': 'Onbekende Circle-actie.',
   'Update password': 'Wachtwoord bijwerken',
-  'Use Contact us in the Profile section for privacy questions, requests, or complaints.':
-      'Gebruik Neem contact op in het onderdeel Profiel voor vragen, verzoeken of klachten over privacy.',
   'Use a password with at least six characters.':
       'Gebruik een wachtwoord van minstens zes tekens.',
   'Use at least six characters.': 'Gebruik minstens zes tekens.',
@@ -1324,8 +1353,6 @@ const nlStrings = <String, String>{
       'VriendTime is nu beschikbaar in {1} steden. Er komen snel meer steden bij.',
   'VriendTime is for adults aged 18 and over. We do not knowingly offer the service to children. If you believe a child has provided personal data, contact us so we can investigate and delete it where appropriate.':
       'VriendTime is voor volwassenen van 18 jaar en ouder. We bieden de dienst niet bewust aan kinderen aan. Denk je dat een kind persoonsgegevens heeft verstrekt, neem dan contact op, zodat we het kunnen onderzoeken en de gegevens waar nodig verwijderen.',
-  'VriendTime is the controller responsible for the processing described in this policy. You can raise privacy questions and data-rights requests through Contact us in the Profile section of the app.':
-      'VriendTime is de verwerkingsverantwoordelijke voor de verwerking die in dit beleid staat beschreven. Vragen over privacy en verzoeken over je rechten kun je stellen via Neem contact op in het onderdeel Profiel van de app.',
   'VriendTime · Friendship Circles · Alkmaar':
       'VriendTime · Friendship Circles · Alkmaar',
   'VriendTime · {1}': 'VriendTime · {1}',
@@ -1342,8 +1369,8 @@ const nlStrings = <String, String>{
   'We are launching city by city.': 'We starten stad voor stad.',
   'We are live in a limited set of cities for now and adding more as we grow.':
       'We zijn nu in een paar steden actief en voegen er meer toe naarmate we groeien.',
-  'We can’t put you in a group until we have your WhatsApp number, birthday, photo and times.':
-      'We kunnen je pas in een groep zetten als we je WhatsApp-nummer, geboortedatum, foto en tijden hebben.',
+  'We can’t put you in a group until we have your birthday, photo and times.':
+      'We kunnen je pas in een groep zetten als we je geboortedatum, foto en tijden hebben.',
   'We could not complete that. Check your details and try again.':
       'Dat is niet gelukt. Controleer je gegevens en probeer het opnieuw.',
   'We could not confirm that your account was deleted. Please try again.':
@@ -1396,12 +1423,8 @@ const nlStrings = <String, String>{
       'We verwerken leeftijdsgegevens om de regel te handhaven dat alleen volwassenen mogen meedoen en om de veiligheid te ondersteunen. We gebruiken beveiligings-, diagnose- en beperkte gebruiksgegevens voor ons gerechtvaardigd belang om misbruik te voorkomen, leden te beschermen, problemen op te lossen en VriendTime te verbeteren, afgewogen tegen jouw rechten.',
   'We retain personal data only for as long as needed for the purposes described above. Account and active profile data are generally retained while your account is open. Operational, safety, transaction, or dispute records may be retained longer where reasonably necessary or legally required.':
       'We bewaren persoonsgegevens niet langer dan nodig is voor de hierboven beschreven doelen. Account- en actieve profielgegevens bewaren we in het algemeen zolang je account open is. Gegevens over werking, veiligheid, transacties of geschillen kunnen langer worden bewaard als dat redelijkerwijs nodig of wettelijk verplicht is.',
-  'We send your payment link and meetup updates here.':
-      'Hier sturen we je betaallink en meetup-updates naartoe.',
   'We take reasonable steps to design safer meetups, set conduct rules, protect private venue details, and respond to concerns. Those steps cannot eliminate every risk. Use your judgment, protect your belongings, arrange your own safe travel, leave any situation that feels unsafe, and contact local emergency services if there is immediate danger.':
       'We nemen redelijke maatregelen om meetups veiliger te maken, gedragsregels te stellen, privélocatiegegevens te beschermen en op zorgen te reageren. Die maatregelen kunnen niet elk risico wegnemen. Gebruik je gezonde verstand, let op je spullen, regel zelf veilig vervoer, ga weg uit elke situatie die onveilig voelt en bel bij direct gevaar de hulpdiensten (112).',
-  'We use Supabase to provide authentication, database, file-storage, and related backend services. Those providers process data on our instructions and under appropriate contractual safeguards.':
-      'We gebruiken Supabase voor inloggen, de database, bestandsopslag en bijbehorende backenddiensten. Die dienstverleners verwerken gegevens in onze opdracht en met passende contractuele waarborgen.',
   'We use technical and organisational measures intended to protect personal data, including access controls and private storage for profile photos. No system can guarantee absolute security, so keep your password private and contact us if you suspect misuse.':
       'We nemen technische en organisatorische maatregelen om persoonsgegevens te beschermen, waaronder toegangscontrole en afgeschermde opslag van profielfoto’s. Geen enkel systeem is volledig veilig, dus houd je wachtwoord geheim en neem contact op als je misbruik vermoedt.',
   'Wed': 'Wo',
@@ -1500,8 +1523,8 @@ const nlStrings = <String, String>{
       'Je kunt je programma-afspraak binnen 14 dagen na het accepteren in de app annuleren en krijgt dan een betaalde programmabijdrage volledig terug. Je kunt ook binnen 48 uur na afloop van de eerste meetup de volledige programmabijdrage terugvragen als de Circle niet goed voelt. Als VriendTime je Circle annuleert, worden ontvangen programmabijdragen terugbetaald. Terugbetalingen worden handmatig geregeld; deze toezeggingen beperken je dwingende consumentenrechten niet. Neem contact op met de organisator voor andere vragen over annuleren of betalen.',
   'You can choose up to three upcoming meetups.':
       'Je kunt maximaal drie komende meetups kiezen.',
-  'You can download your own account and Circle data from your Circle profile. Use Contact us in the Profile section to make other requests. We may need to verify your identity. You also have the right to complain to the Dutch Data Protection Authority (Autoriteit Persoonsgegevens) or the supervisory authority where you live or work.':
-      'Je kunt je eigen account- en Circle-gegevens downloaden via je Circle-profiel. Gebruik Neem contact op in het onderdeel Profiel voor andere verzoeken. Mogelijk moeten we je identiteit controleren. Je hebt ook het recht om een klacht in te dienen bij de Autoriteit Persoonsgegevens of bij de toezichthouder waar je woont of werkt.',
+  'You can download your own account and Circle data from your Circle profile. Email support@vriendtime.com to make other requests. We may need to verify your identity. You also have the right to complain to the Dutch Data Protection Authority (Autoriteit Persoonsgegevens) or the supervisory authority where you live or work.':
+      'Je kunt je eigen account- en Circle-gegevens downloaden via je Circle-profiel. Mail naar support@vriendtime.com voor andere verzoeken. Mogelijk moeten we je identiteit controleren. Je hebt ook het recht om een klacht in te dienen bij de Autoriteit Persoonsgegevens of bij de toezichthouder waar je woont of werkt.',
   'You can leave at any time. If something doesn\'t feel right, move somewhere safe and contact us.':
       'Je kunt altijd weggaan. Voelt iets niet goed, ga dan naar een veilige plek en neem contact met ons op.',
   'You can only do this for someone from one of your Circles.':
@@ -1625,8 +1648,8 @@ const nlStrings = <String, String>{
   'You’re going ✓ · Change RSVP': 'Je gaat ✓ · Aanmelding wijzigen',
   'You’re invited': 'Je bent uitgenodigd',
   'You’re on the list.': 'Je staat op de lijst.',
-  'You’ve agreed to the one-off €19 fee. The organiser will send your payment link on WhatsApp. Your place and group chat open once payment is received.':
-      'Je bent akkoord met de eenmalige bijdrage van €19. De organisator stuurt je betaallink via WhatsApp. Je plek en groepschat gaan open zodra de betaling binnen is.',
+  'You’ve agreed to the one-off €19 fee. The organiser will send you the payment link. Your place and group chat open once payment is received.':
+      'Je bent akkoord met de eenmalige bijdrage van €19. De organisator stuurt je de betaallink. Je plek en groepschat gaan open zodra de betaling binnen is.',
   'You’ve asked not to be matched with {1} again.':
       'Je hebt gevraagd om niet meer met {1} gematcht te worden.',
   'You’ve been on the list since yesterday.':
@@ -1863,8 +1886,8 @@ const nlStrings = <String, String>{
   'Happy to meet again': 'Graag weer samen',
   'The full six-week programme costs €19 once. Food, drinks and activities are separate and paid at the venue. After you accept, you can pay straight away with iDEAL. Your place is confirmed when payment is received. You can cancel for a full refund up to 48 hours before your first meetup. Between your first and second meetup, you can move to another group once, free of charge.':
       'Het hele programma van zes weken kost eenmalig €19. Eten, drinken en activiteiten zijn apart en betaal je ter plekke. Na het accepteren kun je direct betalen met iDEAL. Je plek is bevestigd zodra de betaling binnen is. Je kunt tot 48 uur voor je eerste meetup kosteloos annuleren en krijgt dan je €19 terug. Tussen je eerste en tweede meetup kun je één keer gratis naar een andere groep.',
-  'The full six-week programme costs €19 once. Food, drinks and activities are separate and paid at the venue. The organiser will send a payment link to your WhatsApp number. During this pilot the link comes from the organiser’s own bunq or Tikkie, so you’ll see their name when you pay. Your place is confirmed when payment is received. You can cancel for a full refund up to 48 hours before your first meetup. Between your first and second meetup, you can move to another group once, free of charge.':
-      'Het hele programma van zes weken kost eenmalig €19. Eten, drinken en activiteiten zijn apart en betaal je ter plekke. De organisator stuurt een betaallink naar je WhatsApp-nummer. Tijdens deze pilot komt de link van de eigen bunq of Tikkie van de organisator, dus je ziet diens naam als je betaalt. Je plek is bevestigd zodra de betaling binnen is. Je kunt tot 48 uur voor je eerste meetup kosteloos annuleren en krijgt dan je €19 terug. Tussen je eerste en tweede meetup kun je één keer gratis naar een andere groep.',
+  'The full six-week programme costs €19 once. Food, drinks and activities are separate and paid at the venue. The organiser will send you a payment link. During this pilot the link comes from the organiser’s own bunq or Tikkie, so you’ll see their name when you pay. Your place is confirmed when payment is received. You can cancel for a full refund up to 48 hours before your first meetup. Between your first and second meetup, you can move to another group once, free of charge.':
+      'Het hele programma van zes weken kost eenmalig €19. Eten, drinken en activiteiten zijn apart en betaal je ter plekke. De organisator stuurt je een betaallink. Tijdens deze pilot komt de link van de eigen bunq of Tikkie van de organisator, dus je ziet diens naam als je betaalt. Je plek is bevestigd zodra de betaling binnen is. Je kunt tot 48 uur voor je eerste meetup kosteloos annuleren en krijgt dan je €19 terug. Tussen je eerste en tweede meetup kun je één keer gratis naar een andere groep.',
   'You’re moving to a new group': 'Je gaat naar een nieuwe groep',
   'Your €19 carries over, so your next Circle is free. We’ll invite you as soon as we find a group that fits.':
       'Je €19 gaat mee, dus je volgende Circle is gratis. We nodigen je uit zodra we een groep vinden die past.',
@@ -1967,16 +1990,12 @@ const nlStrings = <String, String>{
       'Behandel andere leden, medewerkers van locaties en het publiek met respect. Intimidatie, discriminatie, bedreiging, geweld, ongewenst seksueel gedrag, stalking, fraude, spam, illegale activiteiten en gedrag dat iemand in gevaar brengt, zijn verboden.',
   'Account data: email address, password authentication records, first name, account identifiers, and account timestamps.':
       'Accountgegevens: e-mailadres, gegevens voor inloggen met je wachtwoord, voornaam, account-ID’s en tijdstempels van je account.',
-  'Profile data: first name, date of birth, WhatsApp number, profile photo, a short introduction, the languages you speak, your interests, and the days and times you are free. Optional fields are identified in the app.':
-      'Profielgegevens: voornaam, geboortedatum, WhatsApp-nummer, profielfoto, een korte introductie, de talen die je spreekt, je interesses en de dagen en tijden waarop je vrij bent. Optionele velden staan als zodanig in de app.',
   'Circle data: age based on your birthday, matching goals, social style, optional life context, your six-week commitment, membership, RSVPs, extra plans you add, private meetup check-ins and optional connection choices, people you would rather not be matched with again, requests to move to another group, programme outcomes, and the optional 90-day follow-up. Organisers use matching answers to form groups. Other members cannot see your private check-ins, matching choices or payment agreements.':
       'Circlegegevens: leeftijd op basis van je geboortedatum, wat je zoekt, je sociale stijl, optionele levenssituatie, je zesweekse toezegging, lidmaatschap, RSVP’s, extra plannen die je toevoegt, privé check-ins na meetups en optionele connecties, mensen met wie je liever niet opnieuw wordt gematcht, verzoeken om naar een andere groep te gaan, programma-uitkomsten en de optionele check-in na 90 dagen. Organisatoren gebruiken je matchingantwoorden om groepen te vormen. Andere leden zien je privé check-ins, matchingkeuzes en betalingsafspraken niet.',
   'Communication and safety data: messages you send in your Circle’s group chat, reports, support enquiries, and information needed to investigate safety or policy concerns.':
       'Communicatie- en veiligheidsgegevens: berichten die je in de groepschat van je Circle stuurt, meldingen, vragen aan support en informatie die nodig is om zorgen over veiligheid of regels te onderzoeken.',
   'We process account, profile, Circle, payment and communication data to provide the service you request and perform our contract with you. This includes creating your account, matching you with a Circle, sharing meetup details with your Circle, enabling the group chat, handling payments, refunds and moves, and providing support.':
       'We verwerken account-, profiel-, Circle-, betalings- en communicatiegegevens om de dienst te leveren waar je om vraagt en onze overeenkomst met je uit te voeren. Dat omvat het aanmaken van je account, je matchen met een Circle, meetupdetails delen met je Circle, de groepschat mogelijk maken, betalingen, terugbetalingen en verhuizingen afhandelen, en support bieden.',
-  'Information is shared with the other members of your Circle only where needed for the programme: your first name, profile photo, short introduction, interests, and the messages you send to your Circle. The organiser also sees your WhatsApp number so they can contact you.':
-      'Met de andere leden van je Circle delen we alleen wat nodig is voor het programma: je voornaam, profielfoto, korte introductie, interesses en de berichten die je naar je Circle stuurt. De organisator ziet ook je WhatsApp-nummer, zodat die contact met je kan opnemen.',
   'Your email address, date of birth, WhatsApp number, matching answers and private account details are never shown to other members. Avoid placing private information in your introduction or in messages that other members can read.':
       'Je e-mailadres, geboortedatum, WhatsApp-nummer, matchingantwoorden en privé accountgegevens worden nooit aan andere leden getoond. Zet geen privé-informatie in je introductie of in berichten die andere leden kunnen lezen.',
   'We may share relevant details with meetup venues, professional advisers, authorities, or safety partners when necessary to deliver a meetup, respond to an incident, protect rights and safety, or comply with law. We do not sell your personal data.':
@@ -1990,4 +2009,70 @@ const nlStrings = <String, String>{
   'Open-source licences': 'Opensourcelicenties',
   'Fonts and software VriendTime is built with':
       'Lettertypen en software waarmee VriendTime is gebouwd',
+  'Preparing your photo…': 'Je foto wordt voorbereid…',
+  'Uploading your photo…': 'Je foto wordt geüpload…',
+  'Almost done…': 'Bijna klaar…',
+  'Photo updated.': 'Foto bijgewerkt.',
+  'Has not opened the payment link yet': 'Heeft de betaallink nog niet geopend',
+  'Opened the payment link': 'Opende de betaallink',
+  'Says they paid': 'Zegt betaald te hebben',
+  'No payment link yet': 'Nog geen betaallink',
+  'Add payment link': 'Betaallink toevoegen',
+  'Change': 'Wijzigen',
+  'Payment link': 'Betaallink',
+  'Make one Tikkie for €19 for this Circle, allowing as many payers as there are members, and paste its link here. Members of this Circle get it behind their Pay button.':
+      'Maak één Tikkie van €19 voor deze Circle, met zoveel betalers als er leden zijn, en plak de link hier. Leden van deze Circle krijgen hem achter hun Betaal-knop.',
+  'Pay €19': 'Betaal €19',
+  'Pay the one-off €19 with iDEAL. Pay from a bank account in your own name so we can match your payment. Your place and group chat open once the organiser has checked it arrived.':
+      'Betaal de eenmalige €19 met iDEAL. Betaal vanaf een rekening op je eigen naam, zodat we je betaling kunnen koppelen. Je plek en groepschat gaan open zodra de organisator heeft gezien dat de betaling binnen is.',
+  'Keep this reference in case the organiser asks about your payment. Paying does not immediately unlock your Circle; the organiser checks the payment arrived.':
+      'Bewaar deze referentie voor het geval de organisator naar je betaling vraagt. Betalen opent je Circle niet direct; de organisator controleert of de betaling binnen is.',
+  'Accept and pay by {1}': 'Accepteer en betaal vóór {1}',
+  'Overdue': 'Te laat',
+  'pay by was': 'betalen vóór was',
+  'Pay by': 'Betalen vóór',
+  'pay by': 'betalen vóór',
+  'Release place': 'Plek vrijgeven',
+  'Release': 'Vrijgeven',
+  'Release {1}’s place?': 'De plek van {1} vrijgeven?',
+  'Check Tikkie first. If they have not paid, they go back to the waiting list and you can invite someone else.':
+      'Kijk eerst in Tikkie. Heeft diegene niet betaald, dan gaat die terug naar de wachtlijst en kun je iemand anders uitnodigen.',
+  'Members': 'Leden',
+  'Paid': 'Betaald',
+  'Accepted, not paid': 'Geaccepteerd, niet betaald',
+  'Invited': 'Uitgenodigd',
+  'Invite someone': 'Iemand uitnodigen',
+  'Invite someone to': 'Iemand uitnodigen voor',
+  'Needs to be free:': 'Moet vrij zijn op:',
+  'Nobody ready is waiting right now.': 'Er wacht nu niemand die klaar is.',
+  'Fits this Circle': 'Past bij deze Circle',
+  'Not free then, no shared language, or excluded':
+      'Niet vrij op dat moment, geen gedeelde taal of uitgesloten',
+  'Invite {1} to {2}?': '{1} uitnodigen voor {2}?',
+  'They get the invitation and the six dates, with 5 days to accept and pay.':
+      'Diegene krijgt de uitnodiging en de zes data, met 5 dagen om te accepteren en te betalen.',
+  'Not available in the preview.': 'Niet beschikbaar in het voorbeeld.',
+  'Pay the one-off €19 with iDEAL. Pay from a bank account in your own name so we can match your payment. Your place and group chat open once the organiser has checked it arrived. We hold your place until the pay-by date; if your €19 has not arrived by then, your place may go to someone on the waiting list.':
+      'Betaal de eenmalige €19 met iDEAL. Betaal vanaf een rekening op je eigen naam, zodat we je betaling kunnen koppelen. Je plek en groepschat gaan open zodra de organisator heeft gezien dat de betaling binnen is. We houden je plek vast tot de betaaldatum; is je €19 dan nog niet binnen, dan kan je plek naar iemand op de wachtlijst gaan.',
+  'Your €19 has not arrived yet': 'Je €19 is nog niet binnen',
+  'Your invitation is still open': 'Je uitnodiging staat nog open',
+  'Your place is confirmed only once your €19 arrives, nothing else. The pay-by date has passed, so the organiser may now offer your place to someone on the waiting list. Pay now to keep it. If you have already paid, tap “I’ve sent the payment”.':
+      'Je plek is pas bevestigd als je €19 binnen is, verder niets. De betaaldatum is voorbij, dus de organisator kan je plek nu aanbieden aan iemand op de wachtlijst. Betaal nu om je plek te houden. Heb je al betaald, tik dan op „Ik heb betaald”.',
+  'The pay-by date has passed, so the organiser may now offer your place to someone on the waiting list. Accept and pay now to keep it.':
+      'De betaaldatum is voorbij, dus de organisator kan je plek nu aanbieden aan iemand op de wachtlijst. Accepteer en betaal nu om je plek te houden.',
+  'Your place was released: payment not received':
+      'Je plek is vrijgegeven: betaling niet ontvangen',
+  'We did not receive your €19 for {1} by your pay-by date, so your place has been released. That is the only reason. You are back on the waiting list, keeping your place in the queue, and we will invite you to another Circle.':
+      'We hebben je €19 voor {1} niet vóór je betaaldatum ontvangen, dus je plek is vrijgegeven. Dat is de enige reden. Je staat weer op de wachtlijst, op je oude plek in de rij, en we nodigen je uit voor een andere Circle.',
+  'Your place in {1} is confirmed once your €19 arrives. Pay by the end of tomorrow to keep it.':
+      'Je plek in {1} is bevestigd zodra je €19 binnen is. Betaal uiterlijk morgen om je plek te houden.',
+  '{1} has not paid for {2} by the pay-by date. Check Tikkie, then confirm the payment or release the place.':
+      '{1} heeft niet vóór de betaaldatum betaald voor {2}. Kijk in Tikkie en bevestig de betaling of geef de plek vrij.',
+  'A place is overdue': 'Een plek is te laat betaald',
+  'Questions about these terms: email support@vriendtime.com, or use Help & contact in the app.':
+      'Vragen over deze voorwaarden: mail naar support@vriendtime.com of gebruik Hulp en contact in de app.',
+  'For privacy questions, requests or complaints, email support@vriendtime.com. This works even if you no longer have an account.':
+      'Voor vragen, verzoeken of klachten over privacy mail je naar support@vriendtime.com. Dat kan ook als je geen account meer hebt.',
+  'Email us': 'Mail ons',
+  'Opens your email app': 'Opent je e-mailapp',
 };

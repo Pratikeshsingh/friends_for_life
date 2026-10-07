@@ -89,7 +89,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const BrandLockup(logoSize: 44),
+                            const BrandLockup(
+                                logoSize: 44,
+                                foregroundColor: Color(0xFF062B55)),
                             const SizedBox(height: 20),
                             Text(
                               _isSuccess

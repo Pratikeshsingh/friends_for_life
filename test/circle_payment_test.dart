@@ -58,7 +58,8 @@ void main() {
       ...invitation,
       'payment_agreement': {'status': 'awaiting_payment'}
     }, (a, [p = const {}]) async {}));
-    expect(find.textContaining('payment link on WhatsApp'), findsOneWidget);
+    expect(
+        find.textContaining('will send you the payment link'), findsOneWidget);
     expect(
         tester
             .widget<ElevatedButton>(

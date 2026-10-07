@@ -75,7 +75,7 @@ void main() {
       await tester.pumpAndSettle();
       // Day, month and year each show in their own dropdown.
       expect(find.text('15'), findsOneWidget);
-      expect(find.text('June'), findsOneWidget);
+      expect(find.textContaining('Jun'), findsOneWidget);
       expect(find.text('1995'), findsOneWidget);
       expect(find.text('Other'), findsNothing);
       expect(find.text('German'), findsNothing);
@@ -110,24 +110,32 @@ void main() {
     expect(CircleApplicationTesting.isValid('0612'), isFalse);
     expect(CircleApplicationTesting.isValid('06 12345678'), isTrue);
   });
-  testWidgets('a WhatsApp number is required and no address is asked for',
+  testWidgets('a WhatsApp number is optional and no address is asked for',
       (tester) async {
-    final noPhone = Map<String, dynamic>.from(initial)..remove('phone');
-    await tester.pumpWidget(MaterialApp(
-        theme: buildTheme(),
-        home: Scaffold(
-            body: SingleChildScrollView(
-                child: CircleApplication(
-                    initial: noPhone,
-                    busy: false,
-                    onSave: (_) async {},
-                    onSubmit: (_) async {})))));
-    await tester.pumpAndSettle();
+    Future<void> openWith(Map<String, dynamic> data) async {
+      await tester.pumpWidget(MaterialApp(
+          theme: buildTheme(),
+          home: Scaffold(
+              body: SingleChildScrollView(
+                  child: CircleApplication(
+                      key: UniqueKey(),
+                      initial: data,
+                      busy: false,
+                      onSave: (_) async {},
+                      onSubmit: (_) async {})))));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Continue'));
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+    }
+
+    await openWith(Map<String, dynamic>.from(initial)..remove('phone'));
     expect(find.textContaining('Home address'), findsNothing);
-    await tester.ensureVisible(find.text('Continue'));
-    await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Add your WhatsApp number'), findsOneWidget);
+    expect(find.text('Start with you.'), findsNothing,
+        reason: 'no number still moves on');
+    // A number that is given must still be valid.
+    await openWith(Map<String, dynamic>.from(initial)..['phone'] = '0612');
+    expect(find.textContaining('Check your WhatsApp number'), findsOneWidget);
     expect(find.text('Start with you.'), findsOneWidget);
   });
   testWidgets('photo is required before live application submission',

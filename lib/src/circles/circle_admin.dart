@@ -336,15 +336,14 @@ class _CircleAdminState extends State<CircleAdmin>
   }
 
   List<Widget> contactLines(String? phone,
-      {String? whatsAppMessage,
-      String whatsAppLabel = 'Send payment link on WhatsApp'}) {
+      {String? whatsAppMessage, String whatsAppLabel = 'Message on WhatsApp'}) {
     final hasPhone = phone != null && phone.isNotEmpty;
     return [
       if (hasPhone)
         SelectableText('WhatsApp: $phone')
       else
-        const Text('No WhatsApp number yet',
-            style: TextStyle(color: Colors.deepOrange)),
+        const Text('No WhatsApp number (optional). They get updates by email.',
+            style: TextStyle(color: Color(0xFF6B7C8A))),
       if (hasPhone && whatsAppMessage != null)
         Align(
             alignment: Alignment.centerLeft,
@@ -601,7 +600,7 @@ class _CircleAdminState extends State<CircleAdmin>
       if (awaitingPayment.isNotEmpty) ...[
         _sectionTitle(context, 'Payments to confirm',
             hint:
-                'Send the link on WhatsApp, then confirm once the money is in.'),
+                'Members pay with the Circle’s payment link. Confirm once the money is in.'),
         for (final p in awaitingPayment) _paymentCard(context, p),
       ],
       if (reports.isNotEmpty) ...[
@@ -640,6 +639,72 @@ class _CircleAdminState extends State<CircleAdmin>
               spacing: 4,
               children: children)));
 
+  /// "Fri 2 Oct 14:02", local time, for matching a payment to a tap.
+  static String _when(Object? iso) {
+    final at = DateTime.tryParse('${iso ?? ''}')?.toLocal();
+    if (at == null) return '';
+    final hh = at.hour.toString().padLeft(2, '0');
+    final mm = at.minute.toString().padLeft(2, '0');
+    return '${circleDate(at.toIso8601String())} $hh:$mm';
+  }
+
+  /// The Circle's payment link (for example a Tikkie for €19). Members of
+  /// this Circle get it behind their Pay button.
+  Widget _paymentLinkRow(Json c) {
+    final link = (c['payment_link'] as String?)?.trim();
+    return Padding(
+        padding: const EdgeInsets.only(top: 6, bottom: 2),
+        child: Row(children: [
+          const Icon(Icons.link_rounded, size: 18, color: _muted),
+          const SizedBox(width: 8),
+          Expanded(
+              child: link == null || link.isEmpty
+                  ? Text(t('No payment link yet'),
+                      style: const TextStyle(color: circleCoralText))
+                  : SelectableText(link,
+                      maxLines: 1, style: const TextStyle(fontSize: 13))),
+          TextButton(
+              onPressed: busy ? null : () => _editPaymentLink(c),
+              child: Text(link == null || link.isEmpty
+                  ? 'Add payment link'
+                  : 'Change')),
+        ]));
+  }
+
+  Future<void> _editPaymentLink(Json c) async {
+    var value = (c['payment_link'] as String?) ?? '';
+    final save = await showDialog<bool>(
+        context: context,
+        builder: (dc) => AlertDialog(
+                title: const Text('Payment link'),
+                content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                          'Make one Tikkie for €19 for this Circle, allowing as many payers as there are members, and paste its link here. Members of this Circle get it behind their Pay button.'),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                          initialValue: value,
+                          autofocus: true,
+                          keyboardType: TextInputType.url,
+                          onChanged: (v) => value = v,
+                          decoration: const InputDecoration(
+                              hintText: 'https://tikkie.me/pay/…')),
+                    ]),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(dc, false),
+                      child: const Text('Cancel')),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(dc, true),
+                      child: const Text('Save')),
+                ]));
+    if (save == true) {
+      await action('admin_payment_link', {'id': c['id'], 'link': value.trim()});
+    }
+  }
+
   Widget _paymentCard(BuildContext context, Json p) {
     final contact = contactFor(p['profile_id']);
     return _card([
@@ -648,10 +713,28 @@ class _CircleAdminState extends State<CircleAdmin>
       Text(
           '€19 · ${t(circleStatusLabel(p['status']))} · ${t('agreed')} ${circleDate(p['agreed_at']?.toString())}',
           style: const TextStyle(color: _muted)),
+      if (p['status'] == 'awaiting_payment') ...[
+        if (p['pay_by'] != null)
+          Text(
+              p['overdue'] == true
+                  ? '${t('Overdue')} · ${t('pay by was')} ${circleDate(p['pay_by']?.toString())}'
+                  : '${t('Pay by')} ${circleDate(p['pay_by']?.toString())}',
+              style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: p['overdue'] == true ? circleCoralText : circleNavy)),
+        Text(
+            p['payment_opened_at'] == null
+                ? t('Has not opened the payment link yet')
+                : '${t('Opened the payment link')} ${_when(p['payment_opened_at'])}',
+            style: const TextStyle(fontWeight: FontWeight.w700)),
+        if (p['payment_reported_at'] != null)
+          Text('${t('Says they paid')} ${_when(p['payment_reported_at'])}',
+              style: const TextStyle(fontWeight: FontWeight.w700)),
+      ],
       SelectableText(p['email']?.toString() ?? 'Account removed'),
       ...contactLines(contact?['phone'] as String?,
           whatsAppMessage: p['status'] == 'awaiting_payment'
-              ? 'Hi ${p['name'] ?? 'there'}! Welcome to your VriendTime Circle "${p['circle_name'] ?? ''}". Here is your link for the one-off €19 programme fee: '
+              ? 'Hi ${p['name'] ?? 'there'}! This is the VriendTime organiser, about your place in "${p['circle_name'] ?? ''}" and the one-off €19 fee. '
               : null),
       if (p['status'] == 'awaiting_payment')
         Align(
@@ -665,7 +748,165 @@ class _CircleAdminState extends State<CircleAdmin>
                         'admin_confirm_payment',
                         {'id': p['id'], 'received': true}),
                 child: const Text('Confirm payment received'))),
+      if (p['status'] == 'awaiting_payment' && p['overdue'] == true)
+        Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+                style: destructiveTextStyle,
+                onPressed: busy
+                    ? null
+                    : () => _releasePlace(
+                        '${p['circle_id']}', '${p['profile_id']}', p['name']),
+                child: const Text('Release place'))),
     ]);
+  }
+
+  Future<void> _releasePlace(String circleId, String memberId, Object? name) =>
+      confirmAction(
+          t('Release {1}’s place?')
+              .replaceAll('{1}', '${name ?? 'this member'}'),
+          'Check Tikkie first. If they have not paid, they go back to the waiting list and you can invite someone else.',
+          'admin_release_place',
+          {'circle_id': circleId, 'profile_id': memberId},
+          destructive: true);
+
+  /// The people in a Circle, with where each stands, and a way to fill an
+  /// empty or released place before the first meetup.
+  List<Widget> _memberRows(Json c) {
+    final members = rows(c['members']);
+    final started = rows(c['meetups']).any((m) =>
+        m['completed'] == true ||
+        (DateTime.tryParse('${m['date']}')?.isBefore(DateTime.now()) ?? false));
+    String status(Json m) {
+      if (m['payment_status'] == 'paid') return t('Paid');
+      final accepted = m['accepted'] == true;
+      final base = accepted ? t('Accepted, not paid') : t('Invited');
+      if (m['pay_by'] == null) return base;
+      return m['overdue'] == true
+          ? '$base · ${t('Overdue')}'
+          : '$base · ${t('pay by')} ${circleDate(m['pay_by']?.toString())}';
+    }
+
+    return [
+      const SizedBox(height: 6),
+      Text('${t('Members')} (${members.length}/6)',
+          style:
+              const TextStyle(fontWeight: FontWeight.w800, color: circleNavy)),
+      for (final m in members)
+        Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(children: [
+              Expanded(
+                  child: Text('${m['name']} · ${status(m)}',
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: m['overdue'] == true
+                              ? circleCoralText
+                              : _muted))),
+              if (m['status'] == 'invited' && m['overdue'] == true)
+                TextButton(
+                    style: destructiveTextStyle,
+                    onPressed: busy
+                        ? null
+                        : () => _releasePlace(
+                            '${c['id']}', '${m['profile_id']}', m['name']),
+                    child: const Text('Release')),
+            ])),
+      if (members.length < 6 && !started)
+        Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+                icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
+                onPressed: busy ? null : () => _inviteToCircle(c),
+                label: const Text('Invite someone'))),
+    ];
+  }
+
+  /// Waiting applicants, best fits first: free on the Circle's day and time,
+  /// sharing a language with everyone, and not excluded by anyone in it. The
+  /// server checks all of this again.
+  Future<void> _inviteToCircle(Json c) async {
+    final start = DateTime.tryParse('${c['start_date']}');
+    final hour = int.tryParse('${c['local_time']}'.split(':').first) ?? 19;
+    final period =
+        hour < 12 ? 'morning' : (hour < 17 ? 'afternoon' : 'evening');
+    const days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday'
+    ];
+    final slot = start == null ? null : '${days[start.weekday - 1]} $period';
+    final memberIds =
+        rows(c['members']).map((m) => '${m['profile_id']}').toSet();
+    final memberLanguages = [
+      for (final m in rows(c['members'])) strings(m['languages']).toSet()
+    ];
+    final exclusions = circleExclusions(data);
+    bool fits(Json a) {
+      final id = '${a['profile_id']}';
+      final free = slot != null && strings(a['availability']).contains(slot);
+      final langs = strings(a['languages']).toSet();
+      final shares = memberLanguages
+          .every((l) => l.isEmpty || l.intersection(langs).isNotEmpty);
+      final excluded =
+          memberIds.any((m) => exclusions.contains(exclusionKey(id, m)));
+      return free && shares && !excluded;
+    }
+
+    final candidates = applicants
+        .where((a) =>
+            isReadyApplicant(a) && !memberIds.contains('${a['profile_id']}'))
+        .toList()
+      ..sort((x, y) => (fits(y) ? 1 : 0) - (fits(x) ? 1 : 0));
+    final chosen = await showModalBottomSheet<Json>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (sc) => SafeArea(
+                child: ListView(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    children: [
+                  Text('${t('Invite someone to')} ${c['name']}',
+                      style: Theme.of(sc).textTheme.titleLarge),
+                  const SizedBox(height: 4),
+                  Text(
+                      slot == null
+                          ? ''
+                          : '${t('Needs to be free:')} ${t(slot)}',
+                      style: const TextStyle(color: _muted)),
+                  const SizedBox(height: 8),
+                  if (candidates.isEmpty)
+                    const Text('Nobody ready is waiting right now.'),
+                  for (final a in candidates)
+                    ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleMemberAvatar('${a['name'] ?? ''}',
+                            radius: 18,
+                            photoUrl: a['photo_url'] as String?,
+                            photoPath: a['photo_path'] as String?),
+                        title: Text('${a['name'] ?? 'Someone'}'),
+                        subtitle: Text(fits(a)
+                            ? t('Fits this Circle')
+                            : t(
+                                'Not free then, no shared language, or excluded')),
+                        trailing: fits(a)
+                            ? const Icon(Icons.check_circle, color: circleTeal)
+                            : null,
+                        onTap: () => Navigator.pop(sc, a)),
+                ])));
+    if (chosen == null) return;
+    await confirmAction(
+        t('Invite {1} to {2}?')
+            .replaceAll('{1}', '${chosen['name'] ?? 'this person'}')
+            .replaceAll('{2}', '${c['name']}'),
+        'They get the invitation and the six dates, with 5 days to accept and pay.',
+        'admin_invite',
+        {'circle_id': c['id'], 'profile_id': chosen['profile_id']});
   }
 
   Widget _reportCard(Json r) => _card([
@@ -1070,7 +1311,7 @@ class _CircleAdminState extends State<CircleAdmin>
         const Padding(
             padding: EdgeInsets.only(bottom: 12),
             child: Text(
-                'Missing details: needs a WhatsApp number, birthday, photo or updated times before matching.',
+                'Missing details: needs a birthday, photo or updated times before matching.',
                 style: TextStyle(color: Colors.deepOrange))),
       ...contactLines(a['phone'] as String?,
           whatsAppLabel:
@@ -1572,6 +1813,8 @@ class _CircleAdminState extends State<CircleAdmin>
               style: const TextStyle(color: Colors.deepOrange)),
         Text('${c['schedule']} · ${t(circleStatusLabel(c['status']))}',
             style: const TextStyle(color: _muted)),
+        if (['offered', 'active'].contains(c['status'])) _paymentLinkRow(c),
+        if (['offered', 'active'].contains(c['status'])) ..._memberRows(c),
         if (['offered', 'active'].contains(c['status']))
           Align(
               alignment: Alignment.centerLeft,
