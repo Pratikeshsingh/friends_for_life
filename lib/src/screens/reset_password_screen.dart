@@ -222,8 +222,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (password.length < 6) {
-      setState(() => _statusMessage = 'Use at least six characters.');
+    if (password.length < 8) {
+      setState(() => _statusMessage = 'Use at least eight characters.');
       return;
     }
 
@@ -238,9 +238,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     });
 
     try {
-      await Supabase.instance.client.auth.updateUser(
-        UserAttributes(password: password),
-      );
+      final auth = Supabase.instance.client.auth;
+      await auth.updateUser(UserAttributes(password: password));
+      // A new password should lock out anyone else: end every other
+      // signed-in session. Best effort — the password itself is changed.
+      try {
+        await auth.signOut(scope: SignOutScope.others);
+      } catch (_) {}
       if (!mounted) return;
       setState(() => _isSuccess = true);
     } on AuthException catch (error) {

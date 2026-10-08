@@ -4,8 +4,129 @@
 // Generated; edit the entries, keep the English keys exactly as in code.
 
 const nlStrings = <String, String>{
-  'We use Supabase for sign-in, the database and file storage (on servers in the EU), Netlify to host the website, and Resend to send account and app emails. These providers process data on our instructions and under appropriate contractual safeguards.':
-      'We gebruiken Supabase voor inloggen, de database en bestandsopslag (op servers in de EU), Netlify voor het hosten van de website en Resend voor het versturen van account- en app-e-mails. Deze dienstverleners verwerken gegevens in onze opdracht en met passende contractuele waarborgen.',
+  'Who came?': 'Wie was er?',
+  'Record who was actually there. An RSVP alone does not count.':
+      'Noteer wie er echt was. Alleen een aanmelding telt niet.',
+  'Came': 'Was er',
+  'Didn’t come': 'Was er niet',
+  'No members to record.': 'Geen leden om te noteren.',
+  'Done': 'Klaar',
+  'A free switch isn’t possible any more and the refund window has closed. You can still leave; your reason helps us make better groups.':
+      'Gratis overstappen kan niet meer en de periode voor terugbetaling is voorbij. Je kunt wel stoppen; je reden helpt ons betere groepen te maken.',
+  'You’re no longer in {1}.': 'Je zit niet meer in {1}.',
+  'The organiser has removed you from this Circle. If you think this is a mistake, email support@vriendtime.com.':
+      'De organisator heeft je uit deze Circle gehaald. Denk je dat dit een vergissing is? Mail dan naar support@vriendtime.com.',
+  'Almost there.': 'Bijna zover.',
+  'Your place is held for you. Once your €19 has arrived, your Circle and its chat open.':
+      'Je plek wordt voor je vastgehouden. Zodra je €19 binnen is, gaan je Circle en de chat open.',
+  'Enough people are free on {1}. Your invitation will appear here once the group is set.':
+      'Er zijn genoeg mensen vrij op {1}. Je uitnodiging verschijnt hier zodra de groep vaststaat.',
+  'A note (optional)': 'Een opmerking (optioneel)',
+  'Anything you’d like us to know': 'Wil je ons nog iets laten weten?',
+  'The day or time doesn’t work': 'De dag of tijd past niet',
+  'The group doesn’t feel right': 'De groep voelt niet goed',
+  'Something came up': 'Er is iets tussengekomen',
+  'Something else': 'Iets anders',
+  'We can find you another group': 'We kunnen een andere groep voor je zoeken',
+  'Before you go': 'Voordat je gaat',
+  'Switch to a group at a time that suits you. Your €19 carries over, and you can update your days and times straight after.':
+      'Stap over naar een groep op een tijd die bij je past. Je €19 gaat mee, en je kunt daarna meteen je dagen en tijden aanpassen.',
+  'Switch to another group and keep your €19. You can do this once, free of charge, until your second meetup.':
+      'Stap over naar een andere groep en houd je €19. Dat kan één keer gratis, tot je tweede meetup.',
+  'Switch to another group': 'Overstappen naar een andere groep',
+  'We’re sorry it isn’t working out. Your reason helps us make better groups.':
+      'Jammer dat het niet werkt. Je reden helpt ons betere groepen te maken.',
+  'I’d rather ask for my €19 back': 'Ik vraag liever mijn €19 terug',
+  'Give up my place': 'Mijn plek opgeven',
+  'Your place will be released and your request goes to the organiser, who reviews it and gets back to you. If it’s approved, the €19 goes back to the account you paid from.':
+      'Je plek komt vrij en je verzoek gaat naar de organisator, die het bekijkt en contact met je opneemt. Wordt het goedgekeurd, dan gaat de €19 terug naar de rekening waarmee je betaalde.',
+  'Request refund': 'Terugbetaling aanvragen',
+  'Give up your place?': 'Je plek opgeven?',
+  'Your place goes to someone on the waiting list. Nothing has been paid, so there is nothing to refund.':
+      'Je plek gaat naar iemand op de wachtlijst. Er is niets betaald, dus er valt niets terug te betalen.',
+  'Your place is released and your remaining meetups are removed from your plans. At this point the €19 isn’t refunded. Your reason stays private.':
+      'Je plek komt vrij en je resterende meetups verdwijnen uit je planning. Op dit moment wordt de €19 niet terugbetaald. Je reden blijft privé.',
+  'What isn’t working?': 'Wat werkt er niet?',
+  'Tell us, and we’ll see what we can do. It stays between you and us.':
+      'Vertel het ons, dan kijken we wat we kunnen doen. Het blijft tussen jou en ons.',
+  'Anything you’d like us to know? (optional)':
+      'Wil je ons nog iets laten weten? (optioneel)',
+  'You’ve left {1}.': 'Je hebt {1} verlaten.',
+  'Your refund request is with the organiser. We’ll be in touch about it.':
+      'Je verzoek om terugbetaling ligt bij de organisator. We nemen er contact over op.',
+  'Your refund is complete. Contact us if it hasn’t arrived.':
+      'Je terugbetaling is afgerond. Neem contact op als het geld niet is aangekomen.',
+  'Thanks for giving it a go.': 'Bedankt dat je het hebt geprobeerd.',
+  'Try another Circle?': 'Een andere Circle proberen?',
+  'Your answers are saved. Join the waiting list again and we’ll invite you when a new group fits your times.':
+      'Je antwoorden zijn bewaard. Zet je weer op de wachtlijst, dan nodigen we je uit zodra er een nieuwe groep bij je tijden past.',
+  'Update my answers first': 'Eerst mijn antwoorden aanpassen',
+  'Circle not feeling right?': 'Voelt je Circle niet goed?',
+  'The organiser will send you the payment link. Your place and group chat open once your €19 has arrived.':
+      'De organisator stuurt je de betaallink. Je plek en groepschat gaan open zodra je €19 binnen is.',
+  'Pay from an account in your own name, so the organiser can match it. Your place and group chat open once it has arrived.':
+      'Betaal vanaf een rekening op je eigen naam, zodat de organisator de betaling kan koppelen. Je plek en groepschat gaan open zodra het geld binnen is.',
+  'I’ve already paid': 'Ik heb al betaald',
+  'Payment sent ✓': 'Betaling verstuurd ✓',
+  'The organiser will confirm it soon. You don’t need to pay again.':
+      'De organisator bevestigt het binnenkort. Je hoeft niet opnieuw te betalen.',
+  'Pay by {1}': 'Betaal vóór {1}',
+  'One payment for all six weeks. Food and drinks are paid at the venue. Not the right group or time? You can switch to another group once, free of charge, until your second meetup.':
+      'Eén betaling voor alle zes weken. Eten en drinken betaal je op locatie. Niet de juiste groep of tijd? Je kunt één keer gratis overstappen naar een andere groep, tot je tweede meetup.',
+  'Thursday evenings · English': 'Donderdagavonden · Engels',
+  'Remove {1} from this Circle?': '{1} uit deze Circle halen?',
+  'They lose access to the Circle and its chat, and are told they were removed. They are not put back on the waiting list. Any refund is up to you and arranged separately. Note why, for your own records; it is not shown to them.':
+      'Diegene verliest toegang tot de Circle en de chat, en hoort dat diegene is verwijderd. Diegene komt niet terug op de wachtlijst. Een eventuele terugbetaling bepaal je zelf en regel je apart. Noteer waarom, voor je eigen administratie; dit wordt niet getoond.',
+  'Why (only you see this)': 'Waarom (alleen jij ziet dit)',
+  'Remove from Circle': 'Uit de Circle halen',
+  'Note why, for your own records.':
+      'Noteer waarom, voor je eigen administratie.',
+  'Remove from this Circle': 'Uit deze Circle halen',
+  'Email them': 'E-mail sturen',
+  'Your report to VriendTime': 'Je melding aan VriendTime',
+  'Reported by': 'Gemeld door',
+  'a member': 'een lid',
+  'asked': 'aangevraagd',
+  'Reason': 'Reden',
+  'Select {1} for a Circle': '{1} selecteren voor een Circle',
+  'Nobody is ready to match yet. People need a birthday, photo and times first.':
+      'Nog niemand is klaar om te matchen. Mensen hebben eerst een geboortedatum, foto en tijden nodig.',
+  'You’re switching groups. Your €19 carries over. Check your days and times below.':
+      'Je stapt over naar een andere groep. Je €19 gaat mee. Kijk hieronder je dagen en tijden na.',
+  'Your place is released. We’ll be in touch about anything outstanding.':
+      'Je plek is vrijgegeven. We nemen contact op over wat nog openstaat.',
+  'You’re back on the waiting list.': 'Je staat weer op de wachtlijst.',
+  'Today': 'Vandaag',
+  'Thanks. Your report reached the organiser privately. We’ll follow up with you.':
+      'Bedankt. Je melding is privé bij de organisator aangekomen. We nemen contact met je op.',
+  'Invitations, payment updates, meetup details, reminders and new messages.':
+      'Uitnodigingen, betaalupdates, meetupdetails, herinneringen en nieuwe berichten.',
+  'Switch group or leave': 'Overstappen of stoppen',
+  'This permanently deletes your profile, photos, Circle application, messages and notifications. This cannot be undone. Payment and refund records are kept for our accounts, as the privacy policy explains.':
+      'Hiermee verwijder je je profiel, foto’s, Circle-aanmelding, berichten en meldingen definitief. Dit kan niet ongedaan worden gemaakt. Betalings- en terugbetalingsgegevens bewaren we voor onze administratie, zoals in het privacybeleid staat.',
+  'Use at least eight characters.': 'Gebruik minstens acht tekens.',
+  'Use a password with at least eight characters.':
+      'Gebruik een wachtwoord van minstens acht tekens.',
+  'We couldn’t delete your account right now. Please try again later, or email support@vriendtime.com and we’ll do it for you.':
+      'We konden je account nu niet verwijderen. Probeer het later opnieuw, of mail support@vriendtime.com, dan doen wij het voor je.',
+  'We couldn’t send that email right now. Please try again later, or email support@vriendtime.com.':
+      'We konden die e-mail nu niet versturen. Probeer het later opnieuw, of mail support@vriendtime.com.',
+  'A welcoming cafe table waiting for guests':
+      'Een uitnodigende cafétafel die op gasten wacht',
+  'On your device, the app stores your sign-in session and your language choice, so you stay signed in and see the right language. We do not use tracking or advertising cookies.':
+      'Op je apparaat bewaart de app je inlogsessie en je taalkeuze, zodat je ingelogd blijft en de juiste taal ziet. We gebruiken geen tracking- of advertentiecookies.',
+  'We keep personal data only as long as needed: account, profile, application and Circle data, and your messages, while your account exists; notifications for up to one year; safety reports for one year after they are resolved; error logs for 30 days; backups for up to eight weeks; and payment and refund records for seven years, because Dutch tax law requires it.':
+      'We bewaren persoonsgegevens niet langer dan nodig: account-, profiel-, aanmeldings- en Circle-gegevens en je berichten zolang je account bestaat; meldingen maximaal één jaar; veiligheidsmeldingen één jaar nadat ze zijn afgehandeld; foutlogs 30 dagen; back-ups maximaal acht weken; en betalings- en terugbetalingsgegevens zeven jaar, omdat de Nederlandse belastingwet dat vereist.',
+  'You pay the €19 with a payment link (during the pilot a Tikkie or bank payment link). The payment provider and your bank process that payment under their own privacy policies; we see the name, amount and date of the payment so we can match it to your place.':
+      'Je betaalt de €19 via een betaallink (tijdens de pilot een Tikkie- of bankbetaallink). De betaaldienst en je bank verwerken die betaling onder hun eigen privacybeleid; wij zien de naam, het bedrag en de datum van de betaling, zodat we die aan jouw plek kunnen koppelen.',
+  'We use Supabase for sign-in, the database and file storage (on servers in the EU), Netlify to host the website, Resend to send account and app emails, and Zoho Mail for our support mailbox (support@vriendtime.com). These providers process data on our instructions and under appropriate contractual safeguards. We also keep private backup copies of the database and photos, for up to eight weeks, so we can recover from mistakes or outages.':
+      'We gebruiken Supabase voor inloggen, de database en bestandsopslag (op servers in de EU), Netlify voor het hosten van de website, Resend voor het versturen van account- en app-e-mails en Zoho Mail voor onze supportmailbox (support@vriendtime.com). Deze dienstverleners verwerken gegevens in onze opdracht en met passende contractuele waarborgen. We bewaren ook privé-back-ups van de database en foto’s, maximaal acht weken, zodat we fouten of storingen kunnen herstellen.',
+  'You can report content or behaviour that breaks these terms with Report a concern in the app, or by email to support@vriendtime.com. We may remove messages, photos or other content that break these terms, and we may take a member out of a Circle when that is needed to keep members safe. If we remove your content or take you out of a Circle, we tell you, and you can email support@vriendtime.com to ask why or to object.':
+      'Je kunt inhoud of gedrag dat tegen deze voorwaarden ingaat melden via Meld een zorg in de app, of per e-mail aan support@vriendtime.com. We kunnen berichten, foto’s of andere inhoud verwijderen die tegen deze voorwaarden ingaan, en we kunnen een lid uit een Circle halen als dat nodig is voor de veiligheid van leden. Verwijderen we jouw inhoud of halen we je uit een Circle, dan laten we je dat weten, en kun je via support@vriendtime.com vragen waarom of bezwaar maken.',
+  'After that: the €19 is not refunded. If your Circle does not feel right, you can switch to another group once, free of charge, until your second meetup starts (also before your first meetup). You keep your place on the waiting list and your €19 covers the new Circle. If we cannot offer you a new group within a reasonable time, we refund your €19. After your second meetup has started, no switch or refund is possible, and joining a further Circle means paying again.':
+      'Daarna wordt de €19 niet terugbetaald. Voelt je Circle niet goed, dan kun je één keer gratis naar een andere groep overstappen, tot je tweede meetup begint (ook al voor je eerste meetup). Je houdt je plek op de wachtlijst en je €19 geldt voor de nieuwe Circle. Kunnen we je binnen redelijke tijd geen nieuwe groep aanbieden, dan betalen we je €19 terug. Na de start van je tweede meetup is overstappen of terugbetalen niet meer mogelijk en betaal je opnieuw voor een volgende Circle.',
+  'Before your first meetup: until 48 hours before the first meetup starts, you can leave your Circle in the app and ask for your €19 back. We may ask why you are leaving, so we can offer you another group instead. If you still want a refund, we check your request and refund the full €19 to the account you paid from.':
+      'Voor je eerste meetup: tot 48 uur voor de eerste meetup kun je je Circle in de app verlaten en je €19 terugvragen. We kunnen vragen waarom je stopt, zodat we je een andere groep kunnen aanbieden. Wil je toch je geld terug, dan controleren we je verzoek en storten we de volledige €19 terug op de rekening waarmee je betaalde.',
   'Information is shared with the other members of your Circle only where needed for the programme: your first name, profile photo, short introduction, interests, and the messages you send to your Circle. If you give a WhatsApp number, the organiser sees it so they can contact you.':
       'Met de andere leden van je Circle delen we alleen wat nodig is voor het programma: je voornaam, profielfoto, korte introductie, interesses en de berichten die je naar je Circle stuurt. Als je een WhatsApp-nummer opgeeft, ziet de organisator dat, zodat die contact met je kan opnemen.',
   'Profile data: first name, date of birth, profile photo, a short introduction, the languages you speak, your interests, the days and times you are free, and, if you choose to give it, a WhatsApp number. Optional fields are identified in the app.':
@@ -744,7 +865,6 @@ const nlStrings = <String, String>{
   'Name': 'Naam',
   'Nature': 'Natuur',
   'Nearly there': 'Bijna klaar',
-  'Need a number, photo or times': 'Nummer, foto of tijden ontbreken',
   'Netherlands time': 'Nederlandse tijd',
   'New': 'Nieuw',
   'New Circle applications require a primary profile photo for recognition. A profile photo is not identity verification. That photo is available only to your assigned Circle and authorised matching organisers. It is never shown publicly.':
@@ -888,8 +1008,6 @@ const nlStrings = <String, String>{
   'Our team starts with a shared language and time, then considers your interests and what you’re looking for.':
       'Ons team begint bij een gedeelde taal en tijd, en kijkt daarna naar je interesses en wat je zoekt.',
   'Password': 'Wachtwoord',
-  'Password reset email sent. Check your inbox for the reset link.':
-      'E-mail voor nieuw wachtwoord verstuurd. Kijk in je inbox voor de link.',
   'Password update failed. Check the link or try again.':
       'Wachtwoord bijwerken mislukt. Controleer de link of probeer het opnieuw.',
   'Password updated': 'Wachtwoord bijgewerkt',
@@ -1270,6 +1388,76 @@ const nlStrings = <String, String>{
       "Accepteer je uitnodiging en betaal de €19. Zodra de organisator je betaling bevestigt, gaat de chat van je Circle hier open.",
   "Once we’ve matched you with a Circle and your place is confirmed, you can chat with your group here.":
       "Zodra we je aan een Circle hebben gekoppeld en je plek bevestigd is, kun je hier met je groep chatten.",
+  "{1} of {2} chosen. Remove one to pick another.":
+      "{1} van {2} gekozen. Haal er een weg om een andere te kiezen.",
+  "Pick up to {1}. {2} chosen.": "Kies er maximaal {1}. {2} gekozen.",
+  "{1} chosen": "{1} gekozen",
+  "Remove": "Verwijderen",
+  "Food & drink": "Eten en drinken",
+  "Outdoors": "Buiten",
+  "Arts & culture": "Kunst en cultuur",
+  "Learning & making": "Leren en maken",
+  "Out and about": "Op pad",
+  "Baking": "Bakken",
+  "Wine & beer": "Wijn en bier",
+  "New restaurants": "Nieuwe restaurants",
+  "Running": "Hardlopen",
+  "Yoga": "Yoga",
+  "Gym": "Sportschool",
+  "Swimming": "Zwemmen",
+  "Dancing": "Dansen",
+  "Hiking": "Wandeltochten",
+  "Gardening": "Tuinieren",
+  "Camping": "Kamperen",
+  "Theatre": "Theater",
+  "Concerts": "Concerten",
+  "Writing": "Schrijven",
+  "Puzzles & quizzes": "Puzzels en quizzen",
+  "Video games": "Videogames",
+  "Crafts": "Handwerk",
+  "DIY": "Klussen",
+  "Languages": "Talen",
+  "Tech": "Techniek",
+  "Science": "Wetenschap",
+  "Volunteering": "Vrijwilligerswerk",
+  "Pets": "Huisdieren",
+  "Fashion": "Mode",
+  "Markets": "Markten",
+  "You’re on the list for a new Circle":
+      "Je staat op de lijst voor een nieuwe Circle",
+  "Meet a new group too?": "Ook een nieuwe groep ontmoeten?",
+  "We’ll invite you when a group fits your times. This Circle and its chat stay yours.":
+      "We nodigen je uit zodra er een groep bij je tijden past. Deze Circle en de chat blijven van jou.",
+  "Join another Circle with new people: six weekly meetups, €19. This Circle and its chat stay yours, and we won’t put you with the same people again.":
+      "Doe mee met een nieuwe Circle met nieuwe mensen: zes wekelijkse meetups, €19. Deze Circle en de chat blijven van jou, en we zetten je niet opnieuw bij dezelfde mensen.",
+  "Check my times": "Mijn tijden bekijken",
+  "Stop looking": "Stoppen met zoeken",
+  "Join a new Circle": "Nieuwe Circle zoeken",
+  "Join a new Circle?": "Een nieuwe Circle zoeken?",
+  "We’ll put you back on the waiting list with your saved answers. When a group fits, you’ll get an invitation and pay €19 for the new six weeks. You keep this Circle and its chat. Check that your days and times are still right.":
+      "We zetten je weer op de wachtlijst met je opgeslagen antwoorden. Past er een groep, dan krijg je een uitnodiging en betaal je €19 voor de nieuwe zes weken. Deze Circle en de chat houd je. Kijk even of je dagen en tijden nog kloppen.",
+  "Not now": "Nu niet",
+  "Join the waiting list": "Op de wachtlijst",
+  "New Circle": "Nieuwe Circle",
+  "Past Circle": "Eerdere Circle",
+  "finished": "afgerond",
+  "Your finished Circle": "Je afgeronde Circle",
+  "Still yours. Keep in touch and make plans.":
+      "Nog steeds van jou. Blijf in contact en maak plannen.",
+  "With {1}. Still yours: keep in touch and make plans.":
+      "Met {1}. Nog steeds van jou: blijf in contact en maak plannen.",
+  "Two people here asked not to be matched, or were in a Circle together before. Swap one of them out.":
+      "Twee mensen hier willen niet samen in een groep, of zaten al eerder samen in een Circle. Wissel er een om.",
+  "{1} pairs here asked not to be matched, or were in a Circle together before. Swap them out.":
+      "{1} paren hier willen niet samen in een groep, of zaten al eerder samen in een Circle. Wissel ze om.",
+  "If an account exists for this email, we’ve sent a reset link. Check your inbox and spam folder.":
+      "Als er een account bij dit e-mailadres hoort, hebben we een resetlink gestuurd. Kijk in je inbox en je spammap.",
+  "Choose at least one thing under “What are you into?”.":
+      "Kies minstens één ding bij “Waar hou je van?”.",
+  "Choose at least one thing under “I’d love to find…”.":
+      "Kies minstens één ding bij “Ik zou graag vinden…”.",
+  "Show photo larger": "Foto groter tonen",
+  "Need a birthday, photo or times": "Geboortedatum, foto of tijden ontbreken",
   "This link has expired": "Deze link is verlopen",
   "OK": "OK",
   "Email links work once and only for a short time. To reset your password, tap Sign in, then Forgot password, and use the newest email. To confirm your email, sign in and tap Resend confirmation email.":
@@ -1421,8 +1609,6 @@ const nlStrings = <String, String>{
       'Wij plannen week 1 tot en met 3. Vanaf week 4 plant je groep samen. Alle tijden zijn Nederlandse tijd.',
   'We process age information to enforce the adults-only eligibility rule and to support safety. We use security, diagnostic, and limited service-usage information for our legitimate interests in preventing misuse, protecting members, fixing problems, and improving VriendTime, balanced against your rights.':
       'We verwerken leeftijdsgegevens om de regel te handhaven dat alleen volwassenen mogen meedoen en om de veiligheid te ondersteunen. We gebruiken beveiligings-, diagnose- en beperkte gebruiksgegevens voor ons gerechtvaardigd belang om misbruik te voorkomen, leden te beschermen, problemen op te lossen en VriendTime te verbeteren, afgewogen tegen jouw rechten.',
-  'We retain personal data only for as long as needed for the purposes described above. Account and active profile data are generally retained while your account is open. Operational, safety, transaction, or dispute records may be retained longer where reasonably necessary or legally required.':
-      'We bewaren persoonsgegevens niet langer dan nodig is voor de hierboven beschreven doelen. Account- en actieve profielgegevens bewaren we in het algemeen zolang je account open is. Gegevens over werking, veiligheid, transacties of geschillen kunnen langer worden bewaard als dat redelijkerwijs nodig of wettelijk verplicht is.',
   'We take reasonable steps to design safer meetups, set conduct rules, protect private venue details, and respond to concerns. Those steps cannot eliminate every risk. Use your judgment, protect your belongings, arrange your own safe travel, leave any situation that feels unsafe, and contact local emergency services if there is immediate danger.':
       'We nemen redelijke maatregelen om meetups veiliger te maken, gedragsregels te stellen, privélocatiegegevens te beschermen en op zorgen te reageren. Die maatregelen kunnen niet elk risico wegnemen. Gebruik je gezonde verstand, let op je spullen, regel zelf veilig vervoer, ga weg uit elke situatie die onveilig voelt en bel bij direct gevaar de hulpdiensten (112).',
   'We use technical and organisational measures intended to protect personal data, including access controls and private storage for profile photos. No system can guarantee absolute security, so keep your password private and contact us if you suspect misuse.':
@@ -1884,10 +2070,10 @@ const nlStrings = <String, String>{
       'Als we nieuwe Circles vormen, kunnen we je bij iemand uit de buurt houden. Diegene hoort het nooit, en je huidige Circle blijft zoals hij is.',
   'Not in my next Circle': 'Niet in mijn volgende Circle',
   'Happy to meet again': 'Graag weer samen',
-  'The full six-week programme costs €19 once. Food, drinks and activities are separate and paid at the venue. After you accept, you can pay straight away with iDEAL. Your place is confirmed when payment is received. You can cancel for a full refund up to 48 hours before your first meetup. Between your first and second meetup, you can move to another group once, free of charge.':
-      'Het hele programma van zes weken kost eenmalig €19. Eten, drinken en activiteiten zijn apart en betaal je ter plekke. Na het accepteren kun je direct betalen met iDEAL. Je plek is bevestigd zodra de betaling binnen is. Je kunt tot 48 uur voor je eerste meetup kosteloos annuleren en krijgt dan je €19 terug. Tussen je eerste en tweede meetup kun je één keer gratis naar een andere groep.',
-  'The full six-week programme costs €19 once. Food, drinks and activities are separate and paid at the venue. The organiser will send you a payment link. During this pilot the link comes from the organiser’s own bunq or Tikkie, so you’ll see their name when you pay. Your place is confirmed when payment is received. You can cancel for a full refund up to 48 hours before your first meetup. Between your first and second meetup, you can move to another group once, free of charge.':
-      'Het hele programma van zes weken kost eenmalig €19. Eten, drinken en activiteiten zijn apart en betaal je ter plekke. De organisator stuurt je een betaallink. Tijdens deze pilot komt de link van de eigen bunq of Tikkie van de organisator, dus je ziet diens naam als je betaalt. Je plek is bevestigd zodra de betaling binnen is. Je kunt tot 48 uur voor je eerste meetup kosteloos annuleren en krijgt dan je €19 terug. Tussen je eerste en tweede meetup kun je één keer gratis naar een andere groep.',
+  'The full six-week programme costs €19 once. Food, drinks and activities are separate and paid at the venue. After you accept, you can pay straight away with iDEAL. Your place is confirmed when payment is received. You can leave and ask for a refund up to 48 hours before your first meetup. Not the right group or time? You can switch to another group once, free of charge, until your second meetup.':
+      'Het hele programma van zes weken kost eenmalig €19. Eten, drinken en activiteiten zijn apart en betaal je ter plekke. Na het accepteren kun je direct betalen met iDEAL. Je plek is bevestigd zodra de betaling binnen is. Je kunt tot 48 uur voor je eerste meetup stoppen en je €19 terugvragen. Niet de juiste groep of tijd? Je kunt één keer gratis overstappen naar een andere groep, tot je tweede meetup.',
+  'The full six-week programme costs €19 once. Food, drinks and activities are separate and paid at the venue. The organiser will send you a payment link. During this pilot the link comes from the organiser’s own bunq or Tikkie, so you’ll see their name when you pay. Your place is confirmed when payment is received. You can leave and ask for a refund up to 48 hours before your first meetup. Not the right group or time? You can switch to another group once, free of charge, until your second meetup.':
+      'Het hele programma van zes weken kost eenmalig €19. Eten, drinken en activiteiten zijn apart en betaal je ter plekke. De organisator stuurt je een betaallink. Tijdens deze pilot komt de link van de eigen bunq of Tikkie van de organisator, dus je ziet diens naam als je betaalt. Je plek is bevestigd zodra de betaling binnen is. Je kunt tot 48 uur voor je eerste meetup stoppen en je €19 terugvragen. Niet de juiste groep of tijd? Je kunt één keer gratis overstappen naar een andere groep, tot je tweede meetup.',
   'You’re moving to a new group': 'Je gaat naar een nieuwe groep',
   'Your €19 carries over, so your next Circle is free. We’ll invite you as soon as we find a group that fits.':
       'Je €19 gaat mee, dus je volgende Circle is gratis. We nodigen je uit zodra we een groep vinden die past.',
@@ -1950,10 +2136,6 @@ const nlStrings = <String, String>{
       'Een uitnodiging accepteren vraagt een uitdrukkelijke afspraak om €19 te betalen. De organisator neemt via je WhatsApp-nummer contact met je op om de betaling apart te regelen. Bij het accepteren wordt geen geld afgeschreven. Je plek en groepschat gaan open zodra de organisator de betaling heeft ontvangen.',
   'Each Circle is a leisure service on fixed dates. For this kind of service the statutory 14-day right of withdrawal for online purchases does not apply. Instead, the following cancellation rules apply.':
       'Elke Circle is een vrijetijdsdienst op vaste data. Voor dit soort diensten geldt het wettelijke herroepingsrecht van 14 dagen bij online aankopen niet. In plaats daarvan gelden de volgende annuleringsregels.',
-  'Before your first meetup: you can cancel your programme agreement in the app until 48 hours before the first meetup starts. If you have paid, we refund the full €19.':
-      'Voor je eerste meetup: je kunt je programma-afspraak in de app annuleren tot 48 uur voordat de eerste meetup begint. Heb je al betaald, dan betalen we de volledige €19 terug.',
-  'After that: the €19 is not refunded. If your Circle does not feel right, you can move to another group once, free of charge, between the start of your first meetup and the start of your second meetup. You keep your place on the waiting list and your €19 covers the new Circle. If we cannot offer you a new group within a reasonable time, we refund your €19. After your second meetup has started, no move or refund is possible, and joining a further Circle means paying again.':
-      'Daarna: de €19 wordt niet terugbetaald. Voelt je Circle niet goed, dan kun je één keer gratis naar een andere groep, tussen het begin van je eerste meetup en het begin van je tweede meetup. Je houdt je plek op de wachtlijst en je €19 dekt de nieuwe Circle. Kunnen we je niet binnen een redelijke termijn een nieuwe groep bieden, dan betalen we je €19 terug. Is je tweede meetup begonnen, dan is verhuizen of terugbetalen niet meer mogelijk en betaal je voor een volgende Circle opnieuw.',
   'If VriendTime cancels your Circle, received programme fees are always refunded. If you leave because of a safety concern you have reported to us, we will look at a refund or a free move with you, separately from the rules above. Refunds are arranged manually and these terms do not limit any rights you have under mandatory consumer law. Contact the organiser for other cancellation or payment concerns.':
       'Als VriendTime je Circle annuleert, worden ontvangen programmakosten altijd terugbetaald. Stop je vanwege een veiligheidszorg die je bij ons hebt gemeld, dan bekijken we samen met je een terugbetaling of een gratis verhuizing, los van de regels hierboven. Terugbetalingen worden handmatig geregeld en deze voorwaarden beperken geen rechten die je hebt onder dwingend consumentenrecht. Neem contact op met de organisator voor andere vragen over annuleren of betalen.',
   'A move is possible between your first and second meetup.':

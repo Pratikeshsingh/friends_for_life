@@ -156,6 +156,44 @@ void main() {
     });
   });
 
+  group('interests', () {
+    testWidgets('at most five, from groups that open one at a time',
+        (tester) async {
+      await pumpForm(tester, step: 2, focused: false, initial: {
+        ...applicant(),
+        'interests': ['Food', 'Coffee', 'Cooking', 'Baking'],
+      });
+      expect(find.textContaining('4 chosen'), findsWidgets);
+      // The first group with a choice is open; the others are closed.
+      expect(find.widgetWithText(FilterChip, 'Wine & beer'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, 'Yoga'), findsNothing);
+      final wine = find.widgetWithText(FilterChip, 'Wine & beer');
+      await tester.ensureVisible(wine);
+      await tester.tap(wine);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('5 of 5 chosen'), findsOneWidget);
+      // A sixth cannot be added until one is removed.
+      expect(
+          tester
+              .widget<FilterChip>(
+                  find.widgetWithText(FilterChip, 'New restaurants'))
+              .onSelected,
+          isNull);
+    });
+  });
+
+  testWidgets('the step-3 message names the section that is missing',
+      (tester) async {
+    await pumpForm(tester,
+        step: 2, focused: false, initial: {...applicant(), 'goals': []});
+    final next = find.text('Continue');
+    await tester.ensureVisible(next);
+    await tester.tap(next);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('I’d love to find'), findsWidgets);
+    expect(find.textContaining('What are you into?”'), findsNothing);
+  });
+
   group('choosing times', () {
     testWidgets('switching to per-day times can be undone', (tester) async {
       await pumpForm(tester, step: 1, focused: false);

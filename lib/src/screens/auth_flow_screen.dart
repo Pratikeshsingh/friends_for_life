@@ -68,7 +68,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
 
     return _firstNameController.text.trim().isNotEmpty &&
         _looksLikeEmail(_emailController.text) &&
-        _passwordController.text.trim().length >= 6 &&
+        _passwordController.text.trim().length >= 8 &&
         _passwordController.text == _confirmPasswordController.text &&
         _hasAcceptedLegal;
   }
@@ -85,7 +85,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
   String? get _passwordValidationMessage {
     final password = _passwordController.text;
     if (password.isEmpty || _accountMode == _AccountMode.signIn) return null;
-    return password.length < 6 ? 'Use at least six characters.' : null;
+    return password.length < 8 ? 'Use at least eight characters.' : null;
   }
 
   String? get _confirmPasswordValidationMessage {
@@ -463,8 +463,8 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
       _setStatus('Enter a valid email address.');
       return;
     }
-    if (password.length < 6) {
-      _setStatus('Use a password with at least six characters.');
+    if (password.length < 8) {
+      _setStatus('Use a password with at least eight characters.');
       return;
     }
     if (password != confirmPassword) {
@@ -582,7 +582,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
       );
       if (!mounted) return;
       _setStatus(
-          'Password reset email sent. Check your inbox for the reset link.');
+          'If an account exists for this email, we’ve sent a reset link. Check your inbox and spam folder.');
     });
   }
 
@@ -668,7 +668,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
         (message.contains('not allowed') ||
             message.contains('invalid') ||
             message.contains('mismatch'))) {
-      return 'Email links are not configured correctly yet. Add vriendtime://auth/callback to the Supabase redirect URLs, then try again.';
+      return 'We couldn’t send that email right now. Please try again later, or email support@vriendtime.com.';
     }
     if (message.contains('signup') && message.contains('18')) {
       return 'Members need to be at least 18 years old to join.';

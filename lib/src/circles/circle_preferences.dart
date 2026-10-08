@@ -25,6 +25,76 @@ const circleLegacyActivity = {
   'Bowling': 'Games',
 };
 
+/// Interests in groups, so a longer list stays short on screen: one group
+/// is open at a time. People pick up to [circleMaxInterests].
+const circleInterestCategories = <String, List<String>>{
+  'Food & drink': [
+    'Food',
+    'Coffee',
+    'Cooking',
+    'Baking',
+    'Wine & beer',
+    'New restaurants',
+  ],
+  'Active': [
+    'Walking',
+    'Running',
+    'Cycling',
+    'Sport',
+    'Yoga',
+    'Gym',
+    'Swimming',
+    'Dancing',
+  ],
+  'Outdoors': [
+    'Nature',
+    'Hiking',
+    'Gardening',
+    'Camping',
+  ],
+  'Arts & culture': [
+    'Art',
+    'Museums',
+    'Films',
+    'Theatre',
+    'Music',
+    'Concerts',
+    'Photography',
+    'Books',
+    'Writing',
+  ],
+  'Games': [
+    'Games',
+    'Board games',
+    'Puzzles & quizzes',
+    'Video games',
+  ],
+  'Learning & making': [
+    'Crafts',
+    'DIY',
+    'Languages',
+    'Tech',
+    'Science',
+  ],
+  'Out and about': [
+    'Travel',
+    'Volunteering',
+    'Pets',
+    'Fashion',
+    'Markets',
+  ],
+};
+const circleMaxInterests = 5;
+
+/// The group an interest belongs to, for matching people whose exact
+/// picks differ but point the same way (Yoga and Running are both Active).
+String? circleInterestCategory(String interest) {
+  for (final e in circleInterestCategories.entries) {
+    if (e.value.contains(interest)) return e.key;
+  }
+  return null;
+}
+
 const circleGoals = ['Regular plans', 'Shared hobbies', 'Local friends'];
 const circleContexts = [
   'New to the area',

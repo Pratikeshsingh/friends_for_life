@@ -55,7 +55,7 @@ class AccountDeletionService {
     }
 
     if (error.status == 404) {
-      return 'Account deletion is not available yet. Deploy the delete-account function and try again.';
+      return 'We couldn’t delete your account right now. Please try again later, or email support@vriendtime.com and we’ll do it for you.';
     }
 
     return 'We could not delete your account. Please try again.';

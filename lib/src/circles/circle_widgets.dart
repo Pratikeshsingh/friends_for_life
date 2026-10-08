@@ -272,3 +272,26 @@ class CircleMemberAvatarBase extends StatelessWidget {
                 color: circleNavy)));
   }
 }
+
+/// Someone's photo, large, for a closer look. Tap anywhere to close.
+Future<void> showCirclePhoto(BuildContext context, String name,
+        {String? photoUrl, String? photoPath}) =>
+    showDialog<void>(
+        context: context,
+        barrierColor: circleNavy.withValues(alpha: .85),
+        builder: (c) => GestureDetector(
+            onTap: () => Navigator.pop(c),
+            child: Center(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+              CircleMemberAvatar(name,
+                  photoUrl: photoUrl,
+                  photoPath: photoPath,
+                  radius: (MediaQuery.sizeOf(c).shortestSide * .4)
+                      .clamp(80.0, 180.0)),
+              const SizedBox(height: 16),
+              Text(name,
+                  style: Theme.of(c)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(color: Colors.white)),
+            ]))));

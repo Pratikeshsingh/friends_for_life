@@ -172,4 +172,20 @@ void main() {
     expect(monday.missing, 3);
     expect(plan.unmatched.map((p) => p['profile_id']), ['solo']);
   });
+
+  test('interests in the same group count for something', () {
+    final yoga = {
+      'profile_id': 'a',
+      'interests': ['Yoga']
+    };
+    final running = {
+      'profile_id': 'b',
+      'interests': ['Running']
+    };
+    final films = {
+      'profile_id': 'c',
+      'interests': ['Films']
+    };
+    expect(pairFit(yoga, running), greaterThan(pairFit(yoga, films)));
+  });
 }

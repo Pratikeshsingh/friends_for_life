@@ -12,7 +12,11 @@ class FloatingGlassNavigation extends StatelessWidget {
     this.circleMode = false,
     this.showMessages = true,
     this.homeLabel,
+    this.messagesUnread = false,
   });
+
+  /// A dot on the Messages tab when the Circle wrote something new.
+  final bool messagesUnread;
 
   final bool circleMode;
 
@@ -94,9 +98,12 @@ class FloatingGlassNavigation extends StatelessWidget {
                     ),
                     if (showMessages)
                       NavigationDestination(
-                        icon: Icon(circleMode
-                            ? Icons.chat_bubble_outline_rounded
-                            : Icons.event_outlined),
+                        icon: Badge(
+                            isLabelVisible: messagesUnread,
+                            smallSize: 9,
+                            child: Icon(circleMode
+                                ? Icons.chat_bubble_outline_rounded
+                                : Icons.event_outlined)),
                         selectedIcon: Icon(circleMode
                             ? Icons.chat_bubble_rounded
                             : Icons.event_rounded),

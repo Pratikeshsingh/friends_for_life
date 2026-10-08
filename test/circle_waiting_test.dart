@@ -39,7 +39,8 @@ void main() {
       expect(wait.stillNeeded, 0);
       expect(wait.progress, 1.0);
       expect(wait.complete, isTrue);
-      expect(wait.progressLine, 'We found your group for Thursday evenings.');
+      expect(wait.progressLine,
+          'Enough people are free on Thursday evenings. Your invitation will appear here once the group is set.');
       expect(wait.headline, 'We’re setting up your first meetup');
       expect(wait.estimate, startsWith('Earliest start: '));
       expect(wait.estimate, contains('We’ll confirm it in your invitation.'));

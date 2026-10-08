@@ -51,6 +51,16 @@ Set<String> _tastes(Json a) => {
       for (final x in strings(a['activities'])) circleLegacyActivity[x] ?? x,
     };
 
+/// How alike two people's interests are, 0–1: mostly the exact picks, partly
+/// the groups they fall in, so with a long list "Yoga" and "Running" still
+/// count for something.
+double _tasteFit(Json a, Json b) {
+  final x = _tastes(a), y = _tastes(b);
+  Set<String> groups(Set<String> s) =>
+      {for (final t in s) circleInterestCategory(t) ?? t};
+  return 0.7 * _jaccard(x, y) + 0.3 * _jaccard(groups(x), groups(y));
+}
+
 double _jaccard(Set<String> x, Set<String> y) {
   if (x.isEmpty && y.isEmpty) return 0;
   final union = {...x, ...y}.length;
@@ -60,7 +70,7 @@ double _jaccard(Set<String> x, Set<String> y) {
 /// How well two people fit, 0–1. Drives who gets added to a group next.
 double pairFit(Json a, Json b) {
   var score = 0.0;
-  score += 0.5 * _jaccard(_tastes(a), _tastes(b));
+  score += 0.5 * _tasteFit(a, b);
   score +=
       0.2 * _jaccard(strings(a['goals']).toSet(), strings(b['goals']).toSet());
   final ageA = applicantAge(a), ageB = applicantAge(b);
@@ -175,7 +185,7 @@ class CircleMatch {
   var pairTaste = 0.0, pairGoals = 0.0, pairs = 0;
   for (var i = 0; i < members.length; i++) {
     for (var j = i + 1; j < members.length; j++) {
-      pairTaste += _jaccard(_tastes(members[i]), _tastes(members[j]));
+      pairTaste += _tasteFit(members[i], members[j]);
       pairGoals += _jaccard(strings(members[i]['goals']).toSet(),
           strings(members[j]['goals']).toSet());
       pairs++;

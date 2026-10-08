@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,6 +8,7 @@ import 'package:vriendtime/src/circles/circle_application.dart';
 import 'package:vriendtime/src/circles/circle_journey.dart';
 import 'package:vriendtime/src/circles/circle_repository.dart';
 import 'package:vriendtime/src/circles/circle_shell.dart';
+import 'package:vriendtime/src/circles/circle_widgets.dart';
 
 Future<void> _pumpShell(WidgetTester tester, CircleRepository repo) async {
   tester.view.physicalSize = const Size(390, 900);
@@ -44,6 +47,86 @@ void main() {
     expect(find.text('Messages'), findsOneWidget);
     expect(find.text('My Circle'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('the profile photo opens larger on tap', (tester) async {
+    await repository.act('preview', {'stage': 'waiting'});
+    await _pumpShell(tester, repository);
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+    final photo = find
+        .byWidgetPredicate((w) => w is CircleMemberAvatar && w.radius == 38);
+    expect(photo, findsOneWidget);
+    await tester.ensureVisible(photo);
+    await tester.pumpAndSettle();
+    await tester.tap(photo);
+    await tester.pumpAndSettle();
+    // A larger copy of the same photo is now open.
+    expect(
+        find.byWidgetPredicate(
+            (w) => w is CircleMemberAvatar && w.radius >= 80),
+        findsOneWidget);
+    await tester.tapAt(const Offset(20, 20));
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  group('a second Circle', () {
+    Future<void> withState(void Function(Map<String, dynamic>) change) async {
+      final prefs = await SharedPreferences.getInstance();
+      final state = Map<String, dynamic>.from(
+          jsonDecode(prefs.getString(DemoCircleRepository.storageKey)!) as Map);
+      change(state);
+      await prefs.setString(DemoCircleRepository.storageKey, jsonEncode(state));
+    }
+
+    testWidgets('after six weeks people can look for a new group',
+        (tester) async {
+      await repository.act('preview', {'stage': 'completed'});
+      await _pumpShell(tester, repository);
+      final join = find.text('Join a new Circle');
+      await tester.ensureVisible(join);
+      await tester.pumpAndSettle();
+      await tester.tap(join);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Join the waiting list'));
+      await tester.pumpAndSettle();
+      expect(find.text('You’re on the list for a new Circle'), findsOneWidget);
+      expect(find.text('Stop looking'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('the finished Circle’s chat stays open next to the new one',
+        (tester) async {
+      await repository.act('preview', {'stage': 'invited'});
+      await withState((s) => s['past_circles'] = [
+            {
+              'id': 'old',
+              'name': 'The Monday Circle',
+              'members': ['Noor', 'Sam'],
+              'messages': [
+                {'id': 'm1', 'name': 'Noor', 'body': 'Coffee on Sunday?'}
+              ]
+            }
+          ]);
+      await _pumpShell(tester, repository);
+      await tester.tap(find.text('Messages'));
+      await tester.pumpAndSettle();
+      // The new Circle's chat is still locked; the old one is a tap away.
+      expect(find.text('Opens when your place is confirmed'), findsOneWidget);
+      final old = find.textContaining('The Monday Circle');
+      await tester.ensureVisible(old);
+      await tester.pumpAndSettle();
+      await tester.tap(old);
+      await tester.pumpAndSettle();
+      expect(find.text('Coffee on Sunday?'), findsOneWidget);
+      expect(find.textContaining('With Noor, Sam'), findsOneWidget);
+      await tester.enterText(find.byType(TextField).last, 'Yes!');
+      await tester.tap(find.byIcon(Icons.send_rounded));
+      await tester.pumpAndSettle();
+      expect(find.text('Yes!'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
   });
 
   testWidgets('an invitation says when to reply by', (tester) async {

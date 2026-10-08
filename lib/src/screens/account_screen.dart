@@ -82,7 +82,7 @@ class _AccountScreenState extends State<AccountScreen> {
         ),
         title: const Text('Delete your account?'),
         content: const Text(
-          'This permanently deletes your profile, photos, Circle application, messages and notifications. This cannot be undone.',
+          'This permanently deletes your profile, photos, Circle application, messages and notifications. This cannot be undone. Payment and refund records are kept for our accounts, as the privacy policy explains.',
         ),
         actions: [
           TextButton(
@@ -635,11 +635,16 @@ class _AccountDetailRow extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        value,
-                        style: theme.textTheme.titleSmall,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 2,
+                      // An email address shrinks to fit rather than
+                      // breaking mid-word.
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          value,
+                          maxLines: 1,
+                          style: theme.textTheme.titleSmall,
+                        ),
                       ),
                     ],
                   );

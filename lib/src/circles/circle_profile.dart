@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide Text;
 import '../core/destructive.dart';
 import '../core/i18n.dart';
 import '../core/app_diagnostics.dart';
+import 'circle_leave.dart';
 import 'circle_preferences.dart';
 import 'circle_home.dart' show CircleAction;
 import 'circle_repository.dart';
@@ -59,43 +60,6 @@ class CircleProfile extends StatelessWidget {
       onHelp,
       onTerms,
       onPrivacy;
-
-  /// Leaving once the refund window has closed. Until 48 hours before the
-  /// first meetup, cancelling for a refund is the better route, so that is
-  /// what this offers instead.
-  Future<void> _leave(BuildContext context) async {
-    if ((state['payment_agreement'] as Map?)?['can_cancel'] == true &&
-        state['refund'] == null) {
-      await _cancelAgreement(context);
-      return;
-    }
-    final reason = await showDialog<String>(
-        context: context, builder: (c) => const _LeaveDialog());
-    if (reason != null) await act!('leave_circle', {'reason': reason});
-  }
-
-  Future<void> _cancelAgreement(BuildContext context,
-      {String? paymentId}) async {
-    final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (c) => AlertDialog(
-              title: const Text('Cancel your programme agreement?'),
-              content: const Text(
-                  'You can cancel up to 48 hours before your first meetup. If you have paid, the organiser will return your €19. Otherwise your payment agreement will be cancelled.'),
-              actions: [
-                TextButton(
-                    onPressed: () => Navigator.pop(c, false),
-                    child: const Text('Keep my place')),
-                FilledButton(
-                    style: destructiveFilledStyle,
-                    onPressed: () => Navigator.pop(c, true),
-                    child: const Text('Confirm cancellation'))
-              ],
-            ));
-    if (confirmed == true) {
-      await act!('cancel_agreement', {if (paymentId != null) 'id': paymentId});
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -226,7 +190,7 @@ class CircleProfile extends StatelessWidget {
                 secondary: _badge(Icons.mail_outline_rounded, _gold),
                 title: const Text('Email me about my Circle'),
                 subtitle: const Text(
-                    'Your invitation, the venue and a day-before reminder.')),
+                    'Invitations, payment updates, meetup details, reminders and new messages.')),
         ],
       ]),
       if (inCircle || onAdmin != null) ...[
@@ -257,7 +221,7 @@ class CircleProfile extends StatelessWidget {
         ]),
       ],
       if (act != null &&
-          ((inCircle && ['active', 'forming'].contains(stage)) ||
+          ((inCircle && ['active', 'forming', 'invited'].contains(stage)) ||
               ((state['payment_agreement'] as Map?)?['can_cancel'] == true &&
                   state['refund'] == null))) ...[
         const SizedBox(height: 22),
@@ -267,15 +231,13 @@ class CircleProfile extends StatelessWidget {
             title: const Text('Programme settings',
                 style: TextStyle(fontWeight: FontWeight.w600)),
             children: [
-              if (inCircle && ['active', 'forming'].contains(stage))
-                _tile(Icons.logout_rounded, 'I need to leave this Circle',
-                    busy ? null : () => _leave(context),
-                    destructive: true),
-              if ((state['payment_agreement'] as Map?)?['can_cancel'] == true &&
-                  state['refund'] == null)
-                _tile(Icons.cancel_outlined, 'Cancel my programme agreement',
-                    busy ? null : () => _cancelAgreement(context),
-                    destructive: true),
+              _tile(
+                  Icons.swap_horiz_rounded,
+                  'Switch group or leave',
+                  busy
+                      ? null
+                      : () => showCircleLeaveFlow(context,
+                          state: state, act: act!)),
             ],
           ),
         ]),
@@ -291,15 +253,9 @@ class CircleProfile extends StatelessWidget {
                 for (final payment in rows(state['payment_history']))
                   ListTile(
                       title: Text('€19 · ${t(circlePaymentLabel(payment))}'),
-                      subtitle: SelectableText('${payment['reference']}'),
-                      trailing: payment['can_cancel'] == true && act != null
-                          ? TextButton(
-                              onPressed: busy
-                                  ? null
-                                  : () => _cancelAgreement(context,
-                                      paymentId: '${payment['id']}'),
-                              child: const Text('Cancel agreement'))
-                          : null),
+                      subtitle: payment['circle_name'] == null
+                          ? null
+                          : Text('${payment['circle_name']}')),
               ])
         ]),
       ],
@@ -366,10 +322,11 @@ class CircleProfile extends StatelessWidget {
       child: Container(
           color: const Color(0xFFE0EEE8),
           child: Column(children: [
-            Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.center,
-                children: [
+            // The photo overlaps the header. It sits inside the Stack's own
+            // height (not hanging below it) so a tap on it registers.
+            SizedBox(
+                height: 128,
+                child: Stack(alignment: Alignment.topCenter, children: [
                   SizedBox(
                       height: 84,
                       width: double.infinity,
@@ -379,18 +336,26 @@ class CircleProfile extends StatelessWidget {
                           alignment: Alignment.topCenter,
                           excludeFromSemantics: true)),
                   Positioned(
-                      bottom: -40,
-                      child: Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: const BoxDecoration(
-                              color: Colors.white, shape: BoxShape.circle),
-                          child: CircleMemberAvatar(name,
-                              photoUrl: app['photo_url'] as String?,
-                              photoPath: app['photo_path'] as String?,
-                              radius: 38))),
-                ]),
+                      top: 44,
+                      child: Semantics(
+                          button: true,
+                          label: t('Show photo larger'),
+                          child: GestureDetector(
+                              onTap: () => showCirclePhoto(context, name,
+                                  photoUrl: app['photo_url'] as String?,
+                                  photoPath: app['photo_path'] as String?),
+                              child: Container(
+                                  padding: const EdgeInsets.all(3),
+                                  decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle),
+                                  child: CircleMemberAvatar(name,
+                                      photoUrl: app['photo_url'] as String?,
+                                      photoPath: app['photo_path'] as String?,
+                                      radius: 38))))),
+                ])),
             Padding(
-                padding: const EdgeInsets.fromLTRB(20, 46, 20, 12),
+                padding: const EdgeInsets.fromLTRB(20, 2, 20, 12),
                 child: Column(children: [
                   Text(name,
                       textAlign: TextAlign.center,
@@ -614,52 +579,3 @@ class CircleProfile extends StatelessWidget {
 /// Owns its text controller so the controller outlives the dialog's closing
 /// animation: disposing it the moment the dialog is popped tears it away from
 /// a TextField that is still on screen.
-class _LeaveDialog extends StatefulWidget {
-  const _LeaveDialog();
-  @override
-  State<_LeaveDialog> createState() => _LeaveDialogState();
-}
-
-class _LeaveDialogState extends State<_LeaveDialog> {
-  final reason = TextEditingController();
-
-  @override
-  void dispose() {
-    reason.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-          title: const Text('Leave your Circle?'),
-          content: SingleChildScrollView(
-              child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                const Text(
-                    'Your place is released and your remaining meetups are removed from your plans. Your reason stays private. The group can see that you are no longer a member.'),
-                const SizedBox(height: 12),
-                const Text(
-                    'The €19 is no longer refundable at this point. If this group isn’t right for you and your second meetup hasn’t started yet, you can move to another group once, free of charge, from your Circle’s home screen.',
-                    style: TextStyle(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 14),
-                TextField(
-                    controller: reason,
-                    maxLength: 300,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                        labelText:
-                            t('Anything you want us to know? (Optional)'),
-                        alignLabelWithHint: true)),
-              ])),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Stay')),
-            FilledButton(
-                style: destructiveFilledStyle,
-                onPressed: () => Navigator.pop(context, reason.text.trim()),
-                child: const Text('Leave the Circle'))
-          ]);
-}

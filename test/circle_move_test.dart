@@ -34,14 +34,20 @@ void main() {
       'move': {'available': true, 'used': false},
     }, calls));
     expect(find.textContaining('Request a refund'), findsNothing);
-    final move = find.text('Circle not feeling right? Move to another group');
+    final move = find.text('Circle not feeling right?');
     await tester.ensureVisible(move);
     await tester.tap(move);
     await tester.pumpAndSettle();
-    expect(find.textContaining('Your €19 carries over'), findsOneWidget);
-    await tester.tap(find.text('Move me'));
+    await tester.tap(find.text('The group doesn’t feel right'));
     await tester.pumpAndSettle();
-    expect(calls, ['request_move']);
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    // A switch keeps the €19; after the first meetup there is no refund.
+    expect(find.textContaining('keep your €19'), findsOneWidget);
+    expect(find.text('I’d rather ask for my €19 back'), findsNothing);
+    await tester.tap(find.text('Switch to another group'));
+    await tester.pumpAndSettle();
+    expect(calls, ['switch_group']);
   });
 
   testWidgets('no move is offered when it is not available', (tester) async {
@@ -53,8 +59,7 @@ void main() {
       'meetups': [],
       'move': {'available': false, 'used': true},
     }, []));
-    expect(find.text('Circle not feeling right? Move to another group'),
-        findsNothing);
+    expect(find.text('Circle not feeling right?'), findsNothing);
   });
 
   testWidgets('a mover accepts the next invitation without paying again',

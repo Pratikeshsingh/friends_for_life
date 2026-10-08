@@ -7,6 +7,7 @@ import 'circle_home.dart';
 import 'circle_matching.dart';
 import 'circle_preferences.dart';
 import 'circle_repository.dart';
+import 'circle_save_dialog.dart';
 import 'circle_widgets.dart';
 
 /// A group of waiting applicants who could actually be put in a Circle
@@ -152,12 +153,13 @@ class _CircleAdminState extends State<CircleAdmin>
   bool busy = false;
   final selected = <String>{};
   final name = TextEditingController(text: t('Alkmaar Founding Circle'));
-  final schedule = TextEditingController(text: t('Thursday evenings · 19:30'));
+  final schedule =
+      TextEditingController(text: t('Thursday evenings · English'));
   final search = TextEditingController();
   final formScroll = ScrollController();
   late final TabController tabs = TabController(length: 4, vsync: this);
   DateTime? start;
-  TimeOfDay time = const TimeOfDay(hour: 19, minute: 30);
+  TimeOfDay time = const TimeOfDay(hour: 19, minute: 0);
   final filter = _ApplicantFilter();
   String? boardLanguage, boardSlot;
   int showMatches = 6;
@@ -224,8 +226,19 @@ class _CircleAdminState extends State<CircleAdmin>
   List<Json> get reports => rows(data?['reports']);
   List<Json> get refunds => rows(data?['refunds']);
   List<Json> get circles => rows(data?['circles']);
-  List<Json> get awaitingPayment =>
-      payments.where((p) => p['status'] == 'awaiting_payment').toList();
+
+  /// Those who say they paid first (they need you), then those who opened
+  /// the link, then the rest.
+  List<Json> get awaitingPayment {
+    int rank(Json p) => p['payment_reported_at'] != null
+        ? 0
+        : p['payment_opened_at'] != null
+            ? 1
+            : 2;
+    return payments.where((p) => p['status'] == 'awaiting_payment').toList()
+      ..sort((a, b) => rank(a).compareTo(rank(b)));
+  }
+
   List<Json> get openRefunds =>
       refunds.where((r) => r['status'] == 'requested').toList();
   List<Json> get needsDetails =>
@@ -279,7 +292,7 @@ class _CircleAdminState extends State<CircleAdmin>
     start = _nextWeekday(day);
     time = _periodStart[period] ?? time;
     name.text = 'The $day Circle';
-    schedule.text = '${day}s · $period · $language';
+    schedule.text = '$day ${period}s · $language';
   }
 
   void _useMatch(CircleMatch match) {
@@ -288,6 +301,7 @@ class _CircleAdminState extends State<CircleAdmin>
         ..clear()
         ..addAll(match.ids);
       _prefillFor(match.day, match.period, match.language);
+      _suggested = (name.text, schedule.text);
     });
     tabs.animateTo(2);
     if (formScroll.hasClients) {
@@ -307,7 +321,42 @@ class _CircleAdminState extends State<CircleAdmin>
     }
     setState(() {
       if (!selected.remove(id)) selected.add(id);
+      _prefillFromSelection();
     });
+  }
+
+  /// A group built by hand gets the same start date, time and wording as a
+  /// suggested one, kept in step as people are added or removed. Whatever
+  /// the organiser typed or picked themselves is left alone.
+  (String, String)? _suggested;
+
+  void _prefillFromSelection() {
+    if (selected.isEmpty) return;
+    Set<String>? slots, langs;
+    for (final a in selectedPeople) {
+      final s = strings(a['availability']).toSet();
+      final l = strings(a['languages']).toSet();
+      slots = slots == null ? s : slots.intersection(s);
+      langs = langs == null ? l : langs.intersection(l);
+    }
+    if (slots == null || slots.isEmpty) return;
+    final parts = (slots.toList()..sort()).first.split(' ');
+    if (parts.length != 2) return;
+    final language = langs == null || langs.isEmpty || langs.contains('English')
+        ? 'English'
+        : (langs.toList()..sort()).first;
+    final ownName = _suggested != null && name.text != _suggested!.$1;
+    final ownSchedule = _suggested != null && schedule.text != _suggested!.$2;
+    final keepName = name.text, keepSchedule = schedule.text;
+    final keepStart = start, keepTime = time;
+    _prefillFor(parts[0], parts[1], language);
+    _suggested = (name.text, schedule.text);
+    if (ownName) name.text = keepName;
+    if (ownSchedule) schedule.text = keepSchedule;
+    if (keepStart != null) {
+      start = keepStart;
+      time = keepTime;
+    }
   }
 
   /// Pairs inside the organiser's current selection who asked not to be
@@ -339,11 +388,7 @@ class _CircleAdminState extends State<CircleAdmin>
       {String? whatsAppMessage, String whatsAppLabel = 'Message on WhatsApp'}) {
     final hasPhone = phone != null && phone.isNotEmpty;
     return [
-      if (hasPhone)
-        SelectableText('WhatsApp: $phone')
-      else
-        const Text('No WhatsApp number (optional). They get updates by email.',
-            style: TextStyle(color: Color(0xFF6B7C8A))),
+      if (hasPhone) SelectableText('WhatsApp: $phone'),
       if (hasPhone && whatsAppMessage != null)
         Align(
             alignment: Alignment.centerLeft,
@@ -375,51 +420,72 @@ class _CircleAdminState extends State<CircleAdmin>
     if (confirmed == true) await action(command, payload);
   }
 
+  /// Who came, one tap per person; the list stays open while you go down it.
   Future<void> attendance(Json meetup) async {
     final people = rows(meetup['attendees']);
+    final marked = <String, bool?>{
+      for (final p in people) '${p['profile_id']}': p['attended'] as bool?
+    };
     await showDialog<void>(
         context: context,
-        builder: (c) => AlertDialog(
-                title: const Text('Actual attendance'),
-                content: SizedBox(
-                    width: 400,
-                    child: SingleChildScrollView(
-                        child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      const Text(
-                          'Record who attended after the meetup. An RSVP alone does not count.'),
-                      if (people.isEmpty)
-                        const Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Text('No attendance records yet.')),
-                      for (final p in people)
-                        ListTile(
-                            title: Text(p['name'] as String? ?? 'Member'),
-                            subtitle: Text(p['attended'] == true
-                                ? 'Attended'
-                                : p['attended'] == false
-                                    ? 'Absent'
-                                    : 'Not recorded'),
-                            trailing: PopupMenuButton<bool>(
-                                onSelected: (v) {
-                                  Navigator.pop(c);
-                                  action('admin_attendance', {
-                                    'id': meetup['id'],
-                                    'profile_id': p['profile_id'],
-                                    'attended': v
-                                  });
-                                },
-                                itemBuilder: (_) => const [
-                                      PopupMenuItem(
-                                          value: true, child: Text('Attended')),
-                                      PopupMenuItem(
-                                          value: false, child: Text('Absent'))
-                                    ]))
-                    ]))),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(c),
-                      child: const Text('Close'))
-                ]));
+        builder: (c) => StatefulBuilder(
+            builder: (c, update) => AlertDialog(
+                    title: const Text('Who came?'),
+                    content: SizedBox(
+                        width: 420,
+                        child: SingleChildScrollView(
+                            child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              const Text(
+                                  'Record who was actually there. An RSVP alone does not count.'),
+                              const SizedBox(height: 8),
+                              if (people.isEmpty)
+                                const Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Text('No members to record.')),
+                              for (final p in people) ...[
+                                const SizedBox(height: 10),
+                                Text(p['name'] as String? ?? 'Member',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: circleNavy)),
+                                const SizedBox(height: 6),
+                                Wrap(spacing: 8, children: [
+                                  for (final came in [true, false])
+                                    ChoiceChip(
+                                        label: Text(came
+                                            ? t('Came')
+                                            : t('Didn’t come')),
+                                        selected:
+                                            marked['${p['profile_id']}'] ==
+                                                came,
+                                        onSelected: (_) async {
+                                          final id = '${p['profile_id']}';
+                                          if (marked[id] == came) return;
+                                          final before = marked[id];
+                                          update(() => marked[id] = came);
+                                          try {
+                                            await widget.repository.act(
+                                                'admin_attendance', {
+                                              'id': meetup['id'],
+                                              'profile_id': p['profile_id'],
+                                              'attended': came
+                                            });
+                                          } catch (_) {
+                                            update(() => marked[id] = before);
+                                          }
+                                        }),
+                                ]),
+                              ],
+                            ]))),
+                    actions: [
+                      FilledButton(
+                          onPressed: () => Navigator.pop(c),
+                          child: const Text('Done'))
+                    ])));
+    await load();
   }
 
   // -------------------------------------------------------------- build
@@ -568,7 +634,7 @@ class _CircleAdminState extends State<CircleAdmin>
           _statTile(
               'Missing details',
               needsDetails.length,
-              'Need a number, photo or times',
+              'Need a birthday, photo or times',
               () => _showApplicants(ready: false),
               attention: true),
           _statTile('Awaiting payment', awaitingPayment.length,
@@ -770,6 +836,30 @@ class _CircleAdminState extends State<CircleAdmin>
           {'circle_id': circleId, 'profile_id': memberId},
           destructive: true);
 
+  /// Taking someone out of a Circle, for example after a safety report.
+  /// The reason stays in the organiser's records; any refund is separate.
+  Future<void> _removeMember(String circleId, String memberId, Object? name) =>
+      showCircleSaveDialog(context,
+          title: t('Remove {1} from this Circle?')
+              .replaceAll('{1}', '${name ?? 'this member'}'),
+          description:
+              'They lose access to the Circle and its chat, and are told they were removed. They are not put back on the waiting list. Any refund is up to you and arranged separately. Note why, for your own records; it is not shown to them.',
+          fields: const {'reason': 'Why (only you see this)'},
+          multiline: true,
+          saveLabel: 'Remove from Circle', onSave: (data) async {
+        if ('${data['reason']}'.trim().length < 3) {
+          throw StateError('Note why, for your own records.');
+        }
+        await action(
+            'admin_remove_member',
+            {
+              'circle_id': circleId,
+              'profile_id': memberId,
+              'reason': '${data['reason']}'.trim()
+            },
+            true);
+      });
+
   /// The people in a Circle, with where each stands, and a way to fill an
   /// empty or released place before the first meetup.
   List<Widget> _memberRows(Json c) {
@@ -810,7 +900,16 @@ class _CircleAdminState extends State<CircleAdmin>
                         ? null
                         : () => _releasePlace(
                             '${c['id']}', '${m['profile_id']}', m['name']),
-                    child: const Text('Release')),
+                    child: const Text('Release'))
+              else
+                IconButton(
+                    tooltip: t('Remove from this Circle'),
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.person_remove_outlined, size: 18),
+                    onPressed: busy
+                        ? null
+                        : () => _removeMember(
+                            '${c['id']}', '${m['profile_id']}', m['name'])),
             ])),
       if (members.length < 6 && !started)
         Align(
@@ -857,9 +956,13 @@ class _CircleAdminState extends State<CircleAdmin>
       return free && shares && !excluded;
     }
 
+    // Not the people who already left or declined this Circle.
+    final leftIds = strings(c['left_ids']).toSet();
     final candidates = applicants
         .where((a) =>
-            isReadyApplicant(a) && !memberIds.contains('${a['profile_id']}'))
+            isReadyApplicant(a) &&
+            !memberIds.contains('${a['profile_id']}') &&
+            !leftIds.contains('${a['profile_id']}'))
         .toList()
       ..sort((x, y) => (fits(y) ? 1 : 0) - (fits(x) ? 1 : 0));
     final chosen = await showModalBottomSheet<Json>(
@@ -910,13 +1013,27 @@ class _CircleAdminState extends State<CircleAdmin>
   }
 
   Widget _reportCard(Json r) => _card([
-        Text('${r['name'] ?? 'Member'} · ${r['circle_name']}',
+        Text(
+            '${t('Reported by')} ${r['name'] ?? t('a member')} · ${r['circle_name'] ?? ''}',
             style: const TextStyle(fontWeight: FontWeight.w700)),
+        if (r['email'] != null)
+          SelectableText('${r['email']}',
+              style: const TextStyle(color: _muted)),
+        const SizedBox(height: 6),
         Text(r['reason'] as String? ?? ''),
         if (r['message'] != null)
           Text('Reported message: ${r['message']}',
               style: const TextStyle(color: _muted)),
         Wrap(spacing: 8, children: [
+          if (r['email'] != null)
+            TextButton.icon(
+                onPressed: () => launchUrl(Uri(
+                    scheme: 'mailto',
+                    path: '${r['email']}',
+                    query:
+                        'subject=${Uri.encodeComponent(t('Your report to VriendTime'))}')),
+                icon: const Icon(Icons.mail_outline_rounded, size: 18),
+                label: const Text('Email them')),
           if (r['message_id'] != null)
             TextButton(
                 style: destructiveTextStyle,
@@ -942,8 +1059,17 @@ class _CircleAdminState extends State<CircleAdmin>
       ]);
 
   Widget _refundCard(Json r) => _card([
-        Text('${r['name'] ?? 'Member'} · ${t(circleStatusLabel(r['status']))}',
+        Text(
+            '${r['name'] ?? 'Member'} · ${r['circle_name'] ?? t(circleStatusLabel(r['status']))}',
             style: const TextStyle(fontWeight: FontWeight.w700)),
+        Text(
+            '€${(((r['amount_cents'] as num?) ?? 1900) / 100).toStringAsFixed(0)}'
+            '${r['paid_at'] != null ? ' · ${t('paid')} ${circleDate(r['paid_at']?.toString())}' : ''}'
+            ' · ${t('asked')} ${circleDate(r['requested_at']?.toString())}',
+            style: const TextStyle(color: _muted)),
+        if (r['reason'] != null)
+          Text(
+              '${t('Reason')}: ${r['reason']}${r['note'] != null ? ' — ${r['note']}' : ''}'),
         if (r['email'] != null) SelectableText('${r['email']}'),
         if (r['status'] == 'requested')
           Align(
@@ -1154,6 +1280,8 @@ class _CircleAdminState extends State<CircleAdmin>
                       // same indent so the rows still line up.
                       if (ready)
                         Checkbox(
+                            semanticLabel: t('Select {1} for a Circle')
+                                .replaceAll('{1}', '${a['name'] ?? ''}'),
                             value: isSelected,
                             onChanged: busy ? null : (_) => _toggle(a))
                       else
@@ -1378,7 +1506,7 @@ class _CircleAdminState extends State<CircleAdmin>
               'Everyone is placed in one group only. Same language and time for everyone, ranked by shared interests and goals, age, social mix and waiting time.'),
       if (readyCount == 0)
         const Text(
-            'Nobody is ready to match yet. People need a WhatsApp number, birthday, photo and times first.')
+            'Nobody is ready to match yet. People need a birthday, photo and times first.')
       else
         Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -1648,8 +1776,8 @@ class _CircleAdminState extends State<CircleAdmin>
       if (common.languages.isEmpty && people.length > 1) 'No shared language.',
       if (blocked.isNotEmpty)
         blocked.length == 1
-            ? 'Two people here asked not to be matched. Swap one of them out.'
-            : '${blocked.length} pairs here asked not to be matched. Swap them out.',
+            ? 'Two people here asked not to be matched, or were in a Circle together before. Swap one of them out.'
+            : '${blocked.length} pairs here asked not to be matched, or were in a Circle together before. Swap them out.',
     ];
     return CirclePanel(tint: true, children: [
       Row(children: [
@@ -1742,10 +1870,17 @@ class _CircleAdminState extends State<CircleAdmin>
                 ? null
                 : () async {
                     final t = await showTimePicker(
-                        context: context, initialTime: time);
+                        context: context,
+                        initialTime: time,
+                        // Dutch times: 19:00, not 7:00 PM.
+                        builder: (c, child) => MediaQuery(
+                            data: MediaQuery.of(c)
+                                .copyWith(alwaysUse24HourFormat: true),
+                            child: child!));
                     if (t != null && mounted) setState(() => time = t);
                   },
-            label: Text('${time.format(context)} · Netherlands time')),
+            label: Text(
+                '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')} · ${t('Netherlands time')}')),
       ]),
       const SizedBox(height: 10),
       const Text('Creates six weekly plans and sends the invitations.',

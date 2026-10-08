@@ -228,7 +228,9 @@ class CircleWaitEstimate {
     if (!isKnown) {
       return 'We’re looking for people who share your language and a time that fits.';
     }
-    if (stillNeeded <= 0) return 'We found your group for $slotPhrase.';
+    if (stillNeeded <= 0) {
+      return 'Enough people are free on $slotPhrase. Your invitation will appear here once the group is set.';
+    }
     if (ready <= 1) return 'We’re gathering people for $slotPhrase.';
     return 'Your group for $slotPhrase is coming together.';
   }
@@ -355,6 +357,13 @@ class SupabaseCircleRepository implements CircleRepository {
       case 'payment_opened':
         await client.rpc('circle_payment_opened');
         return;
+      case 'admin_remove_member':
+        await client.rpc('circle_admin_remove_member', params: {
+          'target_circle': data['circle_id'],
+          'member': data['profile_id'],
+          'reason': data['reason']
+        });
+        return;
       case 'admin_release_place':
         await client.rpc('circle_admin_release_place', params: {
           'target_circle': data['circle_id'],
@@ -396,11 +405,9 @@ class SupabaseCircleRepository implements CircleRepository {
   Future<Json> adminLoad() async {
     final data = Map<String, dynamic>.from(
         await client.rpc('circle_admin_snapshot') as Map);
+    // 'ready' comes from the database: birthday, photo and times. The
+    // WhatsApp number is optional and does not affect it.
     final applications = rows(data['applications']);
-    // A WhatsApp number is required before someone can be grouped.
-    for (final a in applications) {
-      if ((a['phone'] ?? '').toString().isEmpty) a['ready'] = false;
-    }
     await Future.wait(applications.map(_photo));
     data['applications'] = applications;
     return data;
@@ -462,6 +469,7 @@ class DemoCircleRepository implements CircleRepository {
         'used': state['move_used'] == true,
         'available': state['move_used'] != true && done(1) && !done(2),
       };
+      state['switch'] = {'available': state['move_used'] != true && !done(2)};
     }
     return state;
   }
@@ -813,6 +821,56 @@ class DemoCircleRepository implements CircleRepository {
                 })
             .toList();
         state['stage'] = 'invited';
+        break;
+      case 'switch_group':
+        if (state['stage'] != 'active' || state['move_used'] == true) {
+          throw StateError('A switch is possible until your second meetup.');
+        }
+        state['stage'] = 'waiting';
+        state['move_credit'] = true;
+        state.remove('circle');
+        state.remove('members');
+        state.remove('meetups');
+        state.remove('move');
+        state.remove('switch');
+        break;
+      case 'cancel_agreement':
+        state['left_circle'] = {
+          'name': (state['circle'] as Map?)?['name'] ?? 'your Circle',
+          'refund': state['payment'] == 'paid' ? 'requested' : null
+        };
+        state['stage'] = 'apply';
+        state.remove('circle');
+        state.remove('members');
+        state.remove('meetups');
+        break;
+      case 'rejoin':
+        state.remove('left_circle');
+        state['stage'] = 'waiting';
+        break;
+      case 'join_again':
+        state['looking_again'] = true;
+        break;
+      case 'stop_looking':
+        state['looking_again'] = false;
+        break;
+      case 'past_message':
+        state['past_circles'] = [
+          for (final c in rows(state['past_circles']))
+            '${c['id']}' == '${data['circle_id']}'
+                ? {
+                    ...c,
+                    'messages': [
+                      ...rows(c['messages']),
+                      {
+                        'name': 'You',
+                        'body': '${data['body']}'.trim(),
+                        'own': true
+                      }
+                    ]
+                  }
+                : c
+        ];
         break;
       default:
         throw StateError('This action is not available.');

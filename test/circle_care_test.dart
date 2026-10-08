@@ -171,35 +171,24 @@ void main() {
     });
   });
 
-  group('the leave dialog on a small phone', () {
-    testWidgets('opens from the active Circle and fits without overflowing',
-        (tester) async {
-      // A short phone, because this dialog carries two paragraphs and a text
-      // field and is the most likely thing in the app to overflow.
-      tester.view.physicalSize = const Size(375, 667);
+  group('leaving on a small phone', () {
+    Future<void> pumpProfile(
+        WidgetTester tester, Json state, void Function(String, Json) onAct,
+        {Size size = const Size(375, 667)}) async {
+      tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
       addTearDown(() {
         tester.view.resetPhysicalSize();
         tester.view.resetDevicePixelRatio();
       });
-      final calls = <String>[];
       await tester.pumpWidget(MaterialApp(
           theme: buildTheme(),
           home: Scaffold(
               body: SingleChildScrollView(
                   child: CircleProfile(
-                      state: const {
-                'stage': 'active',
-                'payment_agreement': {'can_cancel': true},
-                'profile_id': 'me',
-                'circle': {'name': 'The Thursday Circle'},
-                'members': [
-                  {'id': 'me', 'name': 'You'}
-                ],
-                'meetups': [],
-              },
+                      state: state,
                       busy: false,
-                      act: (a, [d = const {}]) async => calls.add(a),
+                      act: (a, [d = const {}]) async => onAct(a, d),
                       onEdit: (_) {},
                       onPhoto: null,
                       onAccount: null,
@@ -207,83 +196,81 @@ void main() {
                       onExport: null,
                       onBookings: null,
                       onSignOut: null)))));
-
-      expect(find.text('I need to leave this Circle'), findsNothing);
       await tester.ensureVisible(find.text('Programme settings'));
       await tester.tap(find.text('Programme settings'));
       await tester.pumpAndSettle();
-      final leave = find.text('I need to leave this Circle');
+      final leave = find.text('Switch group or leave');
       await tester.ensureVisible(leave);
       await tester.pumpAndSettle();
       await tester.tap(leave);
       await tester.pumpAndSettle();
+    }
+
+    testWidgets('asks why first, fits, and backing out keeps the place',
+        (tester) async {
+      final calls = <String>[];
+      await pumpProfile(
+          tester,
+          const {
+            'stage': 'active',
+            'payment_agreement': {'can_cancel': true},
+            'profile_id': 'me',
+            'circle': {'name': 'The Thursday Circle'},
+            'members': [
+              {'id': 'me', 'name': 'You'}
+            ],
+            'meetups': [],
+          },
+          (a, d) => calls.add(a));
       expect(tester.takeException(), isNull);
-
-      expect(find.text('Cancel your programme agreement?'), findsOneWidget);
-      expect(find.textContaining('up to 48 hours before your first meetup'),
-          findsOneWidget);
-      expect(find.text('Keep my place'), findsOneWidget);
-
+      expect(find.text('What isn’t working?'), findsOneWidget);
+      await tester.tap(find.text('Something came up'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text('Give up my place'));
+      await tester.pumpAndSettle();
+      expect(find.text('Give up your place?'), findsOneWidget);
       // Backing out must not release the place.
       await tester.tap(find.text('Keep my place'));
       await tester.pumpAndSettle();
       expect(calls, isEmpty);
-      final cancel = find.text('Cancel my programme agreement');
-      await tester.ensureVisible(cancel);
-      await tester.tap(cancel);
-      await tester.pumpAndSettle();
-      expect(find.text('Cancel your programme agreement?'), findsOneWidget);
-      await tester.tap(find.text('Confirm cancellation'));
-      await tester.pumpAndSettle();
-      expect(calls, ['cancel_agreement']);
     });
 
-    testWidgets('confirming sends the reason along', (tester) async {
-      tester.view.physicalSize = const Size(375, 900);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+    testWidgets('a switch is offered before a refund, and the reason is sent',
+        (tester) async {
       Json? sent;
-      await tester.pumpWidget(MaterialApp(
-          theme: buildTheme(),
-          home: Scaffold(
-              body: SingleChildScrollView(
-                  child: CircleProfile(
-                      state: const {
-                'stage': 'active',
-                'profile_id': 'me',
-                'circle': {'name': 'The Thursday Circle'},
-                'members': [
-                  {'id': 'me', 'name': 'You'}
-                ],
-                'meetups': [],
-              },
-                      busy: false,
-                      act: (a, [d = const {}]) async =>
-                          sent = {'action': a, ...d},
-                      onEdit: (_) {},
-                      onPhoto: null,
-                      onAccount: null,
-                      onReport: null,
-                      onExport: null,
-                      onBookings: null,
-                      onSignOut: null)))));
-      expect(find.text('I need to leave this Circle'), findsNothing);
-      await tester.ensureVisible(find.text('Programme settings'));
-      await tester.tap(find.text('Programme settings'));
+      await pumpProfile(
+          tester,
+          const {
+            'stage': 'active',
+            'payment': 'paid',
+            'payment_agreement': {'can_cancel': true},
+            'switch': {'available': true},
+            'profile_id': 'me',
+            'circle': {'name': 'The Thursday Circle'},
+            'members': [
+              {'id': 'me', 'name': 'You'}
+            ],
+            'meetups': [],
+          },
+          (a, d) => sent = {'action': a, ...d},
+          size: const Size(375, 900));
+      await tester.tap(find.text('The day or time doesn’t work'));
       await tester.pumpAndSettle();
-      final leave = find.text('I need to leave this Circle');
-      await tester.ensureVisible(leave);
+      await tester.enterText(find.byType(TextField), 'Mondays suit me better.');
+      await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
-      await tester.tap(leave);
+      expect(find.text('Switch to another group'), findsOneWidget);
+      expect(find.text('I’d rather ask for my €19 back'), findsOneWidget);
+      await tester.tap(find.text('Switch to another group'));
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField), 'Moving to Utrecht.');
-      await tester.tap(find.text('Leave the Circle'));
-      await tester.pumpAndSettle();
-      expect(sent?['action'], 'leave_circle');
-      expect(sent?['reason'], 'Moving to Utrecht.');
+      expect(sent, {
+        'action': 'switch_group',
+        'reason': 'The day or time doesn’t work',
+        'note': 'Mondays suit me better.'
+      });
     });
   });
 

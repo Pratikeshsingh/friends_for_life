@@ -60,12 +60,10 @@ void main() {
     }, (a, [p = const {}]) async {}));
     expect(
         find.textContaining('will send you the payment link'), findsOneWidget);
-    expect(
-        tester
-            .widget<ElevatedButton>(
-                find.widgetWithText(ElevatedButton, 'Invitation accepted'))
-            .onPressed,
-        isNull);
+    // Accepted: a quiet confirmation, not a second accept button.
+    expect(find.text('Invitation accepted'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Accept invitation — €19'),
+        findsNothing);
     expect(find.textContaining('Tikkie'), findsNothing);
   });
 

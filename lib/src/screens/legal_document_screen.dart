@@ -4,8 +4,8 @@ import '../core/i18n.dart';
 enum LegalDocumentType { terms, privacy }
 
 abstract final class LegalDocuments {
-  static const termsVersion = '2026-10-07-v7';
-  static const privacyVersion = '2026-10-07-v6';
+  static const termsVersion = '2026-10-08-v8';
+  static const privacyVersion = '2026-10-08-v7';
 
   static LegalDocument documentFor(LegalDocumentType type) {
     return switch (type) {
@@ -16,7 +16,7 @@ abstract final class LegalDocuments {
 
   static const _terms = LegalDocument(
     title: 'Terms & Conditions',
-    effectiveDate: '7 October 2026',
+    effectiveDate: '8 October 2026',
     introduction:
         'These Terms & Conditions govern your use of VriendTime. By creating an account, you agree to these terms.',
     sections: [
@@ -41,8 +41,8 @@ abstract final class LegalDocuments {
           'The founding Circle programme costs €19 once for six weeks. Food, drinks, travel, and activity purchases are separate. There is no subscription or further programme fee after graduation. Your group and schedule are shown before you accept the invitation.',
           'Accepting an invitation requires an explicit agreement to pay €19. You pay with the payment link shown in the app; during the pilot this is a Tikkie or bank payment link from the organiser. Accepting does not collect money. Your place and group chat open when the organiser confirms receipt.',
           'Each Circle is a leisure service on fixed dates. For this kind of service the statutory 14-day right of withdrawal for online purchases does not apply. Instead, the following cancellation rules apply.',
-          'Before your first meetup: you can cancel your programme agreement in the app until 48 hours before the first meetup starts. If you have paid, we refund the full €19.',
-          'After that: the €19 is not refunded. If your Circle does not feel right, you can move to another group once, free of charge, between the start of your first meetup and the start of your second meetup. You keep your place on the waiting list and your €19 covers the new Circle. If we cannot offer you a new group within a reasonable time, we refund your €19. After your second meetup has started, no move or refund is possible, and joining a further Circle means paying again.',
+          'Before your first meetup: until 48 hours before the first meetup starts, you can leave your Circle in the app and ask for your €19 back. We may ask why you are leaving, so we can offer you another group instead. If you still want a refund, we check your request and refund the full €19 to the account you paid from.',
+          'After that: the €19 is not refunded. If your Circle does not feel right, you can switch to another group once, free of charge, until your second meetup starts (also before your first meetup). You keep your place on the waiting list and your €19 covers the new Circle. If we cannot offer you a new group within a reasonable time, we refund your €19. After your second meetup has started, no switch or refund is possible, and joining a further Circle means paying again.',
           'If VriendTime cancels your Circle, received programme fees are always refunded. If you leave because of a safety concern you have reported to us, we will look at a refund or a free move with you, separately from the rules above. Refunds are arranged manually and these terms do not limit any rights you have under mandatory consumer law. Contact the organiser for other cancellation or payment concerns.',
           'Meetup details such as the venue, time or activity may change. For the weeks we plan, the exact venue is shared shortly before the meetup. Venue details must not be used to disrupt the venue or compromise another member’s safety. If a meetup is cancelled or materially changed, we tell your Circle in the app.',
           'Venue purchases and services supplied directly by a third party may be governed by that third party’s own terms.',
@@ -63,6 +63,7 @@ abstract final class LegalDocuments {
         paragraphs: [
           'You retain ownership of content you submit, such as profile details, photos, and messages. You give VriendTime a limited, worldwide, non-exclusive licence to host, store, reproduce, display, and process that content only as needed to operate, secure, and improve the service.',
           'You confirm that you have the rights needed to submit your content and that it does not violate another person’s rights or these terms.',
+          'You can report content or behaviour that breaks these terms with Report a concern in the app, or by email to support@vriendtime.com. We may remove messages, photos or other content that break these terms, and we may take a member out of a Circle when that is needed to keep members safe. If we remove your content or take you out of a Circle, we tell you, and you can email support@vriendtime.com to ask why or to object.',
         ],
       ),
       LegalSection(
@@ -105,7 +106,7 @@ abstract final class LegalDocuments {
 
   static const _privacy = LegalDocument(
     title: 'Privacy Policy',
-    effectiveDate: '7 October 2026',
+    effectiveDate: '8 October 2026',
     introduction:
         'This policy explains how VriendTime collects, uses, shares, and protects personal data when you use the app and related services.',
     sections: [
@@ -124,6 +125,7 @@ abstract final class LegalDocuments {
           'Payment data: the €19 agreement and its version and timestamp, contact email, and organiser confirmations of payment or refund. Bank and card details are not collected through the app. Payment records and the contact email needed to resolve refunds may be retained after account deletion for accounting and dispute purposes.',
           'Communication and safety data: messages you send in your Circle’s group chat, reports, support enquiries, and information needed to investigate safety or policy concerns.',
           'Technical data: information necessary for authentication, security, diagnostics, and operation of the app, such as session data, device or browser information, IP address, and error information generated by our service providers.',
+          'On your device, the app stores your sign-in session and your language choice, so you stay signed in and see the right language. We do not use tracking or advertising cookies.',
         ],
       ),
       LegalSection(
@@ -145,7 +147,8 @@ abstract final class LegalDocuments {
       LegalSection(
         heading: '5. Service providers and other recipients',
         paragraphs: [
-          'We use Supabase for sign-in, the database and file storage (on servers in the EU), Netlify to host the website, and Resend to send account and app emails. These providers process data on our instructions and under appropriate contractual safeguards.',
+          'We use Supabase for sign-in, the database and file storage (on servers in the EU), Netlify to host the website, Resend to send account and app emails, and Zoho Mail for our support mailbox (support@vriendtime.com). These providers process data on our instructions and under appropriate contractual safeguards. We also keep private backup copies of the database and photos, for up to eight weeks, so we can recover from mistakes or outages.',
+          'You pay the €19 with a payment link (during the pilot a Tikkie or bank payment link). The payment provider and your bank process that payment under their own privacy policies; we see the name, amount and date of the payment so we can match it to your place.',
           'We may share relevant details with meetup venues, professional advisers, authorities, or safety partners when necessary to deliver a meetup, respond to an incident, protect rights and safety, or comply with law. We do not sell your personal data.',
           'If you choose an external action, such as opening WhatsApp, a maps service, or a calendar service, that provider receives information under its own privacy policy. VriendTime does not control the provider’s independent processing.',
         ],
@@ -159,7 +162,7 @@ abstract final class LegalDocuments {
       LegalSection(
         heading: '7. Retention and deletion',
         paragraphs: [
-          'We retain personal data only for as long as needed for the purposes described above. Account and active profile data are generally retained while your account is open. Operational, safety, transaction, or dispute records may be retained longer where reasonably necessary or legally required.',
+          'We keep personal data only as long as needed: account, profile, application and Circle data, and your messages, while your account exists; notifications for up to one year; safety reports for one year after they are resolved; error logs for 30 days; backups for up to eight weeks; and payment and refund records for seven years, because Dutch tax law requires it.',
           'You can permanently delete your account from Account details in your Profile. When your account is deleted, we delete its profile, Circle application, messages, notifications, and profile photos unless we must retain specific information for legal, fraud-prevention, safety, accounting, or dispute purposes. Backup copies are removed on their normal secure rotation schedule.',
         ],
       ),

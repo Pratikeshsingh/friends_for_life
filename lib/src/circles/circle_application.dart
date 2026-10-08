@@ -5,23 +5,8 @@ import 'circle_preferences.dart';
 import 'circle_widgets.dart';
 
 /// Everything someone can pick under "What are you into?".
-const circleInterestOptions = [
-  'Food',
-  'Coffee',
-  'Walking',
-  'Books',
-  'Music',
-  'Art',
-  'Museums',
-  'Films',
-  'Games',
-  'Board games',
-  'Cooking',
-  'Cycling',
-  'Nature',
-  'Sport',
-  'Travel',
-  'Photography',
+final circleInterestOptions = [
+  for (final group in circleInterestCategories.values) ...group
 ];
 
 /// Exposes the phone rules to tests without widening the widget's API.
@@ -88,6 +73,10 @@ class _CircleApplicationState extends State<CircleApplication> {
   int? bDay, bMonth, bYear;
   String? photoPath, photoUrl;
   int style = 1, step = 0;
+
+  /// The interest group open when the step appears: the first one with a
+  /// choice in it, else the first group.
+  late String openInterestGroup;
   bool commitment = false, customTimes = false, saving = false;
   String? error, saved;
   bool get busy => widget.busy || saving;
@@ -112,6 +101,9 @@ class _CircleApplicationState extends State<CircleApplication> {
       for (final a in strings(d['activities']))
         if (circleLegacyActivity[a] != null) circleLegacyActivity[a]!,
     }.where(circleInterestOptions.contains).toSet();
+    openInterestGroup = circleInterestCategories.keys.firstWhere(
+        (g) => circleInterestCategories[g]!.any(interests.contains),
+        orElse: () => circleInterestCategories.keys.first);
     goals = strings(d['goals']).where(circleGoals.contains).toSet();
     lifeContext =
         strings(d['life_context']).where(circleContexts.contains).toSet();
@@ -229,8 +221,11 @@ class _CircleApplicationState extends State<CircleApplication> {
         (selectedDays.isEmpty || currentSlots.values.any((v) => v.isEmpty))) {
       return 'Choose at least one day and a time for each selected day.';
     }
-    if (step == 2 && (interests.isEmpty || goals.isEmpty)) {
-      return 'Pick at least one interest and what you’re looking for.';
+    if (step == 2 && interests.isEmpty) {
+      return 'Choose at least one thing under “What are you into?”.';
+    }
+    if (step == 2 && goals.isEmpty) {
+      return 'Choose at least one thing under “I’d love to find…”.';
     }
     if (step == 3) {
       if (widget.onPhoto != null && photoPath == null) {
@@ -534,7 +529,7 @@ class _CircleApplicationState extends State<CircleApplication> {
                     hintText: t('e.g. 06 12345678'),
                     helperText: t(
                         'Only for the organiser, if they need to reach you quickly. Updates come by email and in the app.'),
-                    helperMaxLines: 2,
+                    helperMaxLines: 3,
                     counterText: '')),
             const SizedBox(height: 20),
             const Row(children: [
@@ -631,7 +626,7 @@ class _CircleApplicationState extends State<CircleApplication> {
             // One question. "A plan you'd say yes to" used to follow, but
             // matching already treated both lists as one, so it only made
             // the form longer.
-            _choices('What are you into?', circleInterestOptions, interests),
+            _interestPicker(),
             const SizedBox(height: 24),
             _label('At a new table, I’m usually…'),
             const SizedBox(height: 12),
@@ -881,6 +876,73 @@ class _CircleApplicationState extends State<CircleApplication> {
 
   Widget _label(String value) => Text(value,
       style: const TextStyle(fontWeight: FontWeight.w800, color: circleNavy));
+
+  /// Up to five interests from a grouped list. One group is open at a time,
+  /// so the long list stays a short page; what is chosen sits on top.
+  Widget _interestPicker() {
+    final full = interests.length >= circleMaxInterests;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _label('What are you into?'),
+      const SizedBox(height: 4),
+      Text(
+          full
+              ? '${interests.length} of $circleMaxInterests chosen. Remove one to pick another.'
+              : 'Pick up to $circleMaxInterests. ${interests.length} chosen.',
+          style: const TextStyle(fontSize: 13, color: Color(0xFF66727C))),
+      const SizedBox(height: 10),
+      if (interests.isNotEmpty) ...[
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final value in interests)
+            InputChip(
+                label: Text(value),
+                selected: true,
+                showCheckmark: false,
+                onDeleted:
+                    busy ? null : () => setState(() => interests.remove(value)),
+                deleteButtonTooltipMessage: t('Remove'))
+        ]),
+        const SizedBox(height: 8),
+      ],
+      for (final group in circleInterestCategories.entries)
+        Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+                key: PageStorageKey('interests-${group.key}'),
+                tilePadding: EdgeInsets.zero,
+                childrenPadding: const EdgeInsets.only(bottom: 12),
+                expandedAlignment: Alignment.centerLeft,
+                initiallyExpanded: openInterestGroup == group.key,
+                onExpansionChanged: (open) {
+                  if (open) openInterestGroup = group.key;
+                },
+                title: Text(group.key,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700, color: circleNavy)),
+                subtitle: () {
+                  final n = group.value.where(interests.contains).length;
+                  return n == 0
+                      ? null
+                      : Text('$n chosen',
+                          style: const TextStyle(
+                              fontSize: 12, color: circleTealText));
+                }(),
+                children: [
+                  Wrap(spacing: 8, runSpacing: 8, children: [
+                    for (final value in group.value)
+                      FilterChip(
+                          label: Text(value),
+                          selected: interests.contains(value),
+                          onSelected:
+                              busy || (full && !interests.contains(value))
+                                  ? null
+                                  : (v) => setState(() => v
+                                      ? interests.add(value)
+                                      : interests.remove(value)))
+                  ])
+                ])),
+    ]);
+  }
+
   Widget _choices(String label, List<String> options, Set<String> selected) =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         if (label.isNotEmpty) ...[_label(label), const SizedBox(height: 12)],

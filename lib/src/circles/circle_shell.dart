@@ -167,6 +167,13 @@ class _CircleShellState extends State<CircleShell> {
           error = null;
           _stale = false;
         });
+        // Reading the chat counts as seeing it; otherwise check what was seen.
+        // Never holds up the refresh itself.
+        if (chatOpen) {
+          unawaited(_markChatSeen());
+        } else if (_chatSeen == null) {
+          unawaited(_loadChatSeen());
+        }
       }
     } catch (e) {
       AppDiagnostics.record(e, area: 'circle_load');
@@ -209,7 +216,10 @@ class _CircleShellState extends State<CircleShell> {
           'refresh_commitment',
           'exclude',
           'email_notifications',
-          'leave_circle'
+          'leave_circle',
+          'switch_group',
+          'cancel_agreement',
+          'rejoin'
         ].contains(action)) {
           showCircleToast(
               context,
@@ -223,6 +233,11 @@ class _CircleShellState extends State<CircleShell> {
                     : 'Emails turned off. Your Circle updates stay in the app.',
                 'leave_circle' =>
                   'You’ve left the Circle. We’ll be in touch about anything outstanding.',
+                'switch_group' =>
+                  'You’re switching groups. Your €19 carries over. Check your days and times below.',
+                'cancel_agreement' =>
+                  'Your place is released. We’ll be in touch about anything outstanding.',
+                'rejoin' => 'You’re back on the waiting list.',
                 _ => _stale
                     ? 'Saved. Refresh to see the latest version.'
                     : 'Saved.'
@@ -451,6 +466,8 @@ class _CircleShellState extends State<CircleShell> {
                                           child: Column(children: [
                                             if (editing ||
                                                 (state!['stage'] == 'apply' &&
+                                                    state!['left_circle'] ==
+                                                        null &&
                                                     !applicationParked))
                                               Offstage(
                                                   offstage: tab != 0,
@@ -462,6 +479,8 @@ class _CircleShellState extends State<CircleShell> {
                                                 !(editing ||
                                                     (state!['stage'] ==
                                                             'apply' &&
+                                                        state!['left_circle'] ==
+                                                            null &&
                                                         !applicationParked)))
                                               _body(context),
                                           ])))))),
@@ -485,11 +504,13 @@ class _CircleShellState extends State<CircleShell> {
                                       // Always shown, so people know a group
                                       // chat is coming; locked until then.
                                       showMessages: true,
+                                      messagesUnread: _chatUnread,
                                       homeLabel: hasChat ? null : 'Home',
                                       selectedIndex: tab,
                                       onDestinationSelected: (v) {
                                         setState(() => tab = v);
                                         if (v == 1) {
+                                          _markChatSeen();
                                           _scrollToLatest();
                                         } else if (scroll.hasClients) {
                                           scroll.jumpTo(0);
@@ -500,7 +521,21 @@ class _CircleShellState extends State<CircleShell> {
 
   /// The group chat exists once someone has joined a Circle.
   bool get hasChat => ['active', 'completed'].contains(state?['stage']);
-  bool get chatOpen => tab == 1 && hasChat;
+
+  /// Finished Circles whose chat stays open after joining a new one.
+  List<Json> get pastCircles => rows(state?['past_circles']);
+
+  /// The past Circle whose chat is open in Messages, or null for the
+  /// current Circle.
+  String? _pastChat;
+  Json? get _openPast {
+    for (final c in pastCircles) {
+      if ('${c['id']}' == _pastChat) return c;
+    }
+    return null;
+  }
+
+  bool get chatOpen => tab == 1 && (hasChat || _openPast != null);
 
   void _scrollToLatest() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -516,7 +551,12 @@ class _CircleShellState extends State<CircleShell> {
         _sendId = circleRequestId();
         _sendBody = text;
       }
-      await act('message', {'body': text, 'request_id': _sendId});
+      final past = _openPast;
+      if (past != null) {
+        await act('past_message', {'circle_id': past['id'], 'body': text});
+      } else {
+        await act('message', {'body': text, 'request_id': _sendId});
+      }
       _sendId = _sendBody = null;
       message.clear();
       _scrollToLatest();
@@ -570,7 +610,20 @@ class _CircleShellState extends State<CircleShell> {
       });
 
   Widget _body(BuildContext context) {
-    if (tab == 1) return hasChat ? _messages(context) : _messagesLocked();
+    if (tab == 1) {
+      final past = _openPast;
+      final chat = past != null
+          ? _pastMessages(past)
+          : hasChat
+              ? _messages(context)
+              : _messagesLocked();
+      if (pastCircles.isEmpty) return chat;
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _chatSwitcher(),
+        const SizedBox(height: 12),
+        chat,
+      ]);
+    }
     if (tab == 2) return _profile(context);
     return CircleHome(
         state: state!,
@@ -643,6 +696,46 @@ class _CircleShellState extends State<CircleShell> {
     return sameDay ? hm : '${circleDate(at.toIso8601String())} · $hm';
   }
 
+  /// Current Circle first, then finished ones, newest first. Wraps rather
+  /// than scrolling sideways, so no Circle hides off-screen.
+  Widget _chatSwitcher() {
+    final current = state?['circle'] as Map?;
+    return Wrap(spacing: 8, runSpacing: 8, children: [
+      ChoiceChip(
+          label: Text(current?['name']?.toString() ?? t('New Circle'),
+              overflow: TextOverflow.ellipsis),
+          selected: _pastChat == null,
+          onSelected: (_) => setState(() => _pastChat = null)),
+      for (final c in pastCircles)
+        ChoiceChip(
+            label: Text('${c['name'] ?? t('Past Circle')} · ${t('finished')}',
+                overflow: TextOverflow.ellipsis),
+            selected: _pastChat == '${c['id']}',
+            onSelected: (_) {
+              setState(() => _pastChat = '${c['id']}');
+              _scrollToLatest();
+            }),
+    ]);
+  }
+
+  /// A finished Circle's chat: still open after joining a new Circle.
+  Widget _pastMessages(Json circle) {
+    final messages = rows(circle['messages']);
+    final names = strings(circle['members']);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      CircleHeading('${circle['name'] ?? 'Your Circle'}',
+          eyebrow: 'Your finished Circle',
+          subtitle: names.isEmpty
+              ? 'Still yours. Keep in touch and make plans.'
+              : 'With ${names.join(', ')}. Still yours: keep in touch and make plans.'),
+      if (messages.isEmpty)
+        const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Text('No messages yet. Be the first to say hello.')),
+      ..._withDays(messages),
+    ]);
+  }
+
   /// The Messages tab before there is a group to talk to: what unlocks it.
   Widget _messagesLocked() {
     final invited = state?['stage'] == 'invited';
@@ -688,7 +781,7 @@ class _CircleShellState extends State<CircleShell> {
         TextButton(
             onPressed: _loadingOlder ? null : _loadOlderMessages,
             child: Text(_loadingOlder ? 'Loading…' : 'Load earlier messages')),
-      for (final m in messages) _bubble(context, m),
+      ..._withDays(messages),
     ]);
   }
 
@@ -715,6 +808,74 @@ class _CircleShellState extends State<CircleShell> {
     } finally {
       if (mounted) setState(() => _loadingOlder = false);
     }
+  }
+
+  /// Messages with a quiet "Today / Yesterday / Thu 15 Oct" line whenever
+  /// the day changes, so older conversation is easy to place.
+  List<Widget> _withDays(List<Json> messages) {
+    final out = <Widget>[];
+    String? last;
+    for (final m in messages) {
+      final at = DateTime.tryParse('${m['created_at'] ?? ''}')?.toLocal();
+      if (at != null) {
+        final label = _dayLabel(at);
+        if (label != last) {
+          out.add(Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Center(
+                  child: Text(label,
+                      style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF66727C))))));
+          last = label;
+        }
+      }
+      out.add(_bubble(context, m));
+    }
+    return out;
+  }
+
+  String _dayLabel(DateTime at) {
+    final now = DateTime.now();
+    final day = DateTime(at.year, at.month, at.day);
+    final today = DateTime(now.year, now.month, now.day);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) return t('Today');
+    if (diff == 1) return t('Yesterday');
+    return circleDate(day.toIso8601String());
+  }
+
+  /// When this person last looked at their Circle chat (per device).
+  DateTime? _chatSeen;
+  String get _chatSeenKey =>
+      'vriendtime.chat-seen.${(state?['circle'] as Map?)?['id'] ?? ''}';
+
+  bool get _chatUnread {
+    if (!hasChat || chatOpen) return false;
+    final latest = rows(state?['messages'])
+        .where((m) => m['own'] != true)
+        .map((m) => DateTime.tryParse('${m['created_at'] ?? ''}'))
+        .whereType<DateTime>()
+        .fold<DateTime?>(null, (a, b) => a == null || b.isAfter(a) ? b : a);
+    if (latest == null) return false;
+    return _chatSeen == null || latest.isAfter(_chatSeen!);
+  }
+
+  Future<void> _loadChatSeen() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_chatSeenKey);
+      if (mounted) setState(() => _chatSeen = DateTime.tryParse(raw ?? ''));
+    } catch (_) {}
+  }
+
+  Future<void> _markChatSeen() async {
+    _chatSeen = DateTime.now().toUtc();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_chatSeenKey, _chatSeen!.toIso8601String());
+    } catch (_) {}
   }
 
   Widget _bubble(BuildContext context, Json m) {
@@ -1046,7 +1207,7 @@ class _CircleShellState extends State<CircleShell> {
 
   Future<void> _report({String? messageId}) async {
     final requestId = circleRequestId();
-    await showCircleSaveDialog(context,
+    final sent = await showCircleSaveDialog(context,
         title: 'Tell the organiser',
         description:
             'Your report is private. Tell us what happened. For immediate danger, contact emergency services. For urgent help, use Help & contact in Profile.',
@@ -1063,6 +1224,10 @@ class _CircleShellState extends State<CircleShell> {
         if (messageId != null) 'message_id': messageId
       });
     });
+    if (sent == true && mounted) {
+      showCircleToast(context,
+          'Thanks. Your report reached the organiser privately. We’ll follow up with you.');
+    }
   }
 
   /// "Just now", "3 h ago", "Yesterday", or a date.
