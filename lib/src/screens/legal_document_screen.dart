@@ -4,8 +4,8 @@ import '../core/i18n.dart';
 enum LegalDocumentType { terms, privacy }
 
 abstract final class LegalDocuments {
-  static const termsVersion = '2026-10-08-v8';
-  static const privacyVersion = '2026-10-12-v8';
+  static const termsVersion = '2026-10-13-v9';
+  static const privacyVersion = '2026-10-13-v9';
 
   static LegalDocument documentFor(LegalDocumentType type) {
     return switch (type) {
@@ -16,7 +16,7 @@ abstract final class LegalDocuments {
 
   static const _terms = LegalDocument(
     title: 'Terms & Conditions',
-    effectiveDate: '8 October 2026',
+    effectiveDate: '13 October 2026',
     introduction:
         'These Terms & Conditions govern your use of VriendTime. By creating an account, you agree to these terms.',
     sections: [
@@ -44,7 +44,7 @@ abstract final class LegalDocuments {
           'Before your first meetup: until 48 hours before the first meetup starts, you can leave your Circle in the app and ask for your €19 back. We may ask why you are leaving, so we can offer you another group instead. If you still want a refund, we check your request and refund the full €19 to the account you paid from.',
           'After that: the €19 is not refunded. If your Circle does not feel right, you can switch to another group once, free of charge, until your second meetup starts (also before your first meetup). You keep your place on the waiting list and your €19 covers the new Circle. If we cannot offer you a new group within a reasonable time, we refund your €19. After your second meetup has started, no switch or refund is possible, and joining a further Circle means paying again.',
           'If VriendTime cancels your Circle, received programme fees are always refunded. If you leave because of a safety concern you have reported to us, we will look at a refund or a free move with you, separately from the rules above. Refunds are arranged manually and these terms do not limit any rights you have under mandatory consumer law. Contact the organiser for other cancellation or payment concerns.',
-          'Meetup details such as the venue, time or activity may change. For the weeks we plan, the exact venue is shared shortly before the meetup. Venue details must not be used to disrupt the venue or compromise another member’s safety. If a meetup is cancelled or materially changed, we tell your Circle in the app.',
+          'Meetup details such as the venue, time or activity may change. For the weeks we plan, the venue is shown in the app from the invitation on. Venue details must not be used to disrupt the venue or compromise another member’s safety. If a meetup is cancelled or materially changed, we tell your Circle in the app.',
           'Venue purchases and services supplied directly by a third party may be governed by that third party’s own terms.',
           'Food and drinks are prepared and supplied by independent venues, not VriendTime. You are responsible for deciding what you consume, checking ingredients and allergens directly with the venue, communicating dietary needs, and deciding whether a venue’s food or hygiene practices are suitable for you. VriendTime cannot guarantee that food is allergen-free, safe for a particular diet, or that you will enjoy it.',
         ],
@@ -106,7 +106,7 @@ abstract final class LegalDocuments {
 
   static const _privacy = LegalDocument(
     title: 'Privacy Policy',
-    effectiveDate: '12 October 2026',
+    effectiveDate: '13 October 2026',
     introduction:
         'This policy explains how VriendTime collects, uses, shares, and protects personal data when you use the app and related services.',
     sections: [
@@ -141,7 +141,7 @@ abstract final class LegalDocuments {
         paragraphs: [
           'New Circle applications require a primary profile photo for recognition. A profile photo is not identity verification. That photo is available only to your assigned Circle and authorised matching organisers. It is never shown publicly.',
           'Information is shared with the other members of your Circle only where needed for the programme: your first name, profile photo, short introduction, interests, and the messages you send to your Circle. If you give a WhatsApp number, the organiser sees it so they can contact you.',
-          'Your email address, date of birth, gender, WhatsApp number, matching answers and private account details are never shown to other members. We use your gender only to keep groups balanced, so nobody is the only man or the only woman in their Circle. Avoid placing private information in your introduction or in messages that other members can read.',
+          'Your email address, date of birth, gender, WhatsApp number, matching answers and private account details are never shown to other members. We use your gender only to help balance groups, so we try to avoid anyone being the only man or the only woman in their Circle. Avoid placing private information in your introduction or in messages that other members can read.',
         ],
       ),
       LegalSection(

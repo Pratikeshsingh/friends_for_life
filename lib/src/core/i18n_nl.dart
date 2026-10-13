@@ -96,19 +96,14 @@ const nlStrings = <String, String>{
   'The programme is done, but your Circle isn’t: the chat stays open and you can keep making plans together, at no extra cost.':
       'Het programma zit erop, maar je Circle niet: de chat blijft open en jullie kunnen samen plannen blijven maken, zonder extra kosten.',
   'Programme complete': 'Programma afgerond',
-  'Hard to match': 'Moeilijk te matchen',
   'With one time a week, finding five or six people who are all free then can take a long while. Add another day or time to be matched sooner.':
       'Met één moment per week kan het lang duren om vijf of zes mensen te vinden die dan allemaal kunnen. Voeg nog een dag of tijd toe om sneller gematcht te worden.',
-  'Fair chance': 'Redelijke kans',
   'Adding one or two more days or times makes it much easier to find your group.':
       'Met één of twee extra dagen of tijden vinden we veel makkelijker een groep voor je.',
-  'Good chance': 'Goede kans',
   'Good choice. More options means we can match you sooner.':
       'Goede keuze. Meer opties betekent dat we je sneller kunnen matchen.',
-  'Great chance': 'Grote kans',
   'Plenty of options. We can match you as soon as a group fits.':
       'Genoeg opties. We kunnen je matchen zodra er een groep past.',
-  'Matching chance': 'Kans op een match',
   'To refund: find their €19 in your bank app (the Tikkie payment shows their name, and usually their account number) and transfer it back. No account number? Ask them for it.':
       'Terugbetalen: zoek de €19 in je bankapp (bij de Tikkie-betaling staat hun naam, en meestal hun rekeningnummer) en maak het bedrag terug over. Geen rekeningnummer? Vraag het hen.',
   'Ask for bank details': 'Rekeninggegevens vragen',
@@ -2002,8 +1997,8 @@ const nlStrings = <String, String>{
   'agreed': 'afgesproken',
   'VriendTime helps adults join a small Friendship Circle that meets weekly for six weeks. VriendTime forms the group, sets the schedule, and provides meetup details, reminders, a group chat, and links that help you add a meetup to your calendar.':
       'VriendTime helpt volwassenen mee te doen aan een kleine Friendship Circle die zes weken lang wekelijks samenkomt. VriendTime stelt de groep samen, legt het schema vast en zorgt voor meetupdetails, herinneringen, een groepschat en links waarmee je een meetup aan je agenda toevoegt.',
-  'Meetup details such as the venue, time or activity may change. For the weeks we plan, the exact venue is shared shortly before the meetup. Venue details must not be used to disrupt the venue or compromise another member’s safety. If a meetup is cancelled or materially changed, we tell your Circle in the app.':
-      'Meetupdetails zoals de locatie, tijd of activiteit kunnen veranderen. Voor de weken die wij plannen, delen we de precieze locatie kort voor de meetup. Locatiegegevens mogen niet worden gebruikt om de locatie te verstoren of de veiligheid van een ander lid in gevaar te brengen. Wordt een meetup geannuleerd of wezenlijk gewijzigd, dan laten we dat je Circle weten in de app.',
+  'Meetup details such as the venue, time or activity may change. For the weeks we plan, the venue is shown in the app from the invitation on. Venue details must not be used to disrupt the venue or compromise another member’s safety. If a meetup is cancelled or materially changed, we tell your Circle in the app.':
+      'Meetupdetails zoals de locatie, tijd of activiteit kunnen veranderen. Voor de weken die wij plannen, staat de locatie vanaf de uitnodiging in de app. Locatiegegevens mogen niet worden gebruikt om de locatie te verstoren of de veiligheid van een ander lid in gevaar te brengen. Wordt een meetup geannuleerd of wezenlijk gewijzigd, dan laten we dat je Circle weten in de app.',
   'Venue purchases and services supplied directly by a third party may be governed by that third party’s own terms.':
       'Aankopen bij een locatie en diensten die rechtstreeks door een derde worden geleverd, kunnen onder de eigen voorwaarden van die derde vallen.',
   'Treat other members, venue staff, and the public with respect. Harassment, discrimination, threats, violence, unwanted sexual conduct, stalking, fraud, spam, illegal activity, and conduct that puts anyone at risk are prohibited.':
@@ -2098,8 +2093,6 @@ const nlStrings = <String, String>{
       'Optioneel. Als genoeg mensen dezelfde tijd nodig hebben, voegen we die toe.',
   'Daytime': 'Overdag',
   'How do you describe yourself?': 'Hoe omschrijf je jezelf?',
-  'Private. We only use it so nobody is the only man or the only woman in their group.':
-      'Privé. We gebruiken dit alleen zodat niemand de enige man of de enige vrouw in de groep is.',
   'Choose one of the options.': 'Kies een van de opties.',
   'Please keep your other times under 300 characters.':
       'Houd je andere tijden onder de 300 tekens.',
@@ -2171,8 +2164,8 @@ const nlStrings = <String, String>{
       'Profielgegevens: voornaam, geboortedatum, gender (je kunt kiezen voor “Zeg ik liever niet”), profielfoto, een korte introductie, de talen die je spreekt, je interesses, de dagen en tijden waarop je vrij bent en, als je dat wilt, een WhatsApp-nummer. Optionele velden staan als zodanig in de app.',
   'Communication and safety data: messages you send in your Circle’s group chat, reports, support enquiries, and information needed to investigate safety or policy concerns. Circle chats are moderated: the VriendTime team can read messages when needed for moderation and safety.':
       'Communicatie- en veiligheidsgegevens: berichten die je in de groepschat van je Circle stuurt, meldingen, vragen aan support en informatie die nodig is om zorgen over veiligheid of regels te onderzoeken. Circle-chats worden gemodereerd: het VriendTime-team kan berichten lezen als dat nodig is voor moderatie en veiligheid.',
-  'Your email address, date of birth, gender, WhatsApp number, matching answers and private account details are never shown to other members. We use your gender only to keep groups balanced, so nobody is the only man or the only woman in their Circle. Avoid placing private information in your introduction or in messages that other members can read.':
-      'Je e-mailadres, geboortedatum, gender, WhatsApp-nummer, matchingantwoorden en privé accountgegevens worden nooit aan andere leden getoond. We gebruiken je gender alleen om groepen in balans te houden, zodat niemand de enige man of de enige vrouw in de Circle is. Zet geen privé-informatie in je introductie of in berichten die andere leden kunnen lezen.',
+  'Your email address, date of birth, gender, WhatsApp number, matching answers and private account details are never shown to other members. We use your gender only to help balance groups, so we try to avoid anyone being the only man or the only woman in their Circle. Avoid placing private information in your introduction or in messages that other members can read.':
+      'Je e-mailadres, geboortedatum, gender, WhatsApp-nummer, matchingantwoorden en privé accountgegevens worden nooit aan andere leden getoond. We gebruiken je gender alleen om groepen in balans te brengen, zodat we proberen te voorkomen dat iemand de enige man of de enige vrouw in de Circle is. Zet geen privé-informatie in je introductie of in berichten die andere leden kunnen lezen.',
   'Only one man with {1} women': 'Maar één man met {1} vrouwen',
   'Only one woman with {1} men': 'Maar één vrouw met {1} mannen',
   '{1}. Try to swap someone so nobody is the only one; you can still create it.':
@@ -2313,4 +2306,15 @@ const nlStrings = <String, String>{
   'One-to-one coffee · being planned': 'Eén-op-één koffie · wordt gepland',
   'One-to-one coffee': 'Eén-op-één koffie',
   'You let your Circle know': 'Je hebt het je Circle laten weten',
+  'Private. We only use it to help balance groups, so we try to avoid anyone being the only man or the only woman.':
+      'Privé. We gebruiken het alleen om groepen in balans te brengen, zodat we proberen te voorkomen dat iemand de enige man of de enige vrouw is.',
+  'Your flexibility': 'Je flexibiliteit',
+  'Just one time': 'Maar één moment',
+  'A little flexible': 'Een beetje flexibel',
+  'Flexible': 'Flexibel',
+  'Very flexible': 'Heel flexibel',
+  'I agree to the Terms & Conditions and acknowledge that I have read the Privacy Policy.':
+      'Ik ga akkoord met de Algemene voorwaarden en bevestig dat ik het Privacybeleid heb gelezen.',
+  'Read the Terms & Conditions': 'Lees de Algemene voorwaarden',
+  'Read the Privacy Policy': 'Lees het Privacybeleid',
 };

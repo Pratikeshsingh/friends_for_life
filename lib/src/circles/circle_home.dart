@@ -236,7 +236,10 @@ class CircleHome extends StatelessWidget {
             const SizedBox(height: 16),
             Wrap(spacing: 8, runSpacing: 8, children: [
               for (final label in circleSlotChips(circleOfferedSlots(slots)))
-                CirclePill(label)
+                CirclePill(label),
+              if (circleOfferedSlots(slots).isEmpty &&
+                  '${app['other_times'] ?? ''}'.trim().isNotEmpty)
+                CirclePill('${app['other_times']}'.trim())
             ]),
             const SizedBox(height: 16),
             SizedBox(

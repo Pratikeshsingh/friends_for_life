@@ -965,7 +965,7 @@ class _CircleApplicationState extends State<CircleApplication> {
         _label('How do you describe yourself?'),
         const SizedBox(height: 4),
         const Text(
-            'Private. We only use it so nobody is the only man or the only woman in their group.',
+            'Private. We only use it to help balance groups, so we try to avoid anyone being the only man or the only woman.',
             style: TextStyle(fontSize: 12, color: Color(0xFF66727C))),
         const SizedBox(height: 10),
         Wrap(spacing: 8, runSpacing: 8, children: [
@@ -1125,28 +1125,28 @@ class _MatchChance extends StatelessWidget {
                 : 3;
     final (label, hint, color) = switch (level) {
       0 => (
-          'Hard to match',
+          'Just one time',
           'With one time a week, finding five or six people who are all free then can take a long while. Add another day or time to be matched sooner.',
           circleCoral
         ),
       1 => (
-          'Fair chance',
+          'A little flexible',
           'Adding one or two more days or times makes it much easier to find your group.',
           const Color(0xFFE0A63A)
         ),
       2 => (
-          'Good chance',
+          'Flexible',
           'Good choice. More options means we can match you sooner.',
           circleTeal
         ),
       _ => (
-          'Great chance',
+          'Very flexible',
           'Plenty of options. We can match you as soon as a group fits.',
           circleTeal
         ),
     };
     return Semantics(
-        label: '${t('Matching chance')}: ${t(label)}',
+        label: '${t('Your flexibility')}: ${t(label)}',
         child: Container(
             width: double.infinity,
             padding: const EdgeInsets.all(14),
@@ -1157,7 +1157,7 @@ class _MatchChance extends StatelessWidget {
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text.rich(TextSpan(children: [
                 TextSpan(
-                    text: '${t('Matching chance')}: ',
+                    text: '${t('Your flexibility')}: ',
                     style: const TextStyle(
                         fontWeight: FontWeight.w700, color: circleNavy)),
                 TextSpan(

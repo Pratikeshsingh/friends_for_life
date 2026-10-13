@@ -796,10 +796,10 @@ class _LegalConsentField extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // Screen readers hear one sentence on the checkbox, then the two links;
+    // the visible sentence pieces are not read a second time.
     return Semantics(
       container: true,
-      label: t(
-          'Agreement to the Terms and Conditions and acknowledgement of the Privacy Policy'),
       child: Container(
         key: const ValueKey('legal-consent-field'),
         padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
@@ -813,12 +813,16 @@ class _LegalConsentField extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Checkbox(
-              key: const ValueKey('legal-consent-checkbox'),
-              value: value,
-              onChanged: onChanged == null
-                  ? null
-                  : (nextValue) => onChanged!(nextValue ?? false),
+            Semantics(
+              label: t(
+                  'I agree to the Terms & Conditions and acknowledge that I have read the Privacy Policy.'),
+              child: Checkbox(
+                key: const ValueKey('legal-consent-checkbox'),
+                value: value,
+                onChanged: onChanged == null
+                    ? null
+                    : (nextValue) => onChanged!(nextValue ?? false),
+              ),
             ),
             const SizedBox(width: 4),
             Expanded(
@@ -827,9 +831,11 @@ class _LegalConsentField extends StatelessWidget {
                 child: Wrap(
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Text(
-                      'I agree to the ',
-                      style: theme.textTheme.bodyMedium,
+                    ExcludeSemantics(
+                      child: Text(
+                        'I agree to the ',
+                        style: theme.textTheme.bodyMedium,
+                      ),
                     ),
                     TextButton(
                       key: const ValueKey('open-terms'),
@@ -839,11 +845,14 @@ class _LegalConsentField extends StatelessWidget {
                         minimumSize: const Size(0, 40),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      child: const Text('Terms & Conditions'),
+                      child: Text('Terms & Conditions',
+                          semanticsLabel: t('Read the Terms & Conditions')),
                     ),
-                    Text(
-                      ' and acknowledge that I have read the ',
-                      style: theme.textTheme.bodyMedium,
+                    ExcludeSemantics(
+                      child: Text(
+                        ' and acknowledge that I have read the ',
+                        style: theme.textTheme.bodyMedium,
+                      ),
                     ),
                     TextButton(
                       key: const ValueKey('open-privacy-policy'),
@@ -853,7 +862,8 @@ class _LegalConsentField extends StatelessWidget {
                         minimumSize: const Size(0, 40),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      child: const Text('Privacy Policy.'),
+                      child: Text('Privacy Policy.',
+                          semanticsLabel: t('Read the Privacy Policy')),
                     ),
                   ],
                 ),
