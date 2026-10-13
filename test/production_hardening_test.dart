@@ -65,6 +65,10 @@ class DelayedRepository implements CircleRepository {
   Future<void> act(String action, [Json data = const {}]) async {}
   @override
   Future<Json> adminLoad() async => {};
+  @override
+  Future<Json?> loadExtras(Json data) async => null;
+  @override
+  Future<List<Json>> adminMessages(String circleId) async => [];
 }
 
 void main() {

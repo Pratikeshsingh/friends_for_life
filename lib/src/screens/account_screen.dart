@@ -299,17 +299,17 @@ class _FaqPage extends StatelessWidget {
             icon: Icons.groups_2_outlined,
             title: 'Will I meet the same people?',
             body:
-                'Yes. Five or six people meet once a week for six weeks. We plan the first three weeks, then your Circle takes the lead.'),
+                'Yes. Five or six people meet once a week for six weeks. We plan the first four weeks and suggest the last two, which your Circle can change together.'),
         _HelpAnswerCard(
             icon: Icons.favorite_border_rounded,
             title: 'What if the Circle does not feel right?',
             body:
-                'Before your first meetup you can cancel for a full refund, up to 48 hours before it starts. Between your first and second meetup you can move to another group once, free of charge, from your Circle’s home screen. Your €19 carries over. Your reasons and private check-ins are never shared with other members.'),
+                'Tell us what isn’t working under Profile › Programme settings › Switch group or leave. You can switch to another group once, free of charge, until your second meetup; your €19 carries over. Up to 48 hours before your first meetup you can also ask for your €19 back. Your reasons and private check-ins are never shared with other members.'),
         _HelpAnswerCard(
             icon: Icons.event_repeat_outlined,
             title: 'What happens after week six?',
             body:
-                'Keep your group messages and arrange more meetups. No further programme payment is required.'),
+                'Your Circle and its chat stay open, so you can keep making plans together at no extra cost. You can also join a new Circle with new people for €19.'),
       ],
     );
   }
@@ -341,7 +341,7 @@ class _SafetyPage extends StatelessWidget {
           icon: Icons.support_agent_outlined,
           title: 'Reach out when needed',
           body:
-              'Open Contact us from your profile to message the team directly on WhatsApp.',
+              'Use Report a concern in your profile, message us on WhatsApp, or email support@vriendtime.com. In an emergency, call 112.',
         ),
       ],
     );

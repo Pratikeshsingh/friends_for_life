@@ -90,11 +90,11 @@ void main() {
           if (venue != null) 'venue': venue,
         };
 
-    test('is withheld while the meetup is more than a day away', () {
+    test('is shown from the invitation on', () {
       expect(
           circleVenueLabel(meetup(venue: 'Rozey, Alkmaar'),
-              now: DateTime(2026, 10, 6, 19, 30)),
-          'Revealed 24 hours before · Alkmaar');
+              now: DateTime(2026, 9, 1)),
+          'Rozey, Alkmaar');
     });
 
     test('is shown once the meetup is within a day', () {
@@ -108,7 +108,7 @@ void main() {
       expect(
           circleVenueLabel({'week': 1, 'venue_hidden': true},
               now: DateTime(2026, 10, 8)),
-          'Revealed 24 hours before · Alkmaar');
+          'Shared soon · Alkmaar');
     });
 
     test('a plan the Circle made itself was never a secret', () {

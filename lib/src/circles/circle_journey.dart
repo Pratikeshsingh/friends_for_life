@@ -100,16 +100,16 @@ class _CircleJourneyState extends State<CircleJourney>
     final timeline = AnimatedBuilder(
         animation: _reveal,
         builder: (context, _) {
-          // Slots: handover, weeks 1–3, handover, weeks 4–6.
+          // Slots: handover, weeks 1–4, handover, weeks 5–6.
           const slots = 8;
           final rows = <Widget>[];
           var slot = 0;
           for (var i = 0; i < 6; i++) {
-            if (i == 0 || i == 3) {
+            if (i == 0 || i == 4) {
               rows.add(_handoverRow(
                   i == 0
-                      ? 'We plan weeks 1 to 3'
-                      : 'From week 4, your group plans together',
+                      ? 'We plan weeks 1 to 4'
+                      : 'Weeks 5 and 6: our plan, yours to change',
                   _at(slot++, slots),
                   first: i == 0));
             }

@@ -281,8 +281,17 @@ void main() {
       expect((await repository.load())['email_notifications'], isFalse);
     });
 
-    testWidgets('the profile shows a switch that reflects the saved value',
+    test('each email category can be switched separately', () async {
+      await repository
+          .act('email_setting', {'key': 'email_chat', 'enabled': false});
+      final settings = (await repository.load())['email_settings'] as Map;
+      expect(settings['email_chat'], isFalse);
+      expect(settings['email_reminders'], isTrue);
+    });
+
+    testWidgets('the profile shows one switch per category, as saved',
         (tester) async {
+      String? key;
       bool? changedTo;
       await tester.pumpWidget(MaterialApp(
           theme: buildTheme(),
@@ -292,7 +301,12 @@ void main() {
                       state: const {
                 'stage': 'waiting',
                 'application': {'name': 'Asha'},
-                'email_notifications': false,
+                'email_settings': {
+                  'email_enabled': true,
+                  'email_reminders': false,
+                  'email_chat': true,
+                  'email_organiser': true
+                },
               },
                       onEdit: null,
                       onPhoto: null,
@@ -301,15 +315,22 @@ void main() {
                       onExport: null,
                       onBookings: null,
                       onSignOut: null,
-                      onEmailNotifications: (v) => changedTo = v)))));
-      final toggle = find.byType(SwitchListTile);
-      expect(toggle, findsOneWidget);
-      expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
-      // The profile is long, so the row has to be scrolled into view before a
-      // tap lands on it.
-      await tester.ensureVisible(toggle);
+                      onEmailNotifications: (k, v) {
+                        key = k;
+                        changedTo = v;
+                      })))));
+      final group = find.text('Email notifications');
+      await tester.ensureVisible(group);
+      await tester.tap(group);
       await tester.pumpAndSettle();
-      await tester.tap(toggle);
+      // Three for members; organiser alerts only for organisers.
+      expect(find.byType(SwitchListTile), findsNWidgets(3));
+      final reminders = find.widgetWithText(SwitchListTile, 'Reminders');
+      expect(tester.widget<SwitchListTile>(reminders).value, isFalse);
+      await tester.ensureVisible(reminders);
+      await tester.pumpAndSettle();
+      await tester.tap(reminders);
+      expect(key, 'email_reminders');
       expect(changedTo, isTrue);
     });
 

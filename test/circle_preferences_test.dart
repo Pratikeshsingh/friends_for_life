@@ -39,8 +39,9 @@ void main() {
     'name': 'Asha',
     'date_of_birth': '1995-06-15',
     'languages': ['English'],
+    'gender': 'man',
     'availability_slots': {
-      'mon': ['morning'],
+      'tue': ['morning'],
       'sat': ['afternoon']
     },
     'interests': ['Coffee'],
@@ -90,7 +91,7 @@ void main() {
       await tester.tap(find.text('Find my Circle'));
       await tester.pumpAndSettle();
       expect(submitted!['availability_slots'], {
-        'mon': ['morning'],
+        'tue': ['morning'],
         'sat': ['afternoon']
       });
       expect(submitted!['date_of_birth'], '1995-06-15');
@@ -184,15 +185,16 @@ void main() {
     for (final title in [
       'Dinner together',
       'Go beyond “what do you do?”',
-      'Find out who’s secretly competitive.',
-      'Choose something together',
+      'Find out who’s secretly competitive',
+      'Something new together',
       'A plan of your own',
       'One last get-together',
     ]) {
       expect(find.text(title), findsOneWidget);
     }
-    expect(find.text('WE PLAN WEEKS 1 TO 3'), findsOneWidget);
-    expect(find.text('FROM WEEK 4, YOUR GROUP PLANS TOGETHER'), findsOneWidget);
+    expect(find.text('WE PLAN WEEKS 1 TO 4'), findsOneWidget);
+    expect(
+        find.text('WEEKS 5 AND 6: OUR PLAN, YOURS TO CHANGE'), findsOneWidget);
     expect(tester.binding.hasScheduledFrame, isFalse);
   });
 }

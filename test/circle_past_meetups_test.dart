@@ -93,7 +93,18 @@ void main() {
   testWidgets('has an honest empty state rather than a blank page',
       (tester) async {
     await pump(
-        tester, stateWith([meetup('a', 1, '2026-10-08', completed: false)]));
+        tester,
+        stateWith([
+          // Upcoming, whatever day the test runs.
+          meetup(
+              'a',
+              1,
+              DateTime.now()
+                  .add(const Duration(days: 7))
+                  .toIso8601String()
+                  .substring(0, 10),
+              completed: false)
+        ]));
     expect(find.text('Nothing behind you yet.'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

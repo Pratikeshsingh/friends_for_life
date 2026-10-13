@@ -12,6 +12,10 @@ class ProfilePhotoService {
       "We couldn't upload your photo. Please try again. Your current photo has not changed.";
   static final Map<String, _SignedUrlCacheEntry> _signedUrlCache = {};
 
+  /// Links being fetched right now, so a second ask waits for the first
+  /// instead of sending another request.
+  static final Map<String, Future<String?>> _inFlight = {};
+
   static Future<String> uploadPhoto({
     required SupabaseClient supabase,
     required String userId,
@@ -57,10 +61,68 @@ class ProfilePhotoService {
     return supabase.storage.from(bucketName).download(path);
   }
 
+  /// Photo links last an hour: long enough that the browser can reuse a
+  /// downloaded photo across screens and refreshes (a new link means a new
+  /// download), short enough that a shared link soon stops working.
+  static const signedUrlSeconds = 60 * 60;
+
+  /// Links for many photos in one request instead of one request each.
+  /// Fills the same cache [createSignedPhotoUrl] reads; returns path → link.
+  static Future<Map<String, String>> createSignedPhotoUrls({
+    required SupabaseClient supabase,
+    required Iterable<String?> paths,
+  }) async {
+    final wanted = {
+      for (final p in paths)
+        if (p != null && p.isNotEmpty) p
+    };
+    final result = <String, String>{};
+    final missing = <String>[];
+    final waiting = <String, Future<String?>>{};
+    for (final p in wanted) {
+      final cached = _signedUrlCache[p];
+      if (cached != null && !cached.isExpired) {
+        result[p] = cached.url;
+      } else if (_inFlight[p] != null) {
+        waiting[p] = _inFlight[p]!;
+      } else {
+        missing.add(p);
+      }
+    }
+    if (missing.isNotEmpty) {
+      final batch = supabase.storage
+          .from(bucketName)
+          .createSignedUrls(missing, signedUrlSeconds)
+          .then((signed) {
+        final expiresAt =
+            DateTime.now().add(const Duration(seconds: signedUrlSeconds - 300));
+        final urls = <String, String>{};
+        for (final s in signed) {
+          if (s.signedUrl.isEmpty) continue;
+          urls[s.path] = s.signedUrl;
+          _signedUrlCache[s.path] =
+              _SignedUrlCacheEntry(url: s.signedUrl, expiresAt: expiresAt);
+        }
+        return urls;
+      });
+      for (final p in missing) {
+        final one = batch.then<String?>((urls) => urls[p]);
+        _inFlight[p] = one;
+        waiting[p] = one;
+      }
+      batch.whenComplete(() => missing.forEach(_inFlight.remove)).ignore();
+    }
+    for (final e in waiting.entries) {
+      final url = await e.value;
+      if (url != null) result[e.key] = url;
+    }
+    return result;
+  }
+
   static Future<String?> createSignedPhotoUrl({
     required SupabaseClient supabase,
     required String? path,
-    int expiresInSeconds = 60 * 10,
+    int expiresInSeconds = signedUrlSeconds,
     bool forceRefresh = false,
   }) async {
     if (path == null || path.isEmpty) {
@@ -71,12 +133,17 @@ class ProfilePhotoService {
     if (!forceRefresh && cached != null && !cached.isExpired) {
       return cached.url;
     }
+    final pending = _inFlight[path];
+    if (!forceRefresh && pending != null) {
+      final url = await pending;
+      if (url != null) return url;
+    }
 
     final url = await supabase.storage
         .from(bucketName)
         .createSignedUrl(path, expiresInSeconds);
     final refreshSeconds =
-        (expiresInSeconds - 30).clamp(1, expiresInSeconds).toInt();
+        (expiresInSeconds - 300).clamp(1, expiresInSeconds).toInt();
     _signedUrlCache[path] = _SignedUrlCacheEntry(
       url: url,
       expiresAt: DateTime.now().add(
@@ -84,6 +151,13 @@ class ProfilePhotoService {
       ),
     );
     return url;
+  }
+
+  /// A link already fetched and still valid, without any request.
+  static String? cachedSignedPhotoUrl(String? path) {
+    if (path == null || path.isEmpty) return null;
+    final cached = _signedUrlCache[path];
+    return cached == null || cached.isExpired ? null : cached.url;
   }
 
   static void invalidateSignedPhotoUrl(String? path) {

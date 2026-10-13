@@ -12,6 +12,7 @@ Json applicant() => {
       'name': 'Asha',
       'date_of_birth': '1990-01-01',
       'languages': ['English'],
+      'gender': 'woman',
       'availability_slots': {
         'thu': ['evening']
       },
@@ -121,6 +122,7 @@ void main() {
         'name': 'Asha',
         'date_of_birth': '1990-01-01',
         'languages': ['English'],
+        'gender': 'prefer_not',
       });
       expect(find.textContaining('2 OF 4'), findsOneWidget);
       expect(find.text('Back'), findsOneWidget);
@@ -195,27 +197,48 @@ void main() {
   });
 
   group('choosing times', () {
-    testWidgets('switching to per-day times can be undone', (tester) async {
-      await pumpForm(tester, step: 1, focused: false);
+    testWidgets('a grid of six days, no Monday, with quick picks',
+        (tester) async {
+      Json? saved;
+      await pumpForm(tester,
+          step: 1,
+          focused: true,
+          initial: {...applicant(), 'availability_slots': {}},
+          onSave: (d) => saved = d);
+      expect(find.text('Mon'), findsNothing);
+      expect(find.text('10:30'), findsNWidgets(3));
+      expect(find.text('14:00'), findsNWidgets(3));
+      expect(find.text('19:00'), findsNWidgets(5));
 
-      final toPerDay = find.text('Different times on different days');
-      expect(toPerDay, findsOneWidget);
-      await tester.ensureVisible(toPerDay);
+      final weekends = find.text('Weekends');
+      await tester.ensureVisible(weekends);
+      await tester.tap(weekends);
       await tester.pumpAndSettle();
-      await tester.tap(toPerDay);
-      await tester.pumpAndSettle();
+      expect(find.text('14:00 ✓'), findsNWidgets(3));
+      expect(find.text('19:00 ✓'), findsNWidgets(3));
 
-      // The way back must exist — it used to live inside the branch it hid,
-      // which made this a one-way door.
-      final back = find.text('Use the same times every day');
-      expect(back, findsOneWidget);
-      await tester.ensureVisible(back);
+      final save = find.text('Save changes');
+      await tester.ensureVisible(save);
+      await tester.tap(save);
       await tester.pumpAndSettle();
-      await tester.tap(back);
-      await tester.pumpAndSettle();
+      expect((saved!['availability_slots'] as Map)['sat'],
+          containsAll(['afternoon', 'evening']));
+    });
 
-      expect(find.text('Different times on different days'), findsOneWidget);
-      expect(find.text('What time of day?'), findsOneWidget);
+    testWidgets('other times alone are enough', (tester) async {
+      Json? saved;
+      await pumpForm(tester,
+          step: 1,
+          focused: true,
+          initial: {...applicant(), 'availability_slots': {}},
+          onSave: (d) => saved = d);
+      await tester.enterText(
+          find.byType(TextField).last, 'Mondays after 22:00');
+      final save = find.text('Save changes');
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(saved!['other_times'], 'Mondays after 22:00');
     });
   });
 

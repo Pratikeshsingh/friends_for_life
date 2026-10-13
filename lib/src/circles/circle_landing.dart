@@ -79,7 +79,7 @@ class _CircleLandingState extends State<CircleLanding> {
                             'One payment for all six weeks. No subscription. You pay the venue for what you eat and drink.'),
                         const SizedBox(height: 18),
                         const Text(
-                            'Cancel up to 48 hours before your first meetup for a full refund. Not the right group after the first meetup? Move to another one once, free of charge.',
+                            'Not the right group or time? Switch to another group once, free of charge, until your second meetup. Up to 48 hours before your first meetup you can also ask for your €19 back.',
                             style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 color: circleNavy)),
@@ -125,12 +125,17 @@ class _CircleLandingState extends State<CircleLanding> {
                 const _FaqTile(
                     question: 'Where do you meet?',
                     answer:
-                        'Somewhere in Alkmaar we’ve booked for you. We share the exact place 24 hours before, so you come for the people rather than the venue. Week one is a two-hour dinner; you pay the restaurant for what you order, and leaving early is always fine.'),
+                        'Somewhere in Alkmaar we’ve picked for you. You see all six places, and what each one costs, as soon as you’re invited. Week one is a two-hour dinner, and leaving early is always fine.'),
+                const Divider(height: 1),
+                const _FaqTile(
+                    question: 'What about food and allergies?',
+                    answer:
+                        'The first dinner is all you can eat with lots of choice, including gluten-free options, so it suits most diets. The other weeks are cafés and activities where you order what suits you. Got an allergy or a question? Message us on WhatsApp.'),
                 const Divider(height: 1),
                 const _FaqTile(
                     question: 'What happens after six weeks?',
                     answer:
-                        'The Circle stays together — your group chat and meetup planning stay open, so you can keep making your own plans.'),
+                        'Your Circle stays together: the group chat and meetup planning stay open, so you can keep making plans at no extra cost. Want to meet new people too? You can join a new Circle for €19.'),
                 const Divider(height: 1),
                 const SizedBox(height: 28),
                 const BrandLockup(logoSize: 34, foregroundColor: circleNavy),

@@ -24,8 +24,8 @@ String circleRequestId() {
 const circleWeekTitles = [
   'Dinner together',
   'Go beyond “what do you do?”',
-  'Find out who’s secretly competitive.',
-  'Choose something together',
+  'Find out who’s secretly competitive',
+  'Something new together',
   'A plan of your own',
   'One last get-together',
 ];
@@ -38,19 +38,19 @@ const circleWeekShort = [
   'A two-hour dinner to meet everyone.',
   'A relaxed catch-up over coffee, a drink, or a walk. Less introducing yourself, more getting to know each other.',
   'Games, a quiz, or a playful challenge. An easy way to loosen up together.',
-  'You pick the next activity as a group.',
-  'Someone in the Circle makes the plan.',
-  'Your group stays together. Nothing more to pay.',
+  'Bowling, board games or something new. We plan this one too.',
+  'We suggest a plan; change it together if you like.',
+  'A last get-together, then your group carries on. Nothing more to pay.',
 ];
 
 /// The fuller description, on each week's card.
 const circleWeekNotes = [
-  'A two-hour dinner. We book the table; you pay the restaurant for what you order. Leaving early is always fine, but the first evening is the one worth staying for.',
+  'A two-hour dinner. We book the table; you pay the restaurant yourself. Leaving early is always fine, but the first evening is the one worth staying for.',
   'A relaxed catch-up over coffee, a drink, or a walk. Less introducing yourself, more getting to know each other.',
   'Games, a quiz, or a playful challenge. An easy way to loosen up together.',
-  'Pick your next activity together.',
-  'Someone in the Circle takes the lead this week.',
-  'Make the plan yourselves. Keep the good thing going.',
+  'Something new together. We plan this one too.',
+  'We suggest a plan for this week. Your group can change it together.',
+  'We suggest a plan for your last week. Change it together, and keep the good thing going.',
 ];
 
 /// Older snapshots may still carry the original programme defaults.
@@ -148,22 +148,12 @@ int circleMeetupCompare(Json a, Json b) =>
     (circleMeetupStart(a) ?? DateTime.utc(9999))
         .compareTo(circleMeetupStart(b) ?? DateTime.utc(9999));
 
-/// The venue of a programme meetup is revealed 24 hours before it starts, so
-/// people commit to the Circle rather than to the restaurant. The server
-/// already withholds it (`venue_hidden`); this repeats the rule for the local
-/// preview, and for a payload that predates that change.
+/// The place of a meetup, shown from the invitation on.
 String circleVenueLabel(Json meetup, {DateTime? now}) {
-  const hidden = 'Revealed 24 hours before · Alkmaar';
   final venue = (meetup['venue'] as String?)?.trim();
-  if (meetup['venue_hidden'] == true) return hidden;
+  if (meetup['venue_hidden'] == true) return 'Shared soon · Alkmaar';
   if (venue == null || venue.isEmpty) return 'Location to be confirmed';
-  // A plan the Circle made itself was never a secret from them.
-  if (meetup['week'] == null || (meetup['week'] as int) >= 4) return venue;
-  final start = circleMeetupStart(meetup);
-  if (start == null) return venue;
-  return start.difference(now ?? DateTime.now()) > const Duration(hours: 24)
-      ? hidden
-      : venue;
+  return venue;
 }
 
 /// What we can honestly tell someone who is waiting for a Circle.
@@ -277,9 +267,18 @@ CircleWaitEstimate circleWaitEstimate(Json state, {DateTime? now}) {
 
 abstract class CircleRepository {
   bool get isDemo;
+
+  /// What every screen needs, as fast as possible: one request.
   Future<Json> load();
+
+  /// Photos and settings for [data], fetched after the screen is showing.
+  /// Null when there is nothing to add.
+  Future<Json?> loadExtras(Json data);
   Future<void> act(String action, [Json data = const {}]);
   Future<Json> adminLoad();
+
+  /// The last 200 messages of a Circle's chat, for moderation.
+  Future<List<Json>> adminMessages(String circleId) async => const [];
 }
 
 class SupabaseCircleRepository implements CircleRepository {
@@ -287,18 +286,71 @@ class SupabaseCircleRepository implements CircleRepository {
   final SupabaseClient client;
   @override
   bool get isDemo => false;
+
+  /// Email settings and "don't match again" choices only change through this
+  /// member's own actions, so the 25-second refresh reuses them for a while.
+  Json? _extras;
+  DateTime? _extrasAt;
+
   @override
   Future<Json> load() async {
+    // Home, messages and profile all come from this one request; the screen
+    // shows as soon as it arrives. Photos and settings already known are
+    // filled in straight away, the rest by [loadExtras] in the background.
     final data =
         Map<String, dynamic>.from(await client.rpc('circle_snapshot') as Map);
+    if (_extras != null) data.addAll(_extras!);
     final app = Map<String, dynamic>.from(data['application'] as Map? ?? {});
-    await _photo(app);
-    data['application'] = app;
     final members = rows(data['members']);
-    await Future.wait(members.map(_photo));
+    for (final r in [app, ...members]) {
+      r['photo_url'] =
+          ProfilePhotoService.cachedSignedPhotoUrl(r['photo_path'] as String?);
+    }
+    data['application'] = app;
     data['members'] = members;
-    await Future.wait([_emailSetting(data), _exclusions(data)]);
     return data;
+  }
+
+  @override
+  Future<Json?> loadExtras(Json data) async {
+    final fresh = _extras != null &&
+        _extrasAt != null &&
+        DateTime.now().difference(_extrasAt!) < const Duration(minutes: 5);
+    final app = Map<String, dynamic>.from(data['application'] as Map? ?? {});
+    final members = rows(data['members']);
+    final needPhotos = [app, ...members].any(
+        (r) => r['photo_url'] == null && '${r['photo_path'] ?? ''}'.isNotEmpty);
+    if (fresh && !needPhotos) return null;
+    final extras = <String, dynamic>{};
+    await Future.wait<void>([
+      if (!fresh) _emailSetting(extras),
+      if (!fresh) _exclusions(extras),
+      // All photo links in one request.
+      if (needPhotos) _photos([app, ...members]),
+    ]);
+    if (!fresh) {
+      // A failed read is passed on this time but not remembered.
+      _extras = extras;
+      _extrasAt = extras.values.contains(null) ? null : DateTime.now();
+    }
+    return Map<String, dynamic>.from(data)
+      ..addAll(_extras ?? const {})
+      ..['application'] = app
+      ..['members'] = members;
+  }
+
+  Future<void> _photos(List<Json> records) async {
+    try {
+      final urls = await ProfilePhotoService.createSignedPhotoUrls(
+          supabase: client,
+          paths: records.map((r) => r['photo_path'] as String?));
+      for (final r in records) {
+        r['photo_url'] = urls[r['photo_path']];
+      }
+    } catch (_) {
+      // One by one as a fallback; a missing photo never blocks the screen.
+      await Future.wait(records.map(_photo));
+    }
   }
 
   /// Email is on unless the member has turned it off, so a missing row and a
@@ -308,11 +360,16 @@ class SupabaseCircleRepository implements CircleRepository {
     try {
       final row = await client
           .from('notification_settings')
-          .select('email_enabled')
+          .select('email_enabled,email_reminders,email_chat,email_organiser')
           .maybeSingle();
       data['email_notifications'] = row?['email_enabled'] as bool? ?? true;
+      data['email_settings'] = {
+        for (final key in circleEmailSettings.keys)
+          key: row?[key] as bool? ?? true
+      };
     } catch (_) {
       data['email_notifications'] = null;
+      data['email_settings'] = null;
     }
   }
 
@@ -344,6 +401,10 @@ class SupabaseCircleRepository implements CircleRepository {
     // business and is read back under the member's own row-level security;
     // and an email preference is a plain table write. Dispatching here keeps
     // all of that out of the widgets.
+    if (const {'exclude', 'email_notifications', 'email_setting'}
+        .contains(action)) {
+      _extras = null;
+    }
     switch (action) {
       case 'leave_circle':
         await client.rpc('circle_leave', params: {'reason': data['reason']});
@@ -381,11 +442,17 @@ class SupabaseCircleRepository implements CircleRepository {
             params: {'target': data['id'], 'link': data['link']});
         return;
       case 'email_notifications':
+      case 'email_setting':
         final uid = client.auth.currentUser?.id;
         if (uid == null) throw StateError('Sign in first.');
+        final key =
+            action == 'email_setting' ? '${data['key']}' : 'email_enabled';
+        if (!circleEmailSettings.containsKey(key)) {
+          throw StateError('Unknown setting.');
+        }
         await client.from('notification_settings').upsert({
           'profile_id': uid,
-          'email_enabled': data['enabled'] == true,
+          key: data['enabled'] == true,
           'updated_at': DateTime.now().toUtc().toIso8601String(),
         });
         return;
@@ -402,23 +469,48 @@ class SupabaseCircleRepository implements CircleRepository {
       }).timeout(const Duration(seconds: 15)));
 
   @override
+  Future<List<Json>> adminMessages(String circleId) async => rows(await client
+      .rpc('circle_admin_messages', params: {'target_circle': circleId}));
+
+  @override
   Future<Json> adminLoad() async {
     final data = Map<String, dynamic>.from(
         await client.rpc('circle_admin_snapshot') as Map);
     // 'ready' comes from the database: birthday, photo and times. The
     // WhatsApp number is optional and does not affect it.
     final applications = rows(data['applications']);
-    await Future.wait(applications.map(_photo));
+    await _photos(applications);
     data['applications'] = applications;
     return data;
   }
 }
 
 /// A completely local sandbox. Never reads or writes Supabase or processes money.
+/// The email categories a member can switch off separately, with what each
+/// one covers. 'email_organiser' is only shown to organisers.
+const circleEmailSettings = {
+  'email_enabled': (
+    'Circle updates',
+    'Invitations, payments, changes to your Circle'
+  ),
+  'email_reminders': (
+    'Reminders',
+    'The day before a meetup, check-ins and payment reminders'
+  ),
+  'email_chat': ('Chat summary', 'Once a day when your Circle wrote'),
+  'email_organiser': (
+    'Organiser alerts',
+    'Payments to confirm, reports, refunds and changes'
+  ),
+};
+
 class DemoCircleRepository implements CircleRepository {
   DemoCircleRepository(this.preferences);
   final SharedPreferences preferences;
   static const storageKey = 'vriendtime.circle-preview.v1';
+  @override
+  Future<Json?> loadExtras(Json data) async => null;
+
   @override
   bool get isDemo => true;
   Json get _state {
@@ -459,6 +551,10 @@ class DemoCircleRepository implements CircleRepository {
           DateTime.now().subtract(const Duration(days: 6)).toIso8601String();
     }
     state['email_notifications'] ??= true;
+    state['email_settings'] = {
+      for (final key in circleEmailSettings.keys) key: true,
+      ...Map<String, dynamic>.from(state['email_settings'] as Map? ?? {}),
+    };
     state['exclusions'] ??= const <String>[];
     // One free move, between the first and the second meetup, as on the
     // server.
@@ -523,6 +619,27 @@ class DemoCircleRepository implements CircleRepository {
         'interests': ['Books', 'Coffee']
       },
     ];
+    final coffee = DateTime.now().add(const Duration(days: 3));
+    state['coffees'] = {
+      'started': true,
+      'round': 1,
+      'current': {
+        'id': 'demo-coffee',
+        'round': 1,
+        'starts_at': DateTime(coffee.year, coffee.month, coffee.day, 19)
+            .toUtc()
+            .toIso8601String(),
+        'place': 'De Koffiemolen',
+        'address': 'Ritsevoort 26',
+        'status': 'asked',
+        'swap': false,
+        'mine': null,
+        'theirs': 'yes',
+        'other': {'id': 'noor', 'name': 'Noor'}
+      },
+      'met': ['sam'],
+      'free_week': false
+    };
     state['meetups'] = List.generate(
         6,
         (i) => {
@@ -655,6 +772,12 @@ class DemoCircleRepository implements CircleRepository {
         }
         break;
       case 'payment_opened':
+        break;
+      case 'email_setting':
+        state['email_settings'] = {
+          ...Map<String, dynamic>.from(state['email_settings'] as Map? ?? {}),
+          '${data['key']}': data['enabled'] == true
+        };
         break;
       case 'email_notifications':
         state['email_notifications'] = data['enabled'] == true;
@@ -814,10 +937,18 @@ class DemoCircleRepository implements CircleRepository {
         state['meetups'] = rows(state['meetups'])
             .map((m) => {
                   ...m,
-                  'date': DateTime.parse(data['start_date'] as String)
-                      .add(Duration(days: ((m['week'] as int) - 1) * 7))
+                  'date': (() {
+                    final d = DateTime.parse(data['start_date'] as String);
+                    return DateTime(
+                        d.year, d.month, d.day + ((m['week'] as int) - 1) * 7);
+                  })()
                       .toIso8601String(),
-                  'time': data['time'] ?? '19:30'
+                  'time': data['time'] ?? '19:30',
+                  if (data['weeks'] case final List weeks
+                      when weeks.length >= (m['week'] as int)) ...{
+                    'title': weeks[(m['week'] as int) - 1]['title'],
+                    'venue': weeks[(m['week'] as int) - 1]['venue'],
+                  },
                 })
             .toList();
         state['stage'] = 'invited';
@@ -872,11 +1003,33 @@ class DemoCircleRepository implements CircleRepository {
                 : c
         ];
         break;
+      case 'coffee_answer':
+        final coffees = Map<String, dynamic>.from(state['coffees'] as Map);
+        final c = Map<String, dynamic>.from(coffees['current'] as Map);
+        if (c['status'] == 'confirmed' && data['answer'] == 'no') {
+          coffees['current'] = null;
+        } else {
+          c['mine'] = data['answer'];
+          if (c['mine'] == 'yes' && c['theirs'] == 'yes') {
+            c['status'] = 'confirmed';
+          }
+          coffees['current'] = c;
+        }
+        state['coffees'] = coffees;
+        break;
+      case 'admin_template':
+      case 'admin_coffee_places':
+      case 'coffee_feedback':
+        break;
       default:
         throw StateError('This action is not available.');
     }
     await _save(state);
   }
+
+  @override
+  Future<List<Json>> adminMessages(String circleId) async =>
+      rows(_state['messages']);
 
   @override
   Future<Json> adminLoad() async {
@@ -893,6 +1046,54 @@ class DemoCircleRepository implements CircleRepository {
           : [
               {'id': 'demo-refund', 'name': 'You', 'status': state['refund']}
             ],
+      'programme': [
+        for (final (kind, plan) in [
+          (
+            'evening',
+            [
+              ('Dinner together', 'Rozey Alkmaar'),
+              ('Drinks and a good conversation', 'Het Alkmaars Koffiehuis'),
+              (
+                'Find out who’s secretly competitive',
+                'The Boules Club Alkmaar'
+              ),
+              ('Bowling and a drink', 'Victorie Plaza'),
+              ('Drinks', 'Mr. Gold'),
+              ('Drinks', 'Mr. Gold'),
+            ]
+          ),
+          (
+            'daytime',
+            [
+              ('Lunch together', 'SOEPP'),
+              ('Coffee and a walk', 'Kaldi'),
+              (
+                'Find out who’s secretly competitive',
+                'The Boules Club Alkmaar'
+              ),
+              ('Board games', 'De Spellentoren'),
+              ('Coffee', 'De Koffiemolen'),
+              ('Coffee', 'De Koffiemolen'),
+            ]
+          ),
+        ])
+          for (var i = 0; i < plan.length; i++)
+            {
+              'kind': kind,
+              'week': i + 1,
+              'title': plan[i].$1,
+              'venue': plan[i].$2
+            }
+      ],
+      'coffee_places': [
+        {
+          'kind': 'daytime',
+          'name': 'De Koffiemolen',
+          'address': 'Ritsevoort 26'
+        },
+        {'kind': 'daytime', 'name': 'Kaldi'},
+        {'kind': 'evening', 'name': 'Mr. Gold'},
+      ],
       'metrics': {
         'applications': 6,
         'paid': state['payment'] == 'demo_paid' ? 6 : 0,

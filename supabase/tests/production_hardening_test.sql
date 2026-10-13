@@ -14,15 +14,15 @@ insert into public.chat_threads(id,circle_id,title) values('30000000-0000-0000-0
 insert into public.chat_participants(thread_id,profile_id) select '30000000-0000-0000-0000-000000000001',profile_id from public.circle_memberships;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
-select pg_temp.assert_true(public.circle_snapshot()->'meetups'->0->>'venue' is null,'organiser venue remains hidden');
+select pg_temp.assert_true(public.circle_snapshot()->'meetups'->0->>'venue' is not null,'the place is visible from the start');
 select pg_temp.assert_true(public.circle_snapshot()->'meetups'->3->>'venue'='The shared cafe','group venue is visible immediately');
 select pg_temp.assert_true(public.circle_snapshot()->>'paid_members'='3','paid headcount independent of RSVP');
-select public.circle_action('schedule','{"id":"20000000-0000-0000-0000-000000000004","version":0,"title":"Games","venue":"Cafe","date":"2099-01-01","time":"10:00","request_id":"40000000-0000-0000-0000-000000000001"}');
-select public.circle_action('schedule','{"id":"20000000-0000-0000-0000-000000000004","version":0,"title":"Games","venue":"Cafe","date":"2099-01-01","time":"10:00","request_id":"40000000-0000-0000-0000-000000000001"}');
-select pg_temp.assert_true(public.circle_snapshot()->'meetups'->3->>'plan_version'='1','retries do not update twice');
-select pg_temp.assert_true((public.circle_snapshot()->'meetups'->3->>'starts_at')::timestamptz<now()+interval '29 days','member cannot move the weekly date');
+select public.circle_action('schedule','{"id":"20000000-0000-0000-0000-000000000005","version":0,"title":"Games","venue":"Cafe","date":"2099-01-01","time":"10:00","request_id":"40000000-0000-0000-0000-000000000001"}');
+select public.circle_action('schedule','{"id":"20000000-0000-0000-0000-000000000005","version":0,"title":"Games","venue":"Cafe","date":"2099-01-01","time":"10:00","request_id":"40000000-0000-0000-0000-000000000001"}');
+select pg_temp.assert_true(public.circle_snapshot()->'meetups'->4->>'plan_version'='1','retries do not update twice');
+select pg_temp.assert_true((public.circle_snapshot()->'meetups'->4->>'starts_at')::timestamptz<now()+interval '36 days','member cannot move the weekly date');
 do $$ begin
- begin perform public.circle_action('schedule','{"id":"20000000-0000-0000-0000-000000000004","version":0,"title":"Other","venue":"Elsewhere"}'); raise exception 'stale write accepted'; exception when others then if sqlerrm='stale write accepted' then raise; end if; end;
+ begin perform public.circle_action('schedule','{"id":"20000000-0000-0000-0000-000000000005","version":0,"title":"Other","venue":"Elsewhere"}'); raise exception 'stale write accepted'; exception when others then if sqlerrm='stale write accepted' then raise; end if; end;
 end $$;
 select public.circle_action('schedule',jsonb_build_object('title','Extra coffee','venue','Coffee place','date',current_date+3,'time','12:00','request_id','40000000-0000-0000-0000-000000000002'));
 select pg_temp.assert_true(jsonb_array_length(public.circle_snapshot()->'meetups')=7,'extra meetup saved');

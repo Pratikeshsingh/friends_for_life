@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vriendtime/src/circles/circle_admin.dart';
+import 'package:vriendtime/src/circles/circle_matching.dart';
 import 'package:vriendtime/src/circles/circle_repository.dart';
 
 /// Applicants arrive from the server ordered by how long they have waited,
@@ -159,5 +160,40 @@ void main() {
       applicant('p5', interests: const ['Food', 'Music']),
     ];
     expect(suggestCircles(people).first.sharedInterests, ['Food']);
+  });
+
+  group('gender balance', () {
+    Json g(String id, String? gender) => {...applicant(id), 'gender': gender};
+    test('nobody is the only man or the only woman', () {
+      List<Json> mix(int men, int women, [int others = 0]) => [
+            for (var i = 0; i < men; i++) g('m$i', 'man'),
+            for (var i = 0; i < women; i++) g('w$i', 'woman'),
+            for (var i = 0; i < others; i++) g('o$i', 'non_binary'),
+          ];
+      expect(genderWarning(mix(0, 6)), isNull);
+      expect(genderWarning(mix(2, 4)), isNull);
+      expect(genderWarning(mix(3, 3)), isNull);
+      expect(genderWarning(mix(1, 5)), 'Only one man with 5 women');
+      expect(genderWarning(mix(1, 1, 3)), 'Only one man and one woman');
+      expect(genderWarning(mix(5, 1)), 'Only one woman with 5 men');
+      // Non-binary and prefer-not-to-say don't count either way.
+      expect(genderWarning(mix(0, 5, 1)), isNull);
+      expect(genderWarning([...mix(0, 5), g('x', 'prefer_not')]), isNull);
+    });
+
+    test('suggestions avoid leaving one man alone when they can', () {
+      final people = [
+        g('a', 'man'),
+        g('b', 'woman'),
+        g('c', 'woman'),
+        g('d', 'woman'),
+        g('e', 'woman'),
+        g('f', 'woman'),
+        g('h', 'man'),
+      ];
+      final best = matchCircles(people).first;
+      expect(best.warning, isNull);
+      expect(best.members.length, 6);
+    });
   });
 }

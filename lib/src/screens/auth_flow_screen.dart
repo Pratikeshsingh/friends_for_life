@@ -490,6 +490,9 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
           'terms_version': LegalDocuments.termsVersion,
           'privacy_acknowledged_at': acceptedAt,
           'privacy_version': LegalDocuments.privacyVersion,
+          // Supabase's own emails (confirm, reset) pick their language
+          // from this.
+          'language': appLanguage.value,
         },
       );
 
@@ -547,7 +550,9 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
         }
         rethrow;
       }
-      await _ensureProfileForUser(response.user);
+      // A database trigger creates the profile at sign-up; this is only a
+      // safety net, so it no longer holds up signing in.
+      unawaited(_ensureProfileForUser(response.user));
       final signedInUser = response.user;
       if (signedInUser != null) {
         widget.onUserUpdated?.call(signedInUser);

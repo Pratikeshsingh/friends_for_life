@@ -72,9 +72,9 @@ void showCircleToastOn(ScaffoldMessengerState? messenger, String message,
 /// arbitrary depth and the only thing it needs is the path it already has.
 /// Throws in previews and tests, where there is no Supabase — callers treat
 /// that as "keep the initial".
-Future<String?> resignCirclePhoto(String path) =>
+Future<String?> resignCirclePhoto(String path, {bool force = true}) =>
     ProfilePhotoService.createSignedPhotoUrl(
-        supabase: Supabase.instance.client, path: path, forceRefresh: true);
+        supabase: Supabase.instance.client, path: path, forceRefresh: force);
 
 const circleNavy = Color(0xFF062B55);
 const circleTeal = Color(0xFF138B8A);
@@ -199,13 +199,16 @@ class _CircleMemberAvatarState extends State<CircleMemberAvatar> {
     }
   }
 
-  Future<void> _recover() async {
+  /// [broken]: the link failed to load, so a brand-new one is needed. Without
+  /// it the avatar only had no link yet, and shares the screen's own request.
+  Future<void> _recover({bool broken = true}) async {
     final path = widget.photoPath;
-    final resign = widget.resign ?? resignCirclePhoto;
     if (_retried || path == null || path.isEmpty) return;
     _retried = true;
     try {
-      final fresh = await resign(path);
+      final fresh = widget.resign != null
+          ? await widget.resign!(path)
+          : await resignCirclePhoto(path, force: broken);
       if (mounted && fresh != null) setState(() => _url = fresh);
     } catch (_) {
       // The coloured initial is a perfectly good answer; never crash here.
@@ -219,7 +222,8 @@ class _CircleMemberAvatarState extends State<CircleMemberAvatar> {
     final url = _url;
     if (url == null) {
       if (!_retried && widget.photoPath != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) => _recover());
+        WidgetsBinding.instance
+            .addPostFrameCallback((_) => _recover(broken: false));
       }
       return fallback;
     }

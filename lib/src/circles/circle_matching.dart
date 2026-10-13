@@ -9,6 +9,11 @@ import 'circle_repository.dart' show Json, strings;
 /// everyone shares one language, everyone has the same day and time free,
 /// and no two people who asked to be kept apart end up together.
 ///
+/// Balance: nobody should be the only man or the only woman in a group
+/// (6–0, 4–2 and 3–3 are fine; 5–1 is not). Non-binary people and those who
+/// prefer not to say don't count either way. An unbalanced group loses 20
+/// points and carries a warning; the organiser can still create it.
+///
 /// Soft preferences, scored out of 100:
 ///   interests in common                 40
 ///   goals in common                     15
@@ -83,6 +88,16 @@ double pairFit(Json a, Json b) {
   return score;
 }
 
+/// A warning when someone would be the only man or the only woman, else null.
+String? genderWarning(List<Json> members) {
+  final men = members.where((m) => m['gender'] == 'man').length;
+  final women = members.where((m) => m['gender'] == 'woman').length;
+  if (men == 1 && women == 1) return 'Only one man and one woman';
+  if (men == 1 && women > 0) return 'Only one man with $women women';
+  if (women == 1 && men > 0) return 'Only one woman with $men men';
+  return null;
+}
+
 /// 'At a new table, I'm usually…': 0 warms up slowly, 1 a little of both,
 /// 2 breaks the ice. Missing answers count as the middle.
 int socialStyle(Json a) =>
@@ -148,6 +163,7 @@ class CircleMatch {
   final List<Json> nearlyFree;
 
   String get slot => '$day $period';
+  String? get warning => genderWarning(members);
   bool get complete => members.length >= 5;
   int get missing => complete ? 0 : 5 - members.length;
   List<String> get ids => [for (final m in members) _id(m)];
@@ -261,7 +277,8 @@ class CircleMatch {
       agePoints +
       mix.points +
       situation.points +
-      waitPoints;
+      waitPoints -
+      (genderWarning(members) == null ? 0 : 20);
   return (score: score.clamp(0, 100), reasons: reasons);
 }
 
@@ -333,8 +350,17 @@ List<CircleMatch> matchCircles(
                 socialStyle(c) == 2 && group.every((m) => socialStyle(m) != 2)
                     ? 0.08
                     : 0.0;
-            if (fit + wait + spark > bestScore) {
-              bestScore = fit + wait + spark;
+            // Balance: welcome someone who keeps a lone man or woman company;
+            // avoid leaving one behind as the group fills up.
+            final before = genderWarning(group) != null;
+            final after = genderWarning([...group, c]) != null;
+            final balance = before && !after
+                ? 0.15
+                : !before && after && group.length >= 3
+                    ? -0.3
+                    : 0.0;
+            if (fit + wait + spark + balance > bestScore) {
+              bestScore = fit + wait + spark + balance;
               best = c;
             }
           }

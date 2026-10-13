@@ -64,8 +64,8 @@ class _CircleApplicationState extends State<CircleApplication> {
   late final TextEditingController name, intro, phone;
   late Set<String> languages, interests, goals, lifeContext;
   late Map<String, Set<String>> slots;
-  final selectedDays = <String>{};
-  final commonPeriods = <String>{};
+  late final TextEditingController otherTimes;
+  String? gender;
   DateTime? birthday;
 
   /// Day, month and year picked separately: three short lists are clearer
@@ -77,7 +77,7 @@ class _CircleApplicationState extends State<CircleApplication> {
   /// The interest group open when the step appears: the first one with a
   /// choice in it, else the first group.
   late String openInterestGroup;
-  bool commitment = false, customTimes = false, saving = false;
+  bool commitment = false, saving = false;
   String? error, saved;
   bool get busy => widget.busy || saving;
   @override
@@ -107,13 +107,10 @@ class _CircleApplicationState extends State<CircleApplication> {
     goals = strings(d['goals']).where(circleGoals.contains).toSet();
     lifeContext =
         strings(d['life_context']).where(circleContexts.contains).toSet();
-    slots = circleSlots(d);
-    selectedDays.addAll(slots.keys);
-    if (slots.isNotEmpty) {
-      commonPeriods.addAll(slots.values.first);
-      customTimes = slots.values.any((v) =>
-          v.length != commonPeriods.length || !v.containsAll(commonPeriods));
-    }
+    slots = circleOfferedSlots(circleSlots(d));
+    otherTimes = TextEditingController(text: d['other_times'] as String? ?? '');
+    gender =
+        circleGenders.containsKey(d['gender']) ? d['gender'] as String : null;
     style = (((d['energy'] as num?)?.toDouble() ?? 2) / 2).round().clamp(0, 2);
     commitment = d['commitment'] == true;
     step = widget.initialStep.clamp(0, 3);
@@ -152,13 +149,13 @@ class _CircleApplicationState extends State<CircleApplication> {
     name.dispose();
     intro.dispose();
     phone.dispose();
+    otherTimes.dispose();
     super.dispose();
   }
 
   Map<String, Set<String>> get currentSlots => {
-        for (final day in circleDayKeys)
-          if (selectedDays.contains(day))
-            day: customTimes ? (slots[day] ?? {}) : {...commonPeriods}
+        for (final e in slots.entries)
+          if (e.value.isNotEmpty) e.key: e.value
       };
 
   /// Only the first letter: "robin" becomes "Robin", while Dutch names
@@ -201,6 +198,8 @@ class _CircleApplicationState extends State<CircleApplication> {
         'intro': intro.text.trim(),
         'commitment': commitment,
         'phone': normalisePhone(phone.text),
+        'gender': gender,
+        'other_times': otherTimes.text.trim(),
       };
   String? validate() {
     if (step == 0) {
@@ -215,11 +214,13 @@ class _CircleApplicationState extends State<CircleApplication> {
       if (phone.text.trim().isNotEmpty && !isValidPhone(phone.text)) {
         return 'Check your WhatsApp number, for example 06 12345678.';
       }
+      if (gender == null) {
+        return 'Choose how you describe yourself. It stays private.';
+      }
       if (languages.isEmpty) return 'Choose English, Dutch, or both.';
     }
-    if (step == 1 &&
-        (selectedDays.isEmpty || currentSlots.values.any((v) => v.isEmpty))) {
-      return 'Choose at least one day and a time for each selected day.';
+    if (step == 1 && currentSlots.isEmpty && otherTimes.text.trim().isEmpty) {
+      return 'Choose at least one time, or tell us which times work for you.';
     }
     if (step == 2 && interests.isEmpty) {
       return 'Choose at least one thing under “What are you into?”.';
@@ -518,6 +519,8 @@ class _CircleApplicationState extends State<CircleApplication> {
             const SizedBox(height: 20),
             _birthdayPicker(context),
             const SizedBox(height: 20),
+            _genderChoice(),
+            const SizedBox(height: 20),
             TextField(
                 controller: phone,
                 enabled: !busy,
@@ -547,78 +550,62 @@ class _CircleApplicationState extends State<CircleApplication> {
                 style: TextStyle(fontSize: 12)),
           ],
           if (step == 1) ...[
-            _label('Which days work?'),
+            _label('When are you free?'),
+            const SizedBox(height: 4),
+            const Text('Tap every time that works. Netherlands time.',
+                style: TextStyle(fontSize: 13, color: Color(0xFF4F5D66))),
             const SizedBox(height: 12),
-            Row(children: [for (var i = 0; i < 7; i++) _dayButton(i)]),
-            Wrap(spacing: 8, children: [
+            _slotGrid(),
+            const SizedBox(height: 8),
+            Wrap(spacing: 4, children: [
               TextButton(
                   onPressed: busy
                       ? null
-                      : () => setState(
-                          () => selectedDays.addAll(circleDayKeys.take(5))),
-                  child: const Text('Weekdays')),
+                      : () => setState(() {
+                            for (final day in circleSlotGrid.keys) {
+                              slots.putIfAbsent(day, () => {}).add('evening');
+                            }
+                          }),
+                  child: const Text('All evenings')),
               TextButton(
                   onPressed: busy
                       ? null
-                      : () => setState(
-                          () => selectedDays.addAll(circleDayKeys.skip(5))),
+                      : () => setState(() {
+                            for (final day in ['fri', 'sat', 'sun']) {
+                              slots
+                                  .putIfAbsent(day, () => {})
+                                  .addAll(circleSlotGrid[day]!);
+                            }
+                          }),
                   child: const Text('Weekends')),
               TextButton(
-                  onPressed:
-                      busy ? null : () => setState(() => selectedDays.clear()),
-                  child: const Text('Clear'))
+                  onPressed: busy ? null : () => setState(slots.clear),
+                  child: const Text('Clear')),
             ]),
+            const SizedBox(height: 8),
+            const Text(
+                'Fewer people choose weekday daytimes, so finding a group for those can take longer.',
+                style: TextStyle(fontSize: 12, color: Color(0xFF66727C))),
             const SizedBox(height: 16),
-            if (!customTimes) ...[
-              _label('What time of day?'),
-              const SizedBox(height: 12),
-              _periodPicker(commonPeriods),
-              const SizedBox(height: 8),
-              const Text('Applies to each selected day · Netherlands time',
-                  style: TextStyle(fontSize: 12))
-            ] else
-              for (var i = 0; i < 7; i++)
-                if (selectedDays.contains(circleDayKeys[i]))
-                  Padding(
-                      padding: const EdgeInsets.only(bottom: 20),
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _label(circleDays[i]),
-                            const SizedBox(height: 8),
-                            _periodPicker(slots.putIfAbsent(
-                                circleDayKeys[i], () => {...commonPeriods})),
-                          ])),
-            // Both directions. Switching to per-day times used to be a
-            // one-way door: the button that set it lived inside the branch
-            // it hid, so there was no way back short of reloading.
-            TextButton.icon(
-                onPressed: busy
-                    ? null
-                    : () => setState(() {
-                          if (customTimes) {
-                            // Keep the widest set anyone picked, so coming
-                            // back never silently drops a time.
-                            final union = <String>{
-                              for (final day in selectedDays) ...?slots[day],
-                            };
-                            commonPeriods
-                              ..clear()
-                              ..addAll(
-                                  union.isEmpty ? const {'evening'} : union);
-                            customTimes = false;
-                          } else {
-                            slots = currentSlots;
-                            customTimes = true;
-                          }
-                        }),
-                icon: Icon(
-                    customTimes ? Icons.link_rounded : Icons.call_split_rounded,
-                    size: 18),
-                label: Text(customTimes
-                    ? 'Use the same times every day'
-                    : 'Different times on different days')),
-            const SizedBox(height: 16),
+            if (currentSlots.isNotEmpty) ...[
+              _MatchChance(
+                  slots: currentSlots.values.fold(0, (n, v) => n + v.length)),
+              const SizedBox(height: 16),
+            ],
+            TextField(
+                controller: otherTimes,
+                enabled: !busy,
+                maxLength: 300,
+                minLines: 1,
+                maxLines: 3,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                    labelText: t('None of these work? Tell us your times'),
+                    hintText: t('e.g. Monday evenings after 22:00'),
+                    helperText: t(
+                        'Optional. If enough people need the same time, we add it.'),
+                    helperMaxLines: 2)),
+            const SizedBox(height: 12),
             const CirclePill('You approve the exact schedule before joining',
                 icon: Icons.check_circle_outline),
           ],
@@ -834,46 +821,6 @@ class _CircleApplicationState extends State<CircleApplication> {
     return periods.length == 1 ? periods.first : null;
   }
 
-  Widget _dayButton(int i) {
-    final day = circleDayKeys[i];
-    final selected = selectedDays.contains(day);
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        child: Semantics(
-          label: circleDays[i],
-          selected: selected,
-          child: SizedBox(
-            height: 44,
-            child: TextButton(
-              style: TextButton.styleFrom(
-                minimumSize: Size.zero,
-                padding: EdgeInsets.zero,
-                backgroundColor:
-                    selected ? circleTeal : const Color(0xFFF7F5EF),
-                foregroundColor: selected ? Colors.white : circleNavy,
-                shape: const StadiumBorder(),
-              ),
-              onPressed: busy
-                  ? null
-                  : () => setState(() {
-                        if (selected) {
-                          selectedDays.remove(day);
-                        } else {
-                          selectedDays.add(day);
-                          slots.putIfAbsent(day, () => {...commonPeriods});
-                        }
-                      }),
-              child: Text(circleDays[i].substring(0, 3),
-                  style: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w800)),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _label(String value) => Text(value,
       style: const TextStyle(fontWeight: FontWeight.w800, color: circleNavy));
 
@@ -943,6 +890,94 @@ class _CircleApplicationState extends State<CircleApplication> {
     ]);
   }
 
+  /// Six days, two slots each: one compact table, every cell a big button.
+  Widget _slotGrid() {
+    Widget cell(String day, String part) {
+      final on = slots[day]?.contains(part) == true;
+      final label = circleSlotStart[part]!;
+      return Expanded(
+          child: Padding(
+              padding: const EdgeInsets.all(3),
+              child: Semantics(
+                  selected: on,
+                  button: true,
+                  label:
+                      '${t(circleDays[circleDayKeys.indexOf(day)])} ${t(part)} $label',
+                  child: SizedBox(
+                      height: 44,
+                      child: TextButton(
+                          style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              backgroundColor:
+                                  on ? circleTeal : const Color(0xFFF7F5EF),
+                              foregroundColor: on ? Colors.white : circleNavy,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12))),
+                          onPressed: busy
+                              ? null
+                              : () => setState(() {
+                                    final set =
+                                        slots.putIfAbsent(day, () => {});
+                                    if (!set.remove(part)) set.add(part);
+                                  }),
+                          child: Text(on ? '$label ✓' : label,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w700)))))));
+    }
+
+    return Column(children: [
+      Row(children: [
+        const SizedBox(width: 52),
+        Expanded(
+            child: Text(t('Daytime'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w700))),
+        Expanded(
+            child: Text(t('Evening'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w700))),
+      ]),
+      for (final e in circleSlotGrid.entries)
+        Row(children: [
+          SizedBox(
+              width: 52,
+              child: Text(
+                  t(circleDays[circleDayKeys.indexOf(e.key)]).substring(0, 3),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w700, color: circleNavy))),
+          for (final column in ['day', 'evening'])
+            if (e.value
+                    .where((p) => (p == 'evening') == (column == 'evening'))
+                    .firstOrNull
+                case final String part)
+              cell(e.key, part)
+            else
+              const Expanded(child: SizedBox()),
+        ]),
+    ]);
+  }
+
+  /// Private, for balanced groups only.
+  Widget _genderChoice() =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _label('How do you describe yourself?'),
+        const SizedBox(height: 4),
+        const Text(
+            'Private. We only use it so nobody is the only man or the only woman in their group.',
+            style: TextStyle(fontSize: 12, color: Color(0xFF66727C))),
+        const SizedBox(height: 10),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final e in circleGenders.entries)
+            ChoiceChip(
+                label: Text(e.value),
+                selected: gender == e.key,
+                onSelected:
+                    busy ? null : (_) => setState(() => gender = e.key)),
+        ]),
+      ]);
+
   Widget _choices(String label, List<String> options, Set<String> selected) =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         if (label.isNotEmpty) ...[_label(label), const SizedBox(height: 12)],
@@ -956,38 +991,6 @@ class _CircleApplicationState extends State<CircleApplication> {
                     : (v) => setState(
                         () => v ? selected.add(value) : selected.remove(value)))
         ])
-      ]);
-  Widget _periodPicker(Set<String> selected) =>
-      Wrap(spacing: 10, runSpacing: 10, children: [
-        for (var i = 0; i < 3; i++)
-          FilterChip(
-              showCheckmark: false,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-              avatar: Icon(
-                  [
-                    Icons.wb_sunny_outlined,
-                    Icons.light_mode_outlined,
-                    Icons.nights_stay_outlined
-                  ][i],
-                  size: 20),
-              label: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(['Morning', 'Afternoon', 'Evening'][i],
-                        style: const TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 2),
-                    Text(circlePeriodTimes[i],
-                        style: const TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.w500))
-                  ]),
-              selected: selected.contains(circlePeriods[i]),
-              onSelected: busy
-                  ? null
-                  : (v) => setState(() => v
-                      ? selected.add(circlePeriods[i])
-                      : selected.remove(circlePeriods[i])))
       ]);
 }
 
@@ -1101,5 +1104,85 @@ class _CommitmentCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// How easy the chosen times make it to find a group. A group needs five or
+/// six people free at the same moment, so one time a week is hard to match;
+/// every extra day or time gives us more people to match with.
+class _MatchChance extends StatelessWidget {
+  const _MatchChance({required this.slots});
+  final int slots;
+
+  @override
+  Widget build(BuildContext context) {
+    final level = slots <= 1
+        ? 0
+        : slots <= 3
+            ? 1
+            : slots <= 5
+                ? 2
+                : 3;
+    final (label, hint, color) = switch (level) {
+      0 => (
+          'Hard to match',
+          'With one time a week, finding five or six people who are all free then can take a long while. Add another day or time to be matched sooner.',
+          circleCoral
+        ),
+      1 => (
+          'Fair chance',
+          'Adding one or two more days or times makes it much easier to find your group.',
+          const Color(0xFFE0A63A)
+        ),
+      2 => (
+          'Good chance',
+          'Good choice. More options means we can match you sooner.',
+          circleTeal
+        ),
+      _ => (
+          'Great chance',
+          'Plenty of options. We can match you as soon as a group fits.',
+          circleTeal
+        ),
+    };
+    return Semantics(
+        label: '${t('Matching chance')}: ${t(label)}',
+        child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+                color: const Color(0xFFF7F5EF),
+                borderRadius: BorderRadius.circular(16)),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text.rich(TextSpan(children: [
+                TextSpan(
+                    text: '${t('Matching chance')}: ',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700, color: circleNavy)),
+                TextSpan(
+                    text: t(label),
+                    style:
+                        TextStyle(fontWeight: FontWeight.w800, color: color)),
+              ])),
+              const SizedBox(height: 8),
+              Row(children: [
+                for (var i = 0; i < 4; i++) ...[
+                  if (i > 0) const SizedBox(width: 4),
+                  Expanded(
+                      child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          height: 6,
+                          decoration: BoxDecoration(
+                              color:
+                                  i <= level ? color : const Color(0xFFE3E0D8),
+                              borderRadius: BorderRadius.circular(3)))),
+                ],
+              ]),
+              const SizedBox(height: 8),
+              Text(hint,
+                  style:
+                      const TextStyle(fontSize: 13, color: Color(0xFF4F5D66))),
+            ])));
   }
 }

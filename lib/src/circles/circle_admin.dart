@@ -9,6 +9,7 @@ import 'circle_preferences.dart';
 import 'circle_repository.dart';
 import 'circle_save_dialog.dart';
 import 'circle_widgets.dart';
+import '../widgets/circle_loading.dart';
 
 /// A group of waiting applicants who could actually be put in a Circle
 /// together: everyone shares this language and has this day and time in
@@ -121,8 +122,14 @@ List<CircleSuggestion> suggestCircles(List<Json> applications,
 
 class CircleAdmin extends StatefulWidget {
   const CircleAdmin(
-      {super.key, required this.repository, required this.onChanged});
+      {super.key,
+      required this.repository,
+      required this.onChanged,
+      this.initialTab = 0});
   final CircleRepository repository;
+
+  /// 0 To do, 1 Applicants, 2 Form Circles, 3 Circles, 4 Finished.
+  final int initialTab;
   final VoidCallback onChanged;
   @override
   State<CircleAdmin> createState() => _CircleAdminState();
@@ -157,9 +164,32 @@ class _CircleAdminState extends State<CircleAdmin>
       TextEditingController(text: t('Thursday evenings · English'));
   final search = TextEditingController();
   final formScroll = ScrollController();
-  late final TabController tabs = TabController(length: 4, vsync: this);
+  late final TabController tabs =
+      TabController(length: 5, vsync: this, initialIndex: widget.initialTab);
   DateTime? start;
   TimeOfDay time = const TimeOfDay(hour: 19, minute: 0);
+
+  /// The six-week plan of the next Circle. Filled from the saved
+  /// suggestions for its part of the day until the organiser edits it.
+  final weeks = [
+    for (var i = 0; i < 6; i++)
+      (
+        title: TextEditingController(),
+        venue: TextEditingController(),
+        address: TextEditingController(),
+        cost: TextEditingController(),
+        booking: TextEditingController()
+      )
+  ];
+  String? weeksKind;
+  bool weeksEdited = false;
+
+  /// One-to-one coffee places, one per line: "Name, address".
+  final coffeePlaces = {
+    'daytime': TextEditingController(),
+    'evening': TextEditingController()
+  };
+  bool coffeePlacesLoaded = false;
   final filter = _ApplicantFilter();
   String? boardLanguage, boardSlot;
   int showMatches = 6;
@@ -177,6 +207,16 @@ class _CircleAdminState extends State<CircleAdmin>
     search.dispose();
     formScroll.dispose();
     tabs.dispose();
+    for (final w in weeks) {
+      w.title.dispose();
+      w.venue.dispose();
+      w.address.dispose();
+      w.cost.dispose();
+      w.booking.dispose();
+    }
+    for (final c in coffeePlaces.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -190,6 +230,21 @@ class _CircleAdminState extends State<CircleAdmin>
           // Someone may have been grouped or withdrawn since the last load.
           final ids = {for (final a in applicants) '${a['profile_id']}'};
           selected.retainWhere(ids.contains);
+          _syncWeeks();
+          if (!coffeePlacesLoaded && d['coffee_places'] is List) {
+            coffeePlacesLoaded = true;
+            for (final e in coffeePlaces.entries) {
+              e.value.text = [
+                for (final pl in rows(d['coffee_places']))
+                  if (pl['kind'] == e.key &&
+                      (pl['city'] ?? circleCity) == circleCity)
+                    [
+                      pl['name'],
+                      if ('${pl['address'] ?? ''}'.isNotEmpty) pl['address']
+                    ].join(', ')
+              ].join('\n');
+            }
+          }
         });
       }
     } catch (_) {
@@ -272,10 +327,41 @@ class _CircleAdminState extends State<CircleAdmin>
   /// the full two hours inside the member-facing window, so these are the
   /// safe starts for each period rather than the window openings.
   static const _periodStart = {
-    'morning': TimeOfDay(hour: 9, minute: 30),
-    'afternoon': TimeOfDay(hour: 13, minute: 0),
+    'morning': TimeOfDay(hour: 10, minute: 30),
+    'afternoon': TimeOfDay(hour: 14, minute: 0),
     'evening': TimeOfDay(hour: 19, minute: 0),
   };
+
+  /// Evening plans from 17:00, daytime plans before.
+  String get timeKind => time.hour >= 17 ? 'evening' : 'daytime';
+
+  List<Json> _programme(String kind) => rows(data?['programme'])
+      .where(
+          (p) => p['kind'] == kind && (p['city'] ?? circleCity) == circleCity)
+      .toList()
+    ..sort((a, b) => '${a['week']}'.compareTo('${b['week']}'));
+
+  void _fillWeeks(String kind) {
+    final plan = _programme(kind);
+    for (var i = 0; i < 6; i++) {
+      final p = i < plan.length ? plan[i] : const <String, dynamic>{};
+      weeks[i].title.text = '${p['title'] ?? ''}';
+      weeks[i].venue.text = '${p['venue'] ?? ''}';
+      weeks[i].address.text = '${p['address'] ?? ''}';
+      weeks[i].cost.text = '${p['cost'] ?? ''}';
+      weeks[i].booking.text = '${p['booking_name'] ?? ''}';
+    }
+    weeksKind = kind;
+    weeksEdited = false;
+  }
+
+  /// Keeps the untouched plan in step with the chosen time of day.
+  void _syncWeeks() {
+    if (!weeksEdited && weeksKind != timeKind) _fillWeeks(timeKind);
+  }
+
+  bool get weeksComplete => weeks.every(
+      (w) => w.title.text.trim().isNotEmpty && w.venue.text.trim().isNotEmpty);
 
   /// First matching weekday at least a week out, so nobody is invited to
   /// something happening in two days.
@@ -291,6 +377,7 @@ class _CircleAdminState extends State<CircleAdmin>
   void _prefillFor(String day, String period, String language) {
     start = _nextWeekday(day);
     time = _periodStart[period] ?? time;
+    _syncWeeks();
     name.text = 'The $day Circle';
     schedule.text = '$day ${period}s · $language';
   }
@@ -514,12 +601,23 @@ class _CircleAdminState extends State<CircleAdmin>
                           ? 'Applicants'
                           : 'Applicants · ${applicants.length}')),
                   Tab(text: t(formLabel)),
-                  Tab(text: t('Circles')),
+                  Tab(
+                      text: t(running.isEmpty
+                          ? 'Circles'
+                          : 'Circles · ${running.length}')),
+                  Tab(text: t('Finished')),
                 ])),
         body: data == null
             ? Center(
                 child: error == null
-                    ? const CircularProgressIndicator()
+                    ? const CircleLoading(
+                        label: 'Opening the organiser panel…',
+                        phrases: [
+                            'Counting who’s ready…',
+                            'Checking payments…',
+                            'Looking at the week ahead…',
+                            'Pulling up chairs…',
+                          ])
                     : Padding(
                         padding: const EdgeInsets.all(24),
                         child: Text(error!, textAlign: TextAlign.center)))
@@ -528,6 +626,7 @@ class _CircleAdminState extends State<CircleAdmin>
                 _page(_applicantsTab(context)),
                 _page(_formTab(context), controller: formScroll),
                 _page(_circlesTab(context)),
+                _page(_finishedTab(context)),
               ]));
   }
 
@@ -649,7 +748,7 @@ class _CircleAdminState extends State<CircleAdmin>
           _statTile('Circles running', running, 'Invited or in progress',
               () => tabs.animateTo(3)),
           _statTile('Completed', completed, 'Circles that finished',
-              () => tabs.animateTo(3)),
+              () => tabs.animateTo(4)),
         ]);
       }),
       const SizedBox(height: 12),
@@ -911,14 +1010,121 @@ class _CircleAdminState extends State<CircleAdmin>
                         : () => _removeMember(
                             '${c['id']}', '${m['profile_id']}', m['name'])),
             ])),
-      if (members.length < 6 && !started)
-        Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-                icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
-                onPressed: busy ? null : () => _inviteToCircle(c),
-                label: const Text('Invite someone'))),
+      Wrap(spacing: 4, children: [
+        if (members.length < 6 && !started)
+          TextButton.icon(
+              icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
+              onPressed: busy ? null : () => _inviteToCircle(c),
+              label: const Text('Invite someone')),
+        TextButton.icon(
+            icon: const Icon(Icons.forum_outlined, size: 18),
+            onPressed: () => _readChat(c),
+            label: const Text('Read chat')),
+      ]),
+      if (rows(c['coffees']).isNotEmpty)
+        ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            title: Text(t('One-to-one coffees'),
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text(
+                t('{1} on, {2} waiting')
+                    .replaceAll('{1}',
+                        '${rows(c['coffees']).where((k) => k['status'] == 'confirmed').length}')
+                    .replaceAll('{2}',
+                        '${rows(c['coffees']).where((k) => k['status'] == 'asked').length}'),
+                style: const TextStyle(fontSize: 12, color: _muted)),
+            children: [
+              for (final k in rows(c['coffees']))
+                ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text('${k['a']} & ${k['b']}'),
+                    subtitle: Text([
+                      [
+                        t('Round ${k['round']}'),
+                        _stamp(k['starts_at']),
+                        if (k['place'] != null) '${k['place']}',
+                        if (rows(k['feedback'])
+                            .any((f) => f['rating'] == 'no_show'))
+                          t('Didn’t happen')
+                        else
+                          switch (k['status']) {
+                            'confirmed' => t('On'),
+                            'off' => t('Off'),
+                            _ => t('Asked'),
+                          },
+                      ].join(' · '),
+                      for (final f in rows(k['feedback']))
+                        '${f['name']}: ${switch (f['rating']) {
+                          'great' => '😊',
+                          'good' => '🙂',
+                          'okay' => '😐',
+                          'not' || 'bad' => '🙁',
+                          _ => t('didn’t meet'),
+                        }}${f['note'] == null ? '' : ' “${f['note']}”'}',
+                    ].join('\n'))),
+            ]),
     ];
+  }
+
+  static String _stamp(Object? raw) {
+    final d = DateTime.tryParse('${raw ?? ''}')?.toLocal();
+    if (d == null) return '';
+    return '${circleDate(d.toIso8601String())} ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+  }
+
+  /// Read-only: organisers moderate, they don't take part.
+  Future<void> _readChat(Json c) async {
+    final messages = widget.repository.adminMessages('${c['id']}');
+    await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+                title: Text('${t('Chat')} · ${c['name']}'),
+                content: SizedBox(
+                    width: 480,
+                    child: FutureBuilder<List<Json>>(
+                        future: messages,
+                        builder: (context, snap) {
+                          if (snap.hasError) {
+                            return const Text(
+                                'The chat could not be loaded. Please try again.');
+                          }
+                          if (!snap.hasData) {
+                            return const SizedBox(
+                                height: 170,
+                                child: Center(
+                                    child: CircleLoading(
+                                        compact: true,
+                                        label: 'Opening the chat…',
+                                        phrases: ['Opening the chat…'])));
+                          }
+                          final list = snap.data!;
+                          if (list.isEmpty) {
+                            return const Text('No messages yet.');
+                          }
+                          return ListView(shrinkWrap: true, children: [
+                            for (final m in list)
+                              Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                            '${m['name'] ?? m['sender'] ?? 'Member'} · ${_stamp(m['created_at'])}',
+                                            style: const TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w700,
+                                                color: _muted)),
+                                        Text('${m['body'] ?? ''}'),
+                                      ])),
+                          ]);
+                        })),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close')),
+                ]));
   }
 
   /// Waiting applicants, best fits first: free on the Circle's day and time,
@@ -1071,6 +1277,24 @@ class _CircleAdminState extends State<CircleAdmin>
           Text(
               '${t('Reason')}: ${r['reason']}${r['note'] != null ? ' — ${r['note']}' : ''}'),
         if (r['email'] != null) SelectableText('${r['email']}'),
+        if (r['status'] == 'requested') ...[
+          const SizedBox(height: 6),
+          const Text(
+              'To refund: find their €19 in your bank app (the Tikkie payment shows their name, and usually their account number) and transfer it back. No account number? Ask them for it.',
+              style: TextStyle(fontSize: 13, color: _muted)),
+          if (r['email'] != null)
+            Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                    icon: const Icon(Icons.mail_outline_rounded, size: 18),
+                    onPressed: () => launchUrl(Uri(
+                        scheme: 'mailto',
+                        path: '${r['email']}',
+                        query:
+                            'subject=${Uri.encodeComponent(t('Your VriendTime refund'))}'
+                            '&body=${Uri.encodeComponent(t('Hi! To return your €19, could you reply with the IBAN and account holder name you’d like it sent to? Thanks, VriendTime'))}')),
+                    label: const Text('Ask for bank details'))),
+        ],
         if (r['status'] == 'requested')
           Align(
               alignment: Alignment.centerLeft,
@@ -1463,11 +1687,16 @@ class _CircleAdminState extends State<CircleAdmin>
                         ? 'New Circle is full'
                         : 'Add to new Circle'))),
       chips('Free', strings(a['availability'])),
+      chips('Also free (own words)', [
+        if ('${a['other_times'] ?? ''}'.trim().isNotEmpty) '${a['other_times']}'
+      ]),
       chips('Speaks', strings(a['languages'])),
       chips('Interests', strings(a['interests'])),
       chips('Looking for', strings(a['goals'])),
       chips('Context', strings(a['life_context'])),
       chips('Social style', [style]),
+      chips('Gender (private)',
+          [if (circleGenders[a['gender']] case final g?) g]),
       if ('${a['intro'] ?? ''}'.trim().isNotEmpty) ...[
         const SizedBox(height: 14),
         const Text('Intro',
@@ -1708,6 +1937,22 @@ class _CircleAdminState extends State<CircleAdmin>
                   ]))),
       ]),
       const SizedBox(height: 8),
+      if (m.warning case final w?)
+        Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Padding(
+                  padding: EdgeInsets.only(top: 2),
+                  child:
+                      Icon(Icons.info_outline, size: 15, color: circleCoral)),
+              const SizedBox(width: 6),
+              Expanded(
+                  child: Text(w,
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: circleCoralText))),
+            ])),
       for (final r in m.reasons.skip(2))
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Padding(
@@ -1778,6 +2023,8 @@ class _CircleAdminState extends State<CircleAdmin>
         blocked.length == 1
             ? 'Two people here asked not to be matched, or were in a Circle together before. Swap one of them out.'
             : '${blocked.length} pairs here asked not to be matched, or were in a Circle together before. Swap them out.',
+      if (genderWarning(people) case final w? when people.length >= 5)
+        '$w. Try to swap someone so nobody is the only one; you can still create it.',
     ];
     return CirclePanel(tint: true, children: [
       Row(children: [
@@ -1877,11 +2124,18 @@ class _CircleAdminState extends State<CircleAdmin>
                             data: MediaQuery.of(c)
                                 .copyWith(alwaysUse24HourFormat: true),
                             child: child!));
-                    if (t != null && mounted) setState(() => time = t);
+                    if (t != null && mounted) {
+                      setState(() {
+                        time = t;
+                        _syncWeeks();
+                      });
+                    }
                   },
             label: Text(
                 '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')} · ${t('Netherlands time')}')),
       ]),
+      const SizedBox(height: 16),
+      ..._weeksEditor(context),
       const SizedBox(height: 10),
       const Text('Creates six weekly plans and sends the invitations.',
           style: TextStyle(fontSize: 12, color: _muted)),
@@ -1893,7 +2147,8 @@ class _CircleAdminState extends State<CircleAdmin>
                   start == null ||
                   blocked.isNotEmpty ||
                   common.slots.isEmpty ||
-                  common.languages.isEmpty
+                  common.languages.isEmpty ||
+                  !weeksComplete
               ? null
               : () => action('admin_create', {
                     'members': selected.toList(),
@@ -1901,7 +2156,17 @@ class _CircleAdminState extends State<CircleAdmin>
                     'schedule': schedule.text.trim(),
                     'start_date': start!.toIso8601String().split('T').first,
                     'time':
-                        '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}'
+                        '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+                    'weeks': [
+                      for (final w in weeks)
+                        {
+                          'title': w.title.text.trim(),
+                          'venue': w.venue.text.trim(),
+                          'address': w.address.text.trim(),
+                          'cost': w.cost.text.trim(),
+                          'booking': w.booking.text.trim()
+                        }
+                    ]
                   }),
           child: Text(busy
               ? 'Setting up your Circle…'
@@ -1910,15 +2175,199 @@ class _CircleAdminState extends State<CircleAdmin>
     ]);
   }
 
+  /// Six weeks, each an activity and a place. Weeks 1–4 are fixed; 5 and 6
+  /// are a starting plan the group may change together.
+  List<Widget> _weeksEditor(BuildContext context) {
+    final kindLabel = timeKind == 'evening' ? 'evening' : 'daytime';
+    void edited(String _) => setState(() => weeksEdited = true);
+    InputDecoration field(String label) =>
+        InputDecoration(labelText: t(label), counterText: '');
+    return [
+      Text('The six-week plan', style: Theme.of(context).textTheme.titleMedium),
+      const SizedBox(height: 4),
+      const Text(
+          'Members see the activity and the place from the invitation on. Weeks 5 and 6 are a starting plan the group can change together.',
+          style: TextStyle(fontSize: 12, color: _muted)),
+      const SizedBox(height: 4),
+      Wrap(spacing: 4, children: [
+        TextButton.icon(
+            icon: const Icon(Icons.restart_alt, size: 18),
+            onPressed: busy ? null : () => setState(() => _fillWeeks(timeKind)),
+            label: Text(t('Use the $kindLabel suggestions'))),
+        TextButton.icon(
+            icon: const Icon(Icons.bookmark_add_outlined, size: 18),
+            onPressed: busy || !weeksComplete
+                ? null
+                : () async {
+                    await action('admin_template', {
+                      'city': circleCity,
+                      'kind': timeKind,
+                      'weeks': [
+                        for (var i = 0; i < 6; i++)
+                          {
+                            'week': i + 1,
+                            'title': weeks[i].title.text.trim(),
+                            'venue': weeks[i].venue.text.trim(),
+                            'address': weeks[i].address.text.trim(),
+                            'cost': weeks[i].cost.text.trim(),
+                            'booking': weeks[i].booking.text.trim()
+                          }
+                      ]
+                    });
+                    if (mounted && error == null) {
+                      ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(
+                          content: Text(t(
+                              'Saved as the $kindLabel suggestions for next time.'))));
+                    }
+                  },
+            label: Text(t('Save as $kindLabel suggestions'))),
+      ]),
+      for (var i = 0; i < 6; i++)
+        Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(
+                  [
+                    t('Week ${i + 1}'),
+                    if (start != null)
+                      circleDate(DateTime(
+                              start!.year, start!.month, start!.day + 7 * i)
+                          .toIso8601String()),
+                    if (i >= 4) t('the group can change this'),
+                  ].join(' · '),
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: _muted)),
+              const SizedBox(height: 6),
+              TextField(
+                  controller: weeks[i].title,
+                  maxLength: 120,
+                  enabled: !busy,
+                  onChanged: edited,
+                  decoration: field('Activity')),
+              const SizedBox(height: 6),
+              TextField(
+                  controller: weeks[i].venue,
+                  maxLength: 180,
+                  enabled: !busy,
+                  onChanged: edited,
+                  decoration: field('Place')),
+              const SizedBox(height: 6),
+              TextField(
+                  controller: weeks[i].address,
+                  maxLength: 200,
+                  enabled: !busy,
+                  onChanged: edited,
+                  decoration: field('Address (optional)')),
+              const SizedBox(height: 6),
+              TextField(
+                  controller: weeks[i].cost,
+                  maxLength: 300,
+                  enabled: !busy,
+                  onChanged: edited,
+                  decoration: field('What it costs')),
+              const SizedBox(height: 6),
+              TextField(
+                  controller: weeks[i].booking,
+                  maxLength: 120,
+                  enabled: !busy,
+                  onChanged: edited,
+                  decoration: field('Table booked under (optional)')
+                      .copyWith(helperText: t('Empty: the Circle’s name'))),
+            ])),
+      const SizedBox(height: 12),
+      ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          title: Text(t('Places for one-to-one coffees'),
+              style: const TextStyle(fontWeight: FontWeight.w700)),
+          subtitle: Text(
+              t('We rotate through these. Check they are open at those times.'),
+              style: const TextStyle(fontSize: 12, color: _muted)),
+          children: [
+            for (final e in coffeePlaces.entries) ...[
+              TextField(
+                  controller: e.value,
+                  enabled: !busy,
+                  minLines: 2,
+                  maxLines: 6,
+                  decoration: field(e.key == 'evening'
+                          ? 'Evening (a drink, from 19:00)'
+                          : 'Daytime (coffee, 10:30 and 14:00)')
+                      .copyWith(
+                          helperText: t('One place per line: name, address'))),
+              const SizedBox(height: 8),
+            ],
+            Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton(
+                    onPressed: busy
+                        ? null
+                        : () async {
+                            for (final e in coffeePlaces.entries) {
+                              await action('admin_coffee_places', {
+                                'city': circleCity,
+                                'kind': e.key,
+                                'places': [
+                                  for (final line in e.value.text.split('\n'))
+                                    if (line.trim().isNotEmpty)
+                                      {
+                                        'name': line.split(',').first.trim(),
+                                        'address': line.contains(',')
+                                            ? line
+                                                .substring(
+                                                    line.indexOf(',') + 1)
+                                                .trim()
+                                            : ''
+                                      }
+                                ]
+                              });
+                            }
+                            if (mounted && error == null) {
+                              ScaffoldMessenger.of(this.context).showSnackBar(
+                                  SnackBar(
+                                      content:
+                                          Text(t('Coffee places saved.'))));
+                            }
+                          },
+                    child: const Text('Save coffee places'))),
+            const SizedBox(height: 8),
+          ]),
+    ];
+  }
+
   // ------------------------------------------------------------ Circles
+
+  /// Circles still to come or under way.
+  List<Json> get running => circles
+      .where((c) => ['offered', 'active', 'forming'].contains(c['status']))
+      .toList();
+
+  /// Finished or cancelled Circles, newest first.
+  List<Widget> _finishedTab(BuildContext context) {
+    final done = circles
+        .where((c) => !['offered', 'active', 'forming'].contains(c['status']))
+        .toList()
+      ..sort((a, b) =>
+          '${b['start_date'] ?? ''}'.compareTo('${a['start_date'] ?? ''}'));
+    return [
+      _sectionTitle(context, 'Finished Circles',
+          hint: 'Their chats stay open for the members.'),
+      if (done.isEmpty) const Text('No finished Circles yet.'),
+      for (final c in done) _circleCard(context, c),
+    ];
+  }
 
   List<Widget> _circlesTab(BuildContext context) {
     final otherPayments =
         payments.where((p) => p['status'] != 'awaiting_payment').toList();
     return [
-      _sectionTitle(context, 'Circles'),
-      if (circles.isEmpty) const Text('No Circles yet.'),
-      for (final c in circles) _circleCard(context, c),
+      _sectionTitle(context, 'Running Circles',
+          hint:
+              'Invited or under way. Finished and cancelled Circles are on the Finished tab.'),
+      if (running.isEmpty) const Text('No Circles running right now.'),
+      for (final c in running) _circleCard(context, c),
       _sectionTitle(context, 'Payment history'),
       if (payments.isEmpty) const Text('No accepted invitations yet.'),
       if (awaitingPayment.isNotEmpty)
@@ -1971,7 +2420,10 @@ class _CircleAdminState extends State<CircleAdmin>
                 dense: true,
                 title: Text(m['title'] as String? ?? 'Meetup'),
                 subtitle: Text(
-                    '${circleDate(m['date'] as String?)} · ${m['completed'] == true ? 'Completed' : 'Planned'}')),
+                    '${circleDate(m['date'] as String?)} · ${m['completed'] == true ? t('Completed') : t('Planned')}'
+                    '${m['completed'] != true && m['going'] != null ? ' · ${t('{1} going').replaceAll('{1}', '${m['going']}')}' : ''}'
+                    '${m['completed'] != true && (m['venue'] ?? '').toString().trim().isEmpty ? ' · ${t('No place yet')}' : ''}'
+                    '${(m['place_feelings'] as Map?)?.isNotEmpty == true ? ' · ${t('place')}: ${(m['place_feelings'] as Map).entries.map((e) => '${e.key.toString().split(' ').first} ${e.value}').join(' ')}' : ''}')),
             Wrap(spacing: 8, children: [
               if (m['completed'] != true)
                 TextButton.icon(

@@ -19,6 +19,7 @@
 //   NOTIFICATION_CRON_SECRET                 (any long random string)
 //   APP_URL             e.g. "https://vriendtime.com"  (link back into the app)
 import { createClient } from "npm:@supabase/supabase-js@2.117.2";
+import { buttonLabel, chrome, type Lang, translate } from "./copy.ts";
 
 const BATCH_SIZE = 50;
 // The email provider accepts a few requests per second; stay under it.
@@ -32,7 +33,17 @@ type Pending = {
   kind: string;
   title: string;
   body: string;
+  language?: string | null;
+  open?: string | null;
 };
+
+/// The app link that opens the right screen, e.g. ?open=checkin:<id>.
+export function deepLink(appUrl: string, open: string | null | undefined, lang?: string): string {
+  const url = new URL("/", appUrl);
+  if (open && open !== "home") url.searchParams.set("open", open);
+  if (lang === "nl") url.searchParams.set("lang", "nl");
+  return url.toString();
+}
 
 function escapeHtml(value: string): string {
   return value
@@ -51,14 +62,18 @@ export function logoUrl(appUrl: string): string {
 /// details like a venue or another member's name, so a forwarded or
 /// mis-delivered message gives nothing away.
 export function render(row: Pending, appUrl: string): { html: string; text: string } {
-  const greeting = row.first_name ? `Hi ${row.first_name},` : "Hi,";
-  const title = escapeHtml(row.title);
-  const body = escapeHtml(row.body);
-  const text =
-    `${greeting}\n\n${row.title}\n\n${row.body}\n\nOpen VriendTime: ${appUrl}\n\n` +
-    `You can turn these emails off under Profile in the app.`;
+  const lang: Lang = row.language === "nl" ? "nl" : "en";
+  const greeting = chrome.greeting(row.first_name, lang);
+  const rawTitle = translate(row.title, lang);
+  const rawBody = translate(row.body, lang);
+  const title = escapeHtml(rawTitle);
+  const body = escapeHtml(rawBody).replace(/\n/g, "<br>");
+  const link = deepLink(appUrl, row.open, lang);
+  const label = buttonLabel(row.open ?? "home", lang);
+  const footer = chrome.footer(lang);
+  const text = `${greeting}\n\n${rawTitle}\n\n${rawBody}\n\n${label}: ${link}\n\n${footer}`;
   const html = `<!doctype html>
-<html lang="en"><body style="margin:0;background:#FBF8F3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#12314B">
+<html lang="${lang}"><body style="margin:0;background:#FBF8F3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#12314B">
   <div style="max-width:520px;margin:0 auto;padding:32px 24px">
     <div style="margin-bottom:28px">
       <img src="${escapeHtml(logoUrl(appUrl))}" width="200" height="45" alt="VriendTime" style="display:block;border:0;width:200px;height:45px;font-size:22px;font-weight:700;color:#145247">
@@ -67,12 +82,9 @@ export function render(row: Pending, appUrl: string): { html: string; text: stri
       <p style="margin:0 0 18px;font-size:15px;color:#4A6076">${escapeHtml(greeting)}</p>
       <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;font-weight:700">${title}</h1>
       <p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#33506B">${body}</p>
-      <a href="${escapeHtml(appUrl)}" style="display:inline-block;background:#145247;color:#fff;text-decoration:none;padding:13px 22px;border-radius:999px;font-weight:700;font-size:15px">Open VriendTime</a>
+      <a href="${escapeHtml(link)}" style="display:inline-block;background:#145247;color:#fff;text-decoration:none;padding:13px 22px;border-radius:999px;font-weight:700;font-size:15px">${escapeHtml(label)}</a>
     </div>
-    <p style="margin:22px 4px 0;font-size:12px;line-height:1.5;color:#7A8B99">
-      You are receiving this because you applied for a Friendship Circle in Alkmaar.
-      You can turn these emails off under Profile in the app.
-    </p>
+    <p style="margin:22px 4px 0;font-size:12px;line-height:1.5;color:#7A8B99">${escapeHtml(footer)}</p>
   </div>
 </body></html>`;
   return { html, text };
@@ -104,7 +116,7 @@ export async function handler(request: Request): Promise<Response> {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  const { data, error } = await supabase.rpc("notifications_pending_email", {
+  const { data, error } = await supabase.rpc("notifications_pending_email_v2", {
     max_rows: BATCH_SIZE,
   });
   if (error) {
@@ -138,13 +150,14 @@ export async function handler(request: Request): Promise<Response> {
     }
     if (i > 0) await new Promise((resolve) => setTimeout(resolve, PAUSE_MS));
     const { html, text } = render(row, appUrl);
+    const subject = translate(row.title, row.language === "nl" ? "nl" : "en");
     let failure: string | null = null;
     try {
       const response = await fetch("https://api.resend.com/emails", {
         method: "POST", signal: AbortSignal.timeout(10_000),
         headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json",
           "Idempotency-Key": `vriendtime-notification/${row.id}` },
-        body: JSON.stringify({ from, to: [row.email], reply_to: replyTo, subject: row.title, html, text }),
+        body: JSON.stringify({ from, to: [row.email], reply_to: replyTo, subject, html, text }),
       });
       if (response.status === 429) {
         // Daily or monthly cap: try again in an hour. Too many requests at

@@ -8,7 +8,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'src/app.dart';
 import 'src/core/app_diagnostics.dart';
 import 'src/core/email_links.dart';
-import 'src/core/i18n.dart' show loadSavedLanguage;
+import 'src/core/open_links.dart';
+import 'src/core/i18n.dart' show loadSavedLanguage, setLanguage;
 import 'src/core/supabase_config.dart';
 import 'src/startup_error_app.dart';
 
@@ -48,6 +49,9 @@ Future<void> _startApp() async {
     }
   });
   await loadSavedLanguage();
+  // A link from a Dutch email opens the app in Dutch (and remembers it).
+  final linkLanguage = Uri.base.queryParameters['lang'];
+  if (linkLanguage != null) await setLanguage(linkLanguage);
 
   final configurationError = SupabaseConfig.configurationErrorMessage;
   if (configurationError != null) {
@@ -63,6 +67,7 @@ Future<void> _startApp() async {
     // Opened from a password-reset or confirmation email: check the code
     // before the first screen, so the right screen opens straight away.
     await EmailLinks.handle(Supabase.instance.client, Uri.base);
+    OpenLinks.capture(Uri.base);
   } catch (error, stackTrace) {
     _reportUnhandledError(error, stackTrace);
     runApp(

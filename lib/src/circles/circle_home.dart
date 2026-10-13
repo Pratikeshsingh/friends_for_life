@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/destructive.dart';
 import '../core/payment_config.dart';
 import 'circle_repository.dart';
+import 'circle_coffees.dart';
+import 'circle_invite_friend.dart';
 import 'circle_meetup_detail.dart';
 import 'circle_widgets.dart';
 import 'circle_journey.dart';
@@ -12,6 +14,9 @@ import 'circle_leave.dart';
 import 'circle_preferences.dart';
 
 typedef CircleAction = Future<void> Function(String action, [Json data]);
+
+/// The four answers used for every "how was it?" question.
+const circleFeelings = ['😊 Great', '🙂 Good', '😐 Okay', '🙁 Not for me'];
 
 class CircleHome extends StatelessWidget {
   const CircleHome(
@@ -22,7 +27,11 @@ class CircleHome extends StatelessWidget {
       required this.act,
       required this.onEdit,
       required this.onMessages,
-      this.savePlan});
+      this.savePlan,
+      this.outcomeKey});
+
+  /// Lets a notification scroll to the friendship check-in.
+  final Key? outcomeKey;
   final Json state;
   final bool demo, busy;
   final CircleAction act;
@@ -226,9 +235,8 @@ class CircleHome extends StatelessWidget {
                 'A quick check every few weeks, so we only match you when you can come.'),
             const SizedBox(height: 16),
             Wrap(spacing: 8, runSpacing: 8, children: [
-              for (final e in slots.entries)
-                CirclePill(
-                    '${circleDays[circleDayKeys.indexOf(e.key)].substring(0, 3)} · ${e.value.join(' / ')}')
+              for (final label in circleSlotChips(circleOfferedSlots(slots)))
+                CirclePill(label)
             ]),
             const SizedBox(height: 16),
             SizedBox(
@@ -286,19 +294,19 @@ class CircleHome extends StatelessWidget {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       CircleHeading(
           graduated
-              ? 'Your Circle is now yours.'
+              ? 'Six weeks together. Well done!'
               : invited && agreed
                   ? 'Almost there.'
                   : invited
                       ? 'Meet your Circle.'
                       : 'A few familiar faces.\nA plan to look forward to.',
           eyebrow: graduated
-              ? 'Six weeks. A new beginning.'
+              ? 'Programme complete'
               : invited
                   ? 'You’re invited'
                   : '${circle['name'] ?? 'Your Circle'} · Week ${(completed + 1).clamp(1, 6)} of 6',
           subtitle: graduated
-              ? 'Keep meeting. Keep making plans. There’s no further programme payment.'
+              ? 'The programme is done, but your Circle isn’t: the chat stays open and you can keep making plans together, at no extra cost.'
               : invited && agreed
                   ? 'Your place is held for you. Once your €19 has arrived, your Circle and its chat open.'
                   : invited
@@ -314,7 +322,22 @@ class CircleHome extends StatelessWidget {
           _info(Icons.schedule_rounded,
               circle['schedule']?.toString() ?? 'Schedule to be confirmed'),
           _info(Icons.place_outlined, circle['city']?.toString() ?? 'Alkmaar'),
-          if (state['pay_by'] != null && !credit)
+          if (state['pay_by'] != null && !credit && _lastMinute(state)) ...[
+            _info(
+                Icons.hourglass_bottom_rounded,
+                agreed
+                    ? 'Pay by 1 hour before your first meetup'
+                    : 'Accept and pay by 1 hour before your first meetup'),
+            Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                    icon: const Icon(Icons.chat_outlined, size: 18),
+                    onPressed: () => launchUrl(
+                        Uri.parse('https://wa.me/31685660139'),
+                        mode: LaunchMode.externalApplication),
+                    label: const Text(
+                        'Paid just now? Message us on WhatsApp so we can confirm your place in time.'))),
+          ] else if (state['pay_by'] != null && !credit)
             _info(
                 Icons.hourglass_bottom_rounded,
                 agreed
@@ -390,12 +413,23 @@ class CircleHome extends StatelessWidget {
         ]),
         const SizedBox(height: 20),
         _anotherCircle(context),
+        Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+                icon: const Icon(Icons.favorite_border_rounded, size: 18),
+                onPressed: () => showInviteFriend(context),
+                label: const Text(
+                    'Know someone who’d enjoy this? Invite a friend'))),
         const SizedBox(height: 20),
-        _outcome(context)
+        KeyedSubtree(key: outcomeKey, child: _outcome(context))
       ],
       if (!invited && upcoming != null) ...[
         const SizedBox(height: 20),
         _meetup(context, upcoming, featured: true)
+      ],
+      if (!invited && state['coffees'] is Map) ...[
+        const SizedBox(height: 26),
+        CircleCoffees(state: state, members: members, busy: busy, act: act),
       ],
       const SizedBox(height: 26),
       Text('The people in your Circle',
@@ -407,7 +441,7 @@ class CircleHome extends StatelessWidget {
           style: Theme.of(context).textTheme.headlineSmall),
       const SizedBox(height: 6),
       const Text(
-          'Dates and times are fixed. We plan weeks 1 to 3; from week 4 your group picks the activity and place. Netherlands time.',
+          'Dates and times are fixed. We plan weeks 1 to 4; weeks 5 and 6 start with our plan, which your group can change together. Netherlands time.',
           style: TextStyle(color: Color(0xFF4F5D66), height: 1.45)),
       const SizedBox(height: 14),
       _weekList(
@@ -479,6 +513,15 @@ class CircleHome extends StatelessWidget {
     if (due == null || state['payment'] == 'paid') return false;
     final today = now ?? DateTime.now();
     return DateTime(today.year, today.month, today.day).isAfter(due);
+  }
+
+  /// Invited close to the start: the pay-by day is the first meetup's day.
+  static bool _lastMinute(Json state) {
+    final due = '${state['pay_by'] ?? ''}';
+    final start = '${(state['circle'] as Map?)?['start_date'] ?? ''}';
+    return due.length >= 10 &&
+        start.length >= 10 &&
+        due.substring(0, 10) == start.substring(0, 10);
   }
 
   static String? _replyBy(Map circle) {
@@ -675,7 +718,7 @@ class CircleHome extends StatelessWidget {
       final week = m['week'] as int;
       final done = circleMeetupPast(m);
       final next = m['id'] == nextId && !done;
-      final groupPlans = !done && week >= 4;
+      final groupPlans = !done && week >= 5;
       final checked = checks.any((c) => c['id'] == m['id']);
       final circle = Container(
           width: 36,
@@ -705,7 +748,7 @@ class CircleHome extends StatelessWidget {
                 ? null
                 : () =>
                     scheduleCircleMeetup(context, savePlan ?? act, meetup: m),
-            child: const Text('Plan it'));
+            child: const Text('Change it'));
       }
       return InkWell(
           onTap: () => openCircleMeetup(context, m),
@@ -729,7 +772,8 @@ class CircleHome extends StatelessWidget {
                             '${circleDate(m['date'] as String?)} · ${m['time'] ?? '19:30'}',
                             if (next) 'Next',
                             // The "Plan it" button says it already.
-                            if (groupPlans && invited) 'Your group plans this',
+                            if (groupPlans && invited)
+                              'Your group can change this',
                           ].join(' · '),
                           style: TextStyle(
                               fontSize: 13,
@@ -738,6 +782,15 @@ class CircleHome extends StatelessWidget {
                                   : const Color(0xFF66727C),
                               fontWeight:
                                   next ? FontWeight.w700 : FontWeight.w500)),
+                      // What it costs, before anyone pays.
+                      if (!done && '${m['cost_notes'] ?? ''}'.trim().isNotEmpty)
+                        Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text('${m['cost_notes']}',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    fontSize: 12, color: Color(0xFF66727C)))),
                     ])),
                 action ??
                     const Icon(Icons.chevron_right_rounded,
@@ -755,7 +808,49 @@ class CircleHome extends StatelessWidget {
           for (var i = 0; i < weeks.length; i++) ...[
             if (i > 0) const Divider(height: 1, indent: 66),
             row(weeks[i]),
+            // Round n of one-to-one coffees follows group meetup n + 1.
+            if ((weeks[i]['week'] as int? ?? 0) >= 2)
+              _coffeeRow((weeks[i]['week'] as int) - 1),
           ],
+        ]));
+  }
+
+  /// A slim line between the weeks: the one-to-one coffee of that round.
+  Widget _coffeeRow(int round) {
+    final coffees = state['coffees'] is Map
+        ? Map<String, dynamic>.from(state['coffees'] as Map)
+        : const <String, dynamic>{};
+    final info =
+        rows(coffees['rounds']).where((r) => r['round'] == round).firstOrNull;
+    final coffee = info?['coffee'] is Map
+        ? Map<String, dynamic>.from(info!['coffee'] as Map)
+        : null;
+    final start = DateTime.tryParse('${coffee?['starts_at'] ?? ''}')?.toLocal();
+    final met = coffee?['status'] == 'confirmed' &&
+        start != null &&
+        start.isBefore(DateTime.now());
+    final String text;
+    if (coffee != null) {
+      text = '${t('Coffee with {1}').replaceAll('{1}', '${coffee['name']}')}'
+          '${start == null ? '' : ' · ${circleCoffeeWhen(coffee['starts_at'])}'}'
+          '${coffee['status'] == 'asked' ? ' · ${t('waiting for answers')}' : ''}';
+    } else if (info?['decided'] == true) {
+      text = t('Free week');
+    } else if (info != null) {
+      text = t('One-to-one coffee · being planned');
+    } else {
+      text = t('One-to-one coffee');
+    }
+    return Padding(
+        padding: const EdgeInsets.fromLTRB(28, 2, 16, 8),
+        child: Row(children: [
+          Icon(met ? Icons.check_circle_rounded : Icons.coffee_outlined,
+              size: 16, color: met ? circleTeal : const Color(0xFF66727C)),
+          const SizedBox(width: 22),
+          Expanded(
+              child: Text(text,
+                  style: const TextStyle(
+                      fontSize: 12.5, color: Color(0xFF66727C)))),
         ]));
   }
 
@@ -787,18 +882,44 @@ class CircleHome extends StatelessWidget {
           style: featured
               ? Theme.of(context).textTheme.headlineMedium
               : Theme.of(context).textTheme.titleMedium),
-      if (!done && week != null && week >= 4) ...[
+      if (!done && week != null && week >= 5) ...[
         const SizedBox(height: 8),
-        const CirclePill('Your group plans this', icon: Icons.groups_outlined),
+        const CirclePill('Your group can change this',
+            icon: Icons.groups_outlined),
       ],
       const SizedBox(height: 8),
       Text('${circleDate(m['date'] as String?)} · ${m['time'] ?? '19:30'}'),
       if (featured || week == null) ...[
         const SizedBox(height: 12),
         _info(Icons.place_outlined, circleVenueLabel(m)),
+        if (!done && '${m['booking_name'] ?? ''}'.trim().isNotEmpty)
+          _info(
+              Icons.table_restaurant_outlined,
+              t('Table booked under “{1}”')
+                  .replaceAll('{1}', '${m['booking_name']}'.trim())),
+        // The first evening is the hardest one to walk into.
+        if (!done && week == 1) ...[
+          const Text(
+              'Everyone is new at the first dinner, so nobody knows anyone yet. Running late or can’t find the table? Let your Circle know in the chat.'),
+          const SizedBox(height: 8),
+        ],
         if (week != null)
           const Text(
               'Your place is included in the programme. Can’t make it? Let your Circle know in the chat.'),
+        if (!done &&
+            !invited &&
+            week != null &&
+            circleRunningLateWindow(
+                m['starts_at'] ?? circleMeetupStart(m)?.toIso8601String())) ...[
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+              icon: const Icon(Icons.directions_run_rounded, size: 18),
+              label: const Text('Running late'),
+              onPressed: busy
+                  ? null
+                  : () => showRunningLate(context, act,
+                      kind: 'meetup', id: m['id'] as Object)),
+        ],
         if (week == null) ...[
           CirclePill(
               '${m['confirmed'] ?? 0}/${rows(state['members']).length} confirmed',
@@ -871,13 +992,13 @@ class CircleHome extends StatelessWidget {
                 ? 'Your private check-in is saved ✓'
                 : 'How did this meetup feel?'))
       ],
-      if (!done && !invited && week != null && week >= 4)
+      if (!done && !invited && week != null && week >= 5)
         TextButton(
             onPressed: busy
                 ? null
                 : () =>
                     scheduleCircleMeetup(context, savePlan ?? act, meetup: m),
-            child: const Text('Make a plan together')),
+            child: const Text('Change the plan together')),
     ]);
   }
 
@@ -1112,66 +1233,8 @@ class CircleHome extends StatelessWidget {
     if (yes == true) await act('join_again');
   }
 
-  Future<void> _checkIn(BuildContext context, Json m) async {
-    String? feeling;
-    final connections = <String>{};
-    final result = await showDialog<Json>(
-        context: context,
-        builder: (c) => StatefulBuilder(
-            builder: (c, set) => AlertDialog(
-                    title: const Text('How did tonight feel?'),
-                    content: SingleChildScrollView(
-                        child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                          const Text(
-                              'Just for you and the VriendTime team. Never shown to your Circle.'),
-                          const SizedBox(height: 16),
-                          Wrap(spacing: 8, runSpacing: 8, children: [
-                            for (final f in [
-                              '😊 Great',
-                              '🙂 Good',
-                              '😐 Okay',
-                              '🙁 Not for me'
-                            ])
-                              ChoiceChip(
-                                  label: Text(f),
-                                  selected: feeling == f,
-                                  onSelected: (_) => set(() => feeling = f))
-                          ]),
-                          const SizedBox(height: 20),
-                          const Text(
-                              'Anyone you’d like to spend more time with? (Optional)'),
-                          const SizedBox(height: 10),
-                          Wrap(spacing: 8, children: [
-                            for (final p in rows(state['members']).where((p) =>
-                                p['id'] != 'you' &&
-                                p['id'] != state['profile_id']))
-                              FilterChip(
-                                  label: Text(p['name'] as String),
-                                  selected: connections.contains(p['id']),
-                                  onSelected: (v) => set(() => v
-                                      ? connections.add(p['id'] as String)
-                                      : connections.remove(p['id'])))
-                          ])
-                        ])),
-                    actions: [
-                      TextButton(
-                          onPressed: () => Navigator.pop(c),
-                          child: const Text('Later')),
-                      FilledButton(
-                          onPressed: feeling == null
-                              ? null
-                              : () => Navigator.pop(c, {
-                                    'id': m['id'],
-                                    'feeling': feeling,
-                                    'connections': connections.toList()
-                                  }),
-                          child: const Text('Save privately'))
-                    ])));
-    if (result != null) await act('check_in', result);
-  }
+  Future<void> _checkIn(BuildContext context, Json m) =>
+      showCircleCheckIn(context, m, state, act);
 
   Widget _outcome(BuildContext context) => CirclePanel(children: [
         Text('Is this the start of a friendship?',
@@ -1228,12 +1291,15 @@ class _ScheduleDialog extends StatefulWidget {
 
 class _ScheduleDialogState extends State<_ScheduleDialog> {
   late final TextEditingController title, venue;
-  late final TextEditingController address, meeting, costs, access;
+  late final TextEditingController address, meeting, costs, access, booking;
   bool saving = false;
   final requestId = circleRequestId();
   DateTime? date;
   TimeOfDay time = const TimeOfDay(hour: 19, minute: 30);
   String? error;
+
+  /// Organisers decide whether a change is worth an email to everyone.
+  bool notify = true;
   bool get fixedSchedule => !widget.organiser && widget.meetup?['week'] != null;
   @override
   void initState() {
@@ -1244,6 +1310,7 @@ class _ScheduleDialogState extends State<_ScheduleDialog> {
     meeting = TextEditingController(text: widget.meetup?['meeting_point']);
     costs = TextEditingController(text: widget.meetup?['cost_notes']);
     access = TextEditingController(text: widget.meetup?['accessibility_notes']);
+    booking = TextEditingController(text: widget.meetup?['booking_name']);
     date = DateTime.tryParse(widget.meetup?['date'] as String? ?? '');
     final parts = (widget.meetup?['time'] as String? ?? '19:30').split(':');
     time = TimeOfDay(
@@ -1259,6 +1326,7 @@ class _ScheduleDialogState extends State<_ScheduleDialog> {
     meeting.dispose();
     costs.dispose();
     access.dispose();
+    booking.dispose();
     super.dispose();
   }
 
@@ -1266,9 +1334,11 @@ class _ScheduleDialogState extends State<_ScheduleDialog> {
   Widget build(BuildContext context) => PopScope(
       canPop: !saving,
       child: AlertDialog(
-          title: Text(fixedSchedule
-              ? 'Make a plan together'
-              : 'Suggest an extra meetup'),
+          title: Text(widget.organiser && widget.meetup != null
+              ? 'Edit the plan'
+              : fixedSchedule
+                  ? 'Change the plan together'
+                  : 'Suggest an extra meetup'),
           content: SingleChildScrollView(
               child: Column(mainAxisSize: MainAxisSize.min, children: [
             TextField(
@@ -1293,8 +1363,16 @@ class _ScheduleDialogState extends State<_ScheduleDialog> {
                   enabled: !saving,
                   maxLength: 300,
                   decoration: InputDecoration(labelText: t(field.value))),
-            const Text(
-                'Discuss the idea in your Circle chat first. Saving shares this plan with everyone.'),
+            if (widget.organiser && widget.meetup?['week'] != null)
+              TextField(
+                  controller: booking,
+                  enabled: !saving,
+                  maxLength: 120,
+                  decoration: InputDecoration(
+                      labelText: t('Table booked under (optional)'))),
+            if (!widget.organiser)
+              const Text(
+                  'Discuss the idea in your Circle chat first. Saving shares this plan with everyone.'),
             const SizedBox(height: 14),
             if (fixedSchedule) ...[
               Text(
@@ -1328,13 +1406,35 @@ class _ScheduleDialogState extends State<_ScheduleDialog> {
                       ? null
                       : () async {
                           final picked = await showTimePicker(
-                              context: context, initialTime: time);
+                              context: context,
+                              initialTime: time,
+                              builder: (c, child) => MediaQuery(
+                                  data: MediaQuery.of(c)
+                                      .copyWith(alwaysUse24HourFormat: true),
+                                  child: child!));
                           if (picked != null && mounted) {
                             setState(() => time = picked);
                           }
                         },
-                  child: Text('${time.format(context)} · Netherlands time')),
+                  child: Text(
+                      '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')} · ${t('Netherlands time')}')),
+              if (widget.organiser && widget.meetup?['week'] != null) ...[
+                const SizedBox(height: 6),
+                const Text(
+                    'Keep the start within the Circle’s part of the day: morning 09:00–11:00, afternoon 12:00–15:00, evening 18:00–20:00.',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF66727C))),
+              ],
             ],
+            if (widget.organiser && widget.meetup != null)
+              CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  value: notify,
+                  onChanged:
+                      saving ? null : (v) => setState(() => notify = v ?? true),
+                  title: const Text('Let members know by email'),
+                  subtitle: const Text(
+                      'Leave this off for small fixes, like a typo.')),
             if (error != null)
               Text(error!, style: const TextStyle(color: Colors.red))
           ])),
@@ -1371,7 +1471,11 @@ class _ScheduleDialogState extends State<_ScheduleDialog> {
                             'time':
                                 '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
                             if (widget.meetup != null)
-                              'id': widget.meetup!['id']
+                              'id': widget.meetup!['id'],
+                            if (widget.organiser && !notify) 'notify': false,
+                            if (widget.organiser &&
+                                widget.meetup?['week'] != null)
+                              'booking': booking.text.trim(),
                           });
                           if (context.mounted) Navigator.pop(context);
                         } catch (e) {
@@ -1416,4 +1520,81 @@ Future<bool> confirmWithdraw(BuildContext context) async {
                     child: const Text('Withdraw'))
               ]));
   return ok == true;
+}
+
+/// The private check-in after a meetup. Also opened from a notification or
+/// an email link.
+Future<void> showCircleCheckIn(
+    BuildContext context, Json m, Json state, CircleAction act) async {
+  String? feeling;
+  String? place;
+  final venue = '${m['venue'] ?? ''}'.trim();
+  final connections = <String>{};
+  final result = await showDialog<Json>(
+      context: context,
+      builder: (c) => StatefulBuilder(
+          builder: (c, set) => AlertDialog(
+                  title: const Text('How was your meetup?'),
+                  content: SingleChildScrollView(
+                      child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                        const Text(
+                            'Just for you and the VriendTime team. Never shown to your Circle.'),
+                        const SizedBox(height: 16),
+                        Wrap(spacing: 8, runSpacing: 8, children: [
+                          for (final f in circleFeelings)
+                            ChoiceChip(
+                                label: Text(f),
+                                selected: feeling == f,
+                                onSelected: (_) => set(() => feeling = f))
+                        ]),
+                        const SizedBox(height: 20),
+                        const Text(
+                            'Anyone you’d like to spend more time with? (Optional)'),
+                        const SizedBox(height: 10),
+                        Wrap(spacing: 8, children: [
+                          for (final p in rows(state['members']).where((p) =>
+                              p['id'] != 'you' &&
+                              p['id'] != state['profile_id']))
+                            FilterChip(
+                                label: Text(p['name'] as String),
+                                selected: connections.contains(p['id']),
+                                onSelected: (v) => set(() => v
+                                    ? connections.add(p['id'] as String)
+                                    : connections.remove(p['id'])))
+                        ]),
+                        // Helps us keep good places on the list. Optional.
+                        if (venue.isNotEmpty) ...[
+                          const SizedBox(height: 20),
+                          Text(t('How was {1}? (Optional)')
+                              .replaceAll('{1}', venue)),
+                          const SizedBox(height: 10),
+                          Wrap(spacing: 8, runSpacing: 8, children: [
+                            for (final f in circleFeelings)
+                              ChoiceChip(
+                                  label: Text(f),
+                                  selected: place == f,
+                                  onSelected: (on) =>
+                                      set(() => place = on ? f : null)),
+                          ]),
+                        ],
+                      ])),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(c),
+                        child: const Text('Later')),
+                    FilledButton(
+                        onPressed: feeling == null
+                            ? null
+                            : () => Navigator.pop(c, {
+                                  'id': m['id'],
+                                  'feeling': feeling,
+                                  'connections': connections.toList(),
+                                  if (place != null) 'place_feeling': place,
+                                }),
+                        child: const Text('Save privately'))
+                  ])));
+  if (result != null) await act('check_in', result);
 }

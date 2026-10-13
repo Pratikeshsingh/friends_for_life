@@ -19,7 +19,11 @@ class CircleLoading extends StatefulWidget {
     super.key,
     this.label = 'Opening your Circle…',
     this.phrases = circleLoadingPhrases,
+    this.compact = false,
   });
+
+  /// Smaller, for sheets and dialogs.
+  final bool compact;
 
   /// Stable label for screen readers, and the visible text when motion is off.
   final String label;
@@ -83,7 +87,7 @@ class _CircleLoadingState extends State<CircleLoading>
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           RepaintBoundary(
             child: SizedBox.square(
-              dimension: 240,
+              dimension: widget.compact ? 110 : 240,
               child: Center(
                 child: AnimatedBuilder(
                   animation: animation,
@@ -93,7 +97,7 @@ class _CircleLoadingState extends State<CircleLoading>
                         ? ((t - .24) / .18).clamp(0.0, 1.0)
                         : (1 - (t - .72) / .18).clamp(0.0, 1.0);
                     return CustomPaint(
-                      size: const Size.square(140),
+                      size: Size.square(widget.compact ? 64 : 140),
                       painter: VriendTimeMarkPainter(
                         top: still ? 0 : 300 * (1 - together(t, 0, .32)),
                         left: still ? 0 : 330 * (1 - together(t, .04, .36)),
@@ -107,7 +111,7 @@ class _CircleLoadingState extends State<CircleLoading>
               ),
             ),
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: widget.compact ? 6 : 18),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 250),
             child: Text(

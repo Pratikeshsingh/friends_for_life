@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import '../core/app_diagnostics.dart';
 import '../core/email_links.dart';
+import '../core/open_links.dart';
 import 'circle_meetup_detail.dart';
 import 'circle_save_dialog.dart';
 import 'dart:typed_data';
@@ -50,14 +51,25 @@ class _CircleShellState extends State<CircleShell> {
   bool applicationParked = false;
   int tab = 0;
   int editStep = 0;
+
+  /// One answer changed from the profile, even the first step.
+  bool editFocused = false;
   final message = TextEditingController();
   final scroll = ScrollController();
   Timer? timer;
+
+  /// No refreshing while the app is in the background; a fresh look when
+  /// it comes back.
+  bool _visible = true;
+  AppLifecycleListener? _lifecycle;
   int _loadGeneration = 0;
   bool _loading = false;
   bool _stale = false;
   var _applicationKey = GlobalKey();
   String? _sendId, _sendBody;
+
+  /// A message shown straight away while it is being sent.
+  Json? _sending;
   final List<Json> _olderMessages = [];
   bool _loadingOlder = false, _hasOlder = true;
 
@@ -74,9 +86,17 @@ class _CircleShellState extends State<CircleShell> {
       repo = SupabaseCircleRepository(Supabase.instance.client);
       load();
     }
+    appLanguage.addListener(_syncLanguage);
     timer = Timer.periodic(const Duration(seconds: 25), (_) {
-      if (repo != null && !busy && !_loading) load(silent: true);
+      if (_visible && repo != null && !busy && !_loading) load(silent: true);
     });
+    _lifecycle = AppLifecycleListener(
+        onHide: () => _visible = false,
+        onShow: () {
+          final away = !_visible;
+          _visible = true;
+          if (away && repo != null && !busy && !_loading) load(silent: true);
+        });
     if (EmailLinks.outcome == EmailLinkOutcome.expired) {
       EmailLinks.outcome = EmailLinkOutcome.none;
       WidgetsBinding.instance.addPostFrameCallback((_) => _linkExpired());
@@ -132,7 +152,9 @@ class _CircleShellState extends State<CircleShell> {
 
   @override
   void dispose() {
+    appLanguage.removeListener(_syncLanguage);
     timer?.cancel();
+    _lifecycle?.dispose();
     message.dispose();
     scroll.dispose();
     super.dispose();
@@ -154,6 +176,30 @@ class _CircleShellState extends State<CircleShell> {
     await load();
   }
 
+  /// The notification list, fetched in the background so the sheet opens
+  /// with it straight away. Refetched when the unread count changes.
+  List<Json>? _notesCache;
+  Object? _notesForUnread;
+
+  Future<List<Json>> _fetchNotes() async => rows(await Supabase.instance.client
+      .from('notifications')
+      .select('id,kind,title,body,created_at,read_at,event_id,metadata')
+      .eq('recipient_profile_id', widget.session!.user.id)
+      .order('created_at', ascending: false)
+      .limit(60));
+
+  void _prefetchNotes() {
+    if (repo?.isDemo == true || widget.session == null) return;
+    final unread = state?['unread_notifications'];
+    if (_notesCache != null && unread == _notesForUnread) return;
+    _notesForUnread = unread;
+    _fetchNotes().then((list) {
+      _notesCache = list;
+    }, onError: (Object _) {
+      _notesForUnread = null;
+    });
+  }
+
   Future<void> load({bool silent = false}) async {
     final source = repo;
     if (source == null) return;
@@ -167,7 +213,24 @@ class _CircleShellState extends State<CircleShell> {
           error = null;
           _stale = false;
         });
+        // Photos and settings follow while the screen is already showing.
+        unawaited(source.loadExtras(value).then((more) {
+          if (more != null &&
+              mounted &&
+              identical(repo, source) &&
+              identical(state, value)) {
+            setState(() => state = more);
+          }
+        }, onError: (Object _) {}));
         // Reading the chat counts as seeing it; otherwise check what was seen.
+        _syncLanguage();
+        _prefetchNotes();
+        // An email link waiting since start-up (or since signing in).
+        if (repo?.isDemo != true && OpenLinks.pending != null) {
+          final target = OpenLinks.take();
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => _openTarget(target));
+        }
         // Never holds up the refresh itself.
         if (chatOpen) {
           unawaited(_markChatSeen());
@@ -216,6 +279,7 @@ class _CircleShellState extends State<CircleShell> {
           'refresh_commitment',
           'exclude',
           'email_notifications',
+          'email_setting',
           'leave_circle',
           'switch_group',
           'cancel_agreement',
@@ -231,6 +295,9 @@ class _CircleShellState extends State<CircleShell> {
                 'email_notifications' => data['enabled'] == true
                     ? 'We’ll email you about your Circle.'
                     : 'Emails turned off. Your Circle updates stay in the app.',
+                'email_setting' => data['enabled'] == true
+                    ? 'Email turned on.'
+                    : 'Email turned off. You’ll still see these in the app.',
                 'leave_circle' =>
                   'You’ve left the Circle. We’ll be in touch about anything outstanding.',
                 'switch_group' =>
@@ -268,13 +335,110 @@ class _CircleShellState extends State<CircleShell> {
     } catch (_) {}
   }
 
-  void openAdmin() {
+  void openAdmin([int initialTab = 0]) {
     Navigator.push(
         context,
         MaterialPageRoute<void>(
-            builder: (_) =>
-                CircleAdmin(repository: repo!, onChanged: () => load())));
+            builder: (_) => CircleAdmin(
+                repository: repo!,
+                initialTab: initialTab,
+                onChanged: () => load())));
   }
+
+  /// Opens the screen a notification or email link points to:
+  /// home, messages, `meetup:<id>`, `checkin:<id>`, outcome, payments,
+  /// organiser:todo|form|circles.
+  void _openTarget(String? target) {
+    if (target == null || state == null || !mounted) return;
+    final i = target.indexOf(':');
+    final kind = i < 0 ? target : target.substring(0, i);
+    final id = i < 0 ? '' : target.substring(i + 1);
+    Json? meetup() =>
+        rows(state?['meetups']).where((m) => '${m['id']}' == id).firstOrNull;
+    switch (kind) {
+      case 'messages':
+        setState(() => tab = 1);
+        _markChatSeen();
+        _scrollToLatest();
+      case 'meetup':
+        final m = meetup();
+        if (m != null) {
+          openCircleMeetup(context, m);
+        } else {
+          _goHome();
+        }
+      case 'checkin':
+        final m = meetup();
+        final done = rows(state?['check_ins']).any((c) => '${c['id']}' == id);
+        _goHome();
+        if (m != null && !done) {
+          showCircleCheckIn(context, m, state!, safeAct);
+        }
+      case 'outcome':
+        _goHome();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final c = _outcomeKey.currentContext;
+          if (c != null) {
+            Scrollable.ensureVisible(c,
+                duration: const Duration(milliseconds: 400), alignment: .1);
+          }
+        });
+      case 'payments':
+        setState(() => tab = 2);
+      case 'organiser':
+        if (state?['is_admin'] == true) {
+          openAdmin(switch (id) {
+            'form' => 2,
+            'circles' => 3,
+            _ => 0,
+          });
+        } else {
+          _goHome();
+        }
+      default:
+        _goHome();
+    }
+  }
+
+  /// Emails go out in the language the member uses the app in.
+  String? _syncedLanguage;
+  Future<void> _syncLanguage() async {
+    final uid = widget.session?.user.id;
+    final lang = appLanguage.value;
+    if (uid == null || repo?.isDemo == true || _syncedLanguage == lang) return;
+    _syncedLanguage = lang;
+    // Saved before on this device: no request on every start.
+    final key = 'language_saved_$uid';
+    SharedPreferences? prefs;
+    try {
+      prefs = await SharedPreferences.getInstance();
+    } catch (_) {}
+    if (prefs?.getString(key) != lang) {
+      Supabase.instance.client
+          .from('profiles')
+          .update({'language': lang})
+          .eq('id', uid)
+          .then((_) {
+            prefs?.setString(key, lang);
+          }, onError: (Object _) {
+            _syncedLanguage = null;
+          });
+    }
+    // Account emails sent by Supabase (password reset, password changed)
+    // read the language from the account's own details.
+    if (widget.session?.user.userMetadata?['language'] != lang) {
+      Supabase.instance.client.auth
+          .updateUser(UserAttributes(data: {'language': lang}))
+          .then((_) {}, onError: (Object _) {});
+    }
+  }
+
+  void _goHome() {
+    setState(() => tab = 0);
+    if (scroll.hasClients) scroll.jumpTo(0);
+  }
+
+  final _outcomeKey = GlobalKey();
 
   bool get _authAsModal => MediaQuery.sizeOf(context).width >= 760;
 
@@ -554,11 +718,28 @@ class _CircleShellState extends State<CircleShell> {
       final past = _openPast;
       if (past != null) {
         await act('past_message', {'circle_id': past['id'], 'body': text});
+        message.clear();
       } else {
-        await act('message', {'body': text, 'request_id': _sendId});
+        // Shown at once with "Sending…"; the saved copy replaces it.
+        setState(() => _sending = {
+              'body': text,
+              'own': true,
+              'pending': true,
+              'created_at': DateTime.now().toUtc().toIso8601String(),
+            });
+        message.clear();
+        _scrollToLatest();
+        try {
+          await act('message', {'body': text, 'request_id': _sendId});
+        } catch (_) {
+          // Not sent: the text goes back in the box to try again.
+          if (mounted && message.text.isEmpty) message.text = text;
+          rethrow;
+        } finally {
+          if (mounted) setState(() => _sending = null);
+        }
       }
       _sendId = _sendBody = null;
-      message.clear();
       _scrollToLatest();
     } catch (_) {}
   }
@@ -601,10 +782,11 @@ class _CircleShellState extends State<CircleShell> {
                     icon: const Icon(Icons.send_rounded)),
               ]))));
 
-  void _openApplication(int step) => setState(() {
+  void _openApplication(int step, {bool focused = false}) => setState(() {
         _applicationKey = GlobalKey();
         editing = true;
         editStep = step;
+        editFocused = focused || step > 0;
         applicationParked = false;
         tab = 0;
       });
@@ -631,6 +813,7 @@ class _CircleShellState extends State<CircleShell> {
         busy: busy,
         act: safeAct,
         savePlan: act,
+        outcomeKey: _outcomeKey,
         onEdit: _openApplication,
         onMessages: () {
           setState(() => tab = 1);
@@ -642,7 +825,7 @@ class _CircleShellState extends State<CircleShell> {
     // A focused edit is one answer being changed from the profile or home
     // — never "Continue my application" or "Finish my profile", which both
     // open at step 0 and must keep the whole four-step walk.
-    final focused = editing && editStep > 0;
+    final focused = editing && editFocused;
     return CircleApplication(
         key: _applicationKey,
         initial: Map<String, dynamic>.from(state!['application'] as Map? ??
@@ -656,6 +839,7 @@ class _CircleShellState extends State<CircleShell> {
           setState(() {
             editing = false;
             editStep = 0;
+            editFocused = false;
             // Closing a focused edit is not enough on its own: an
             // application still in the 'apply' stage matches the second
             // clause of the condition above, so the full four-step form
@@ -668,6 +852,7 @@ class _CircleShellState extends State<CircleShell> {
         onCancel: () => setState(() {
               editing = false;
               editStep = 0;
+              editFocused = false;
               if (state?['stage'] == 'apply') applicationParked = true;
             }),
         onPhoto: repo!.isDemo ? null : _pickPhoto,
@@ -679,6 +864,7 @@ class _CircleShellState extends State<CircleShell> {
           setState(() {
             editing = false;
             editStep = 0;
+            editFocused = false;
             applicationParked = true;
           });
           showCircleToast(context, 'Saved. Pick up where you left off.');
@@ -728,6 +914,7 @@ class _CircleShellState extends State<CircleShell> {
           subtitle: names.isEmpty
               ? 'Still yours. Keep in touch and make plans.'
               : 'With ${names.join(', ')}. Still yours: keep in touch and make plans.'),
+      const _ModeratedNote(),
       if (messages.isEmpty)
         const Padding(
             padding: EdgeInsets.symmetric(vertical: 24),
@@ -772,7 +959,8 @@ class _CircleShellState extends State<CircleShell> {
       const CircleHeading('A little hello goes a long way.',
           eyebrow: 'Circle messages',
           subtitle:
-              'Plans, small updates and “see you Thursday”. Only your Circle can read this. Be kind, and ask before sharing someone’s details.'),
+              'Plans, small updates and “see you Thursday”. Be kind, and ask before sharing someone’s details.'),
+      const _ModeratedNote(),
       if (messages.isEmpty)
         const Padding(
             padding: EdgeInsets.symmetric(vertical: 24),
@@ -781,7 +969,7 @@ class _CircleShellState extends State<CircleShell> {
         TextButton(
             onPressed: _loadingOlder ? null : _loadOlderMessages,
             child: Text(_loadingOlder ? 'Loading…' : 'Load earlier messages')),
-      ..._withDays(messages),
+      ..._withDays([...messages, if (_sending != null) _sending!]),
     ]);
   }
 
@@ -880,7 +1068,9 @@ class _CircleShellState extends State<CircleShell> {
 
   Widget _bubble(BuildContext context, Json m) {
     final own = m['own'] == true;
-    final time = _messageTime(m['created_at']?.toString());
+    final time = m['pending'] == true
+        ? t('Sending…')
+        : _messageTime(m['created_at']?.toString());
     return Align(
         alignment: own ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
@@ -942,7 +1132,7 @@ class _CircleShellState extends State<CircleShell> {
         act: safeAct,
         busy: busy,
         onEdit: ['apply', 'waiting'].contains(state!['stage'])
-            ? _openApplication
+            ? (step) => _openApplication(step, focused: true)
             : null,
         onPhoto: repo!.isDemo
             ? null
@@ -957,10 +1147,11 @@ class _CircleShellState extends State<CircleShell> {
         // Hidden until the email worker is deployed; offering the switch
         // would promise emails nobody receives. Build with
         // --dart-define=EMAIL_DELIVERY=true once email is live.
-        onEmailNotifications: repo!.isDemo ||
-                !const bool.fromEnvironment('EMAIL_DELIVERY')
-            ? null
-            : (enabled) => safeAct('email_notifications', {'enabled': enabled}),
+        onEmailNotifications:
+            repo!.isDemo || !const bool.fromEnvironment('EMAIL_DELIVERY')
+                ? null
+                : (key, enabled) =>
+                    safeAct('email_setting', {'key': key, 'enabled': enabled}),
         onAccount: repo!.isDemo ? null : _openAccount,
         onReport: state!['circle'] == null ? null : () => _report(),
         onExport: repo!.isDemo ? null : _exportData,
@@ -1254,9 +1445,14 @@ class _CircleShellState extends State<CircleShell> {
     } catch (_) {}
   }
 
-  /// Where a notification leads. Organiser alerts ('support') open the
-  /// organiser panel; everything else is about the person's own Circle.
+  /// Where a notification leads: the destination stored with it, or for
+  /// older ones, the organiser panel (alerts) or the meetup it is about.
   void _openNotification(Json n) {
+    final open = (n['metadata'] as Map?)?['open'] as String?;
+    if (open != null) {
+      _openTarget(open);
+      return;
+    }
     if (n['kind'] == 'support' && state?['is_admin'] == true) {
       openAdmin();
       return;
@@ -1268,39 +1464,39 @@ class _CircleShellState extends State<CircleShell> {
       openCircleMeetup(context, meetup);
       return;
     }
-    setState(() => tab = 0);
-    if (scroll.hasClients) scroll.jumpTo(0);
+    _goHome();
   }
 
   /// New (unread) on top, Earlier (read) below. Opening the list no longer
   /// marks everything read: a notification is read once it is opened, or
   /// with "Mark all as read".
   Future<void> _notifications(BuildContext context) async {
-    var notes = rows(state?['notifications']);
-    if (repo?.isDemo != true && widget.session != null) {
-      try {
-        final result = await Supabase.instance.client
-            .from('notifications')
-            .select('id,kind,title,body,created_at,read_at,event_id')
-            .eq('recipient_profile_id', widget.session!.user.id)
-            .order('created_at', ascending: false)
-            .limit(60);
-        notes = rows(result);
-      } catch (_) {
-        if (context.mounted) {
-          showCircleToast(
-              context, 'Could not load notifications. Please retry.',
-              icon: Icons.error_outline_rounded);
-        }
-        return;
-      }
+    // The sheet opens straight away with a loading state; the list follows.
+    // Usually already fetched in the background; then it shows at once and
+    // is only brought up to date while open.
+    final live = repo?.isDemo != true && widget.session != null;
+    var notes = _notesCache ?? rows(state?['notifications']);
+    var loading = live && _notesCache == null;
+    var failed = false;
+    void Function(void Function())? refreshSheet;
+    if (live) {
+      _fetchNotes().then((result) {
+        notes = result;
+        _notesCache = result;
+        loading = false;
+        refreshSheet?.call(() {});
+      }).catchError((Object _) {
+        failed = loading;
+        loading = false;
+        refreshSheet?.call(() {});
+      });
     }
-    if (!context.mounted) return;
     await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
         showDragHandle: true,
         builder: (sheet) => StatefulBuilder(builder: (sheet, update) {
+              refreshSheet = update;
               final unread = [
                 for (final n in notes)
                   if (n['read_at'] == null) n
@@ -1400,7 +1596,7 @@ class _CircleShellState extends State<CircleShell> {
                                       style: Theme.of(sheet)
                                           .textTheme
                                           .headlineSmall)),
-                              if (unread.isNotEmpty)
+                              if (!loading && unread.isNotEmpty)
                                 TextButton(
                                     onPressed: () {
                                       final ids = [
@@ -1411,12 +1607,28 @@ class _CircleShellState extends State<CircleShell> {
                                     },
                                     child: const Text('Mark all as read')),
                             ]),
-                            if (notes.isEmpty)
+                            if (loading)
+                              const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 24),
+                                  child: Center(
+                                      child: CircleLoading(
+                                          compact: true,
+                                          label: 'Getting your updates…',
+                                          phrases: [
+                                        'Getting your updates…',
+                                        'Checking the post…',
+                                      ])))
+                            else if (failed)
+                              const Padding(
+                                  padding: EdgeInsets.only(top: 12),
+                                  child: Text(
+                                      'Could not load notifications. Please retry.'))
+                            else if (notes.isEmpty)
                               const Padding(
                                   padding: EdgeInsets.only(top: 12),
                                   child: Text(
                                       'You’re all caught up. Circle updates will appear here.')),
-                            if (notes.isNotEmpty) ...[
+                            if (!loading && notes.isNotEmpty) ...[
                               label('New'),
                               if (unread.isEmpty)
                                 const Padding(
@@ -1442,4 +1654,20 @@ class _CircleShellState extends State<CircleShell> {
                           ])));
             }));
   }
+}
+
+/// Members are told plainly that the chat is moderated.
+class _ModeratedNote extends StatelessWidget {
+  const _ModeratedNote();
+
+  @override
+  Widget build(BuildContext context) => const Padding(
+      padding: EdgeInsets.only(bottom: 12),
+      child: Row(children: [
+        Icon(Icons.shield_outlined, size: 16, color: Color(0xFF66727C)),
+        SizedBox(width: 6),
+        Expanded(
+            child: Text('This chat is moderated to keep Circles safe.',
+                style: TextStyle(fontSize: 12, color: Color(0xFF66727C)))),
+      ]));
 }

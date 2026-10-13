@@ -1,6 +1,10 @@
+import '../core/i18n.dart' show t;
 import 'circle_repository.dart' show Json, strings;
 
 const circleLanguages = ['English', 'Dutch'];
+
+/// Where Circles run. Places and suggestions are stored per city.
+const circleCity = 'Alkmaar';
 const circleDays = [
   'Monday',
   'Tuesday',
@@ -12,7 +16,41 @@ const circleDays = [
 ];
 const circleDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const circlePeriods = ['morning', 'afternoon', 'evening'];
-const circlePeriodTimes = ['09:00–12:00', '12:00–17:00', '18:00–22:00'];
+
+/// The time slots Circles run in: weekday late mornings and evenings,
+/// weekend afternoons and evenings. No Mondays and no Tuesday evenings
+/// (many places are closed).
+const circleSlotGrid = <String, List<String>>{
+  'tue': ['morning'],
+  'wed': ['morning', 'evening'],
+  'thu': ['morning', 'evening'],
+  'fri': ['afternoon', 'evening'],
+  'sat': ['afternoon', 'evening'],
+  'sun': ['afternoon', 'evening'],
+};
+
+/// The usual start time of a slot.
+const circleSlotStart = {
+  'morning': '10:30',
+  'afternoon': '14:00',
+  'evening': '19:00',
+};
+
+/// Only the slots in [circleSlotGrid]; older answers (Mondays, weekday
+/// afternoons…) are left out so people pick again from what runs now.
+Map<String, Set<String>> circleOfferedSlots(Map<String, Set<String>> slots) => {
+      for (final e in circleSlotGrid.entries)
+        if ((slots[e.key] ?? const {}).any(e.value.contains))
+          e.key: slots[e.key]!.where(e.value.contains).toSet()
+    };
+
+/// "Tue 19:00", "Sat 14:00"…, in week order and in the app language.
+List<String> circleSlotChips(Map<String, Set<String>> slots) => [
+      for (final e in circleSlotGrid.entries)
+        for (final part in e.value)
+          if (slots[e.key]?.contains(part) == true)
+            '${t(circleDays[circleDayKeys.indexOf(e.key)]).substring(0, 3)} ${circleSlotStart[part]}'
+    ];
 
 /// Answers to the old "A plan you'd say yes to" question, mapped onto the
 /// interests they now live in. Unknown answers are dropped.
@@ -94,6 +132,13 @@ String? circleInterestCategory(String interest) {
   }
   return null;
 }
+
+const circleGenders = {
+  'woman': 'Woman',
+  'man': 'Man',
+  'non_binary': 'Non-binary',
+  'prefer_not': 'Prefer not to say',
+};
 
 const circleGoals = ['Regular plans', 'Shared hobbies', 'Local friends'];
 const circleContexts = [

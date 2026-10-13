@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart' hide Text;
 import 'package:url_launcher/url_launcher.dart';
 import '../core/i18n.dart';
@@ -87,6 +91,14 @@ class CircleMeetupDetail extends StatelessWidget {
                                           style: const TextStyle(
                                               color: Color(0xFF4F5D66))),
                                   ])),
+                          if ('${meetup['booking_name'] ?? ''}'
+                              .trim()
+                              .isNotEmpty)
+                            line(
+                                Icons.table_restaurant_outlined,
+                                Text(t('Table booked under “{1}”').replaceAll(
+                                    '{1}',
+                                    '${meetup['booking_name']}'.trim()))),
                           for (final field in extras)
                             line(
                                 switch (field.key) {
@@ -119,9 +131,22 @@ class CircleMeetupDetail extends StatelessWidget {
                                   style: OutlinedButton.styleFrom(
                                       minimumSize: const Size(0, 48)),
                                   icon: const Icon(Icons.calendar_month),
-                                  label: const Text('Add to calendar'),
+                                  label: const Text('Google Calendar'),
                                   onPressed: () =>
                                       open(circleCalendarUri(meetup))),
+                            if (circleMeetupStart(meetup) != null)
+                              OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                      minimumSize: const Size(0, 48)),
+                                  icon: const Icon(Icons.event_available),
+                                  label: const Text('Apple or Outlook'),
+                                  onPressed: () => FilePicker.platform.saveFile(
+                                      dialogTitle: t('Add to calendar'),
+                                      fileName: 'vriendtime-meetup.ics',
+                                      type: FileType.custom,
+                                      allowedExtensions: ['ics'],
+                                      bytes: Uint8List.fromList(utf8
+                                          .encode(circleCalendarIcs(meetup))))),
                           ]),
                           const SizedBox(height: 10),
                           const Text(
@@ -146,8 +171,51 @@ Uri circleCalendarUri(Json meetup) {
     'text': 'VriendTime · ${circleMeetupTitle(meetup)}',
     'dates':
         '${stamp(circleMeetupStart(meetup)!)}/${stamp(circleMeetupEnd(meetup)!)}',
-    'location': circleVenueLabel(meetup),
+    'location': _calendarLocation(meetup),
     'ctz': 'Europe/Amsterdam',
-    'details': 'Open VriendTime for the latest plan: https://vriendtime.com/',
+    'details':
+        '${t('Open VriendTime for the latest plan:')} ${_meetupLink(meetup)}',
   });
+}
+
+/// The place, or a plain "Alkmaar" while it is still hidden.
+String _calendarLocation(Json meetup) {
+  final label = circleVenueLabel(meetup);
+  return label.startsWith('Revealed') || label == 'Location to be confirmed'
+      ? 'Alkmaar'
+      : label;
+}
+
+String _meetupLink(Json meetup) => Uri.https('vriendtime.com', '/', {
+      if (meetup['id'] != null) 'open': 'meetup:${meetup['id']}',
+      if (isDutch) 'lang': 'nl',
+    }).toString();
+
+/// The same meetup as an .ics file, for Apple Calendar and Outlook.
+String circleCalendarIcs(Json meetup) {
+  String stamp(DateTime date) =>
+      '${date.toUtc().toIso8601String().replaceAll('-', '').replaceAll(':', '').split('.').first}Z';
+  String esc(String v) => v
+      .replaceAll('\\', '\\\\')
+      .replaceAll(';', '\\;')
+      .replaceAll(',', '\\,')
+      .replaceAll('\n', '\\n');
+  final start = circleMeetupStart(meetup)!, end = circleMeetupEnd(meetup)!;
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//VriendTime//Circles//EN',
+    'BEGIN:VEVENT',
+    'UID:${meetup['id'] ?? stamp(start)}@vriendtime.com',
+    'DTSTAMP:${stamp(DateTime.now())}',
+    'DTSTART:${stamp(start)}',
+    'DTEND:${stamp(end)}',
+    'SUMMARY:${esc('VriendTime · ${circleMeetupTitle(meetup)}')}',
+    'LOCATION:${esc(_calendarLocation(meetup))}',
+    'DESCRIPTION:${esc('${t('Open VriendTime for the latest plan:')} ${_meetupLink(meetup)}')}',
+    'URL:${_meetupLink(meetup)}',
+    'END:VEVENT',
+    'END:VCALENDAR',
+    '',
+  ].join('\r\n');
 }

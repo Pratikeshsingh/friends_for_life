@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide Text;
 import '../core/destructive.dart';
 import '../core/i18n.dart';
 import '../core/app_diagnostics.dart';
+import 'circle_invite_friend.dart';
 import 'circle_leave.dart';
 import 'circle_preferences.dart';
 import 'circle_home.dart' show CircleAction;
@@ -41,7 +42,8 @@ class CircleProfile extends StatelessWidget {
 
   /// Turns the notification emails on or off. Null hides the row entirely,
   /// which is what the preview does: it has nowhere to send mail.
-  final ValueChanged<bool>? onEmailNotifications;
+  /// Turns one email category on or off (see [circleEmailSettings]).
+  final void Function(String key, bool enabled)? onEmailNotifications;
 
   /// Opens the application at a given step so each card edits its own
   /// answers instead of starting at name and date of birth.
@@ -84,10 +86,21 @@ class CircleProfile extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       color: _muted)),
               const SizedBox(height: 10),
-              if (circleSlots(app).isEmpty)
+              if (circleOfferedSlots(circleSlots(app)).isEmpty &&
+                  '${app['other_times'] ?? ''}'.trim().isEmpty)
                 const Text('Choose the days and times that fit your life.')
-              else
-                _slotGrid(circleSlots(app)),
+              else ...[
+                Wrap(spacing: 6, runSpacing: 6, children: [
+                  for (final label
+                      in circleSlotChips(circleOfferedSlots(circleSlots(app))))
+                    CirclePill(label, icon: Icons.schedule_rounded),
+                ]),
+                if ('${app['other_times'] ?? ''}'.trim().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text('${t('Also')}: ${app['other_times']}',
+                      style: const TextStyle(fontSize: 13, color: _muted)),
+                ],
+              ],
               const SizedBox(height: 12),
               Row(children: [
                 Icon(
@@ -118,6 +131,8 @@ class CircleProfile extends StatelessWidget {
                       letterSpacing: 1.5,
                       color: circleTealText,
                       fontWeight: FontWeight.w800)),
+              _row(context, 'Gender',
+                  circleGenders[app['gender']] ?? 'Not answered yet'),
               _row(
                   context,
                   'Looking for',
@@ -147,6 +162,10 @@ class CircleProfile extends StatelessWidget {
           _tile(Icons.tune_outlined, 'Edit my interests and goals',
               () => onEdit!(2),
               color: circleCoral),
+          const Divider(height: 1, color: _line),
+          _tile(Icons.badge_outlined, 'Edit birthday, languages and gender',
+              () => onEdit!(0),
+              color: circleNavy),
         ],
         if (onWithdraw != null) ...[
           const Divider(height: 1, color: _line),
@@ -179,18 +198,44 @@ class CircleProfile extends StatelessWidget {
         // app, so email is on by default, and this is the only place to stop it.
         if (onEmailNotifications != null) ...[
           const Divider(height: 1, color: _line),
-          if (state['email_notifications'] == null)
+          if (state['email_settings'] is! Map)
             const ListTile(
                 title: Text('Email preference unavailable'),
                 subtitle: Text('Refresh to load your saved choice.'))
           else
-            SwitchListTile(
-                value: state['email_notifications'] == true,
-                onChanged: onEmailNotifications,
-                secondary: _badge(Icons.mail_outline_rounded, _gold),
-                title: const Text('Email me about my Circle'),
-                subtitle: const Text(
-                    'Invitations, payment updates, meetup details, reminders and new messages.')),
+            Theme(
+                data: Theme.of(context)
+                    .copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                    leading: _badge(Icons.mail_outline_rounded, _gold),
+                    title: const Text('Email notifications',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text(() {
+                      final on = (state['email_settings'] as Map)
+                          .entries
+                          .where((e) =>
+                              e.value == true &&
+                              (e.key != 'email_organiser' || onAdmin != null))
+                          .length;
+                      final total = onAdmin != null ? 4 : 3;
+                      return on == total
+                          ? t('All on')
+                          : on == 0
+                              ? t('All off')
+                              : '$on ${t('of')} $total ${t('on')}';
+                    }()),
+                    children: [
+                      for (final e in circleEmailSettings.entries)
+                        if (e.key != 'email_organiser' || onAdmin != null)
+                          SwitchListTile(
+                              value: (state['email_settings'] as Map)[e.key] !=
+                                  false,
+                              onChanged: busy
+                                  ? null
+                                  : (v) => onEmailNotifications!(e.key, v),
+                              title: Text(e.value.$1),
+                              subtitle: Text(e.value.$2)),
+                    ])),
         ],
       ]),
       if (inCircle || onAdmin != null) ...[
@@ -265,9 +310,14 @@ class CircleProfile extends StatelessWidget {
       const SizedBox(height: 22),
       _sectionLabel('Help & account'),
       _card([
-        if (onHelp != null)
+        _tile(Icons.favorite_border_rounded, 'Invite a friend',
+            () => showInviteFriend(context),
+            subtitle: 'Share VriendTime with someone who’d enjoy it'),
+        if (onHelp != null) ...[
+          const Divider(height: 1, color: _line),
           _tile(Icons.chat_outlined, 'Help & contact', onHelp,
               subtitle: 'Chat with our team on WhatsApp', color: _green),
+        ],
         if (onAccount != null) ...[
           const Divider(height: 1, color: _line),
           _tile(Icons.manage_accounts_outlined, 'Account details', onAccount,
@@ -504,44 +554,6 @@ class CircleProfile extends StatelessWidget {
 
   /// Seven days by three parts of the day. It stays the same size whether
   /// someone picked one evening or every slot of the week.
-  Widget _slotGrid(Map<String, Set<String>> slots) {
-    const labels = ['Morning', 'Afternoon', 'Evening'];
-    Widget cell(bool on) => Expanded(
-        child: Container(
-            height: 22,
-            margin: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-                color: on ? circleTeal : const Color(0xFFEAF2EF),
-                borderRadius: BorderRadius.circular(6)),
-            child: on
-                ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
-                : null));
-    return Column(children: [
-      Row(children: [
-        const SizedBox(width: 76),
-        for (final day in circleDays)
-          Expanded(
-              child: Text(t(day).substring(0, 2),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: _muted))),
-      ]),
-      const SizedBox(height: 2),
-      for (var p = 0; p < circlePeriods.length; p++)
-        Row(children: [
-          SizedBox(
-              width: 76,
-              child: Text(labels[p],
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12, color: _muted))),
-          for (final day in circleDayKeys)
-            cell(slots[day]?.contains(circlePeriods[p]) ?? false),
-        ]),
-    ]);
-  }
-
   Widget _tile(IconData icon, String title, VoidCallback? onTap,
           {String? subtitle,
           bool destructive = false,
