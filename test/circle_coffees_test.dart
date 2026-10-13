@@ -71,7 +71,7 @@ void main() {
     expect(find.text('Running late'), findsNothing);
     expect(find.text('Can’t make it after all'), findsOneWidget);
     expect(find.text('Google Calendar'), findsOneWidget);
-    expect(find.text('Apple or Outlook'), findsOneWidget);
+    expect(find.text('Download calendar file (Apple/Outlook)'), findsOneWidget);
   });
 
   testWidgets('a "no" can still change their mind', (tester) async {

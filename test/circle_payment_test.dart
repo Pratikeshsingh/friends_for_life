@@ -34,7 +34,7 @@ void main() {
       action = a;
       payload = p;
     }));
-    await tester.tap(find.text('Accept invitation — €19').first);
+    await tester.tap(find.text('Accept invitation').first);
     await tester.pumpAndSettle();
     expect(
         tester
@@ -62,8 +62,8 @@ void main() {
         find.textContaining('will send you the payment link'), findsOneWidget);
     // Accepted: a quiet confirmation, not a second accept button.
     expect(find.text('Invitation accepted'), findsOneWidget);
-    expect(find.widgetWithText(ElevatedButton, 'Accept invitation — €19'),
-        findsNothing);
+    expect(
+        find.widgetWithText(ElevatedButton, 'Accept invitation'), findsNothing);
     expect(find.textContaining('Tikkie'), findsNothing);
   });
 
@@ -74,7 +74,7 @@ void main() {
         {...invitation, 'stage': 'cancelled', 'payment': 'paid'},
         (a, [p = const {}]) async {}));
     expect(find.textContaining('refund is being arranged'), findsOneWidget);
-    expect(find.text('Accept invitation — €19'), findsNothing);
+    expect(find.text('Accept invitation'), findsNothing);
     expect(find.text('Find another Circle'), findsNothing);
   });
 }

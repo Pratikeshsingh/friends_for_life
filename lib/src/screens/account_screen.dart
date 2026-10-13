@@ -335,7 +335,7 @@ class _SafetyPage extends StatelessWidget {
           icon: Icons.people_outline,
           title: 'Meet in the planned setting',
           body:
-              'Stay at the location shared in the app. If plans change, only go somewhere you feel comfortable.',
+              'Meet at the place shared in the app. If you move on together, only go to another public place you’re both comfortable with, and tell us if a plan no longer feels right.',
         ),
         _HelpAnswerCard(
           icon: Icons.support_agent_outlined,

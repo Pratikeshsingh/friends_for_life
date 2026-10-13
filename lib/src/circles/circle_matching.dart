@@ -88,6 +88,27 @@ double pairFit(Json a, Json b) {
   return score;
 }
 
+/// A warning when ages are far apart, else null. Only a warning: the score
+/// already prefers close ages, and the organiser can still create the group.
+///   * more than 20 years apart, at any age;
+///   * more than 10 years apart when anyone is under 40 (people over 40
+///     mix easily across a wider range).
+String? ageWarning(List<Json> members) {
+  final ages = [
+    for (final m in members)
+      if (applicantAge(m) != null) applicantAge(m)!
+  ]..sort();
+  if (ages.length < 2) return null;
+  final span = ages.last - ages.first;
+  if (span > 20) {
+    return 'Ages ${ages.first}–${ages.last}: more than 20 years apart';
+  }
+  if (span > 10 && ages.first < 40) {
+    return 'Ages ${ages.first}–${ages.last}: more than 10 years apart';
+  }
+  return null;
+}
+
 /// A warning when someone would be the only man or the only woman, else null.
 String? genderWarning(List<Json> members) {
   final men = members.where((m) => m['gender'] == 'man').length;
@@ -164,6 +185,7 @@ class CircleMatch {
 
   String get slot => '$day $period';
   String? get warning => genderWarning(members);
+  String? get ageNote => ageWarning(members);
   bool get complete => members.length >= 5;
   int get missing => complete ? 0 : 5 - members.length;
   List<String> get ids => [for (final m in members) _id(m)];

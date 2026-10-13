@@ -21,8 +21,7 @@ void main() {
       final wait = circleWaitEstimate(waitingSnapshot(peers: 2));
       expect(wait.ready, 3);
       expect(wait.stillNeeded, 2);
-      expect(wait.progressLine,
-          'Your group for Thursday evenings is coming together.');
+      expect(wait.progressLine, 'We’re finding people for Thursday evenings.');
       expect(wait.headline, '2 more people needed');
     });
 
@@ -50,15 +49,11 @@ void main() {
       expect(start, DateTime(2026, 10, 8, 19, 0));
     });
 
-    test('a longer queue gives a longer range', () {
-      String rangeFor(int peers) =>
-          circleWaitEstimate(waitingSnapshot(peers: peers)).estimate;
-      expect(rangeFor(3), 'Usually about a week');
-      expect(rangeFor(2), 'Usually one to two weeks');
-      expect(rangeFor(1), 'Usually two to three weeks');
-      // Nobody else waiting yet: the Circle depends on people who have not
-      // applied, so the range stops pretending to be precise.
-      expect(rangeFor(0), 'Usually a few weeks');
+    test('no time range is promised while people are still needed', () {
+      for (final peers in [0, 1, 2, 3]) {
+        expect(circleWaitEstimate(waitingSnapshot(peers: peers)).estimate,
+            'We’ll email you as soon as your invitation is ready.');
+      }
     });
 
     test('days waited are counted from the application', () {
@@ -156,7 +151,7 @@ void main() {
             ..addAll({
               'application': {'name': 'Asha'}
             }));
-      expect(find.text('Your group for Thursday evenings is coming together.'),
+      expect(find.text('We’re finding people for Thursday evenings.'),
           findsOneWidget);
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
       expect(find.text('2 more people needed'), findsOneWidget);

@@ -180,7 +180,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
                                 Text(
                                   signIn
                                       ? 'Sign in to see what’s next.'
-                                      : 'Takes a minute. After this, four short questions about you, your week and your kind of company, plus a photo so your group can recognise you. No payment.',
+                                      : 'Takes a minute. After this, four short steps about you, your week and your kind of company, plus a photo so your group can recognise you. No payment.',
                                   style: theme.textTheme.bodyLarge?.copyWith(
                                       color: const Color(0xFF60727A)),
                                 ),

@@ -31,7 +31,7 @@ void main() {
                     onEdit: (_) {},
                     onMessages: () {})))));
     final people = tester.getTopLeft(find.text('The people in your Circle'));
-    final accept = find.text('Accept invitation — €19');
+    final accept = find.text('Accept invitation');
     expect(accept, findsNWidgets(2));
     expect(tester.getTopLeft(accept.first).dy, lessThan(people.dy));
     expect(tester.getTopLeft(accept.last).dy, greaterThan(people.dy));

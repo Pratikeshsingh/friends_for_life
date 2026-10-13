@@ -62,10 +62,10 @@ update public.events set starts_at=now()+interval '1 hour', ends_at=now()+interv
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
 select public.circle_action('running_late',jsonb_build_object('kind','coffee','id',(select id from cof),'minutes',10));
-select pg_temp.assert_true((public.circle_snapshot()->'messages'->-1->>'body')='Ik ben ongeveer 10 minuten later voor onze koffie, Member 2.','chat message in the member''s language');
+select pg_temp.assert_true((public.circle_snapshot()->'messages'->-1->>'body')='Ik ben ongeveer 10 minuten later voor mijn koffie met Member 2.','chat message in the member''s language');
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000003',true);
 select public.circle_action('running_late',jsonb_build_object('kind','meetup','id',(select ev from ids),'minutes',15));
-select pg_temp.assert_true((public.circle_snapshot()->'messages'->-1->>'body')='Running about 15 minutes late.','group meetup message');
+select pg_temp.assert_true((public.circle_snapshot()->'messages'->-1->>'body')='Running about 15 minutes late for “Dinner together”.','group meetup message names the meetup');
 select pg_temp.assert_true((select count(*) from jsonb_array_elements(public.circle_snapshot()->'coffees'->'rounds'))=0,'no rounds yet');
 reset role;
 select pg_temp.assert_true(exists(select 1 from public.notifications where recipient_profile_id='00000000-0000-0000-0000-000000000002' and title='Member 1 is running late' and body like 'About 10 minutes.%'),'coffee partner told');
@@ -76,4 +76,6 @@ select pg_temp.assert_true(pg_temp.refused($q$select public.circle_action('runni
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000004',true);
 select pg_temp.assert_true(pg_temp.refused($q$select public.circle_action('running_late',jsonb_build_object('kind','coffee','id',(select id from cof),'minutes',10))$q$),'only the two people of the coffee');
 reset role;
+-- The survey accepts an honest "No".
+select pg_temp.assert_true(position('''Not yet'',''No''' in pg_get_functiondef('public.circle_action_core(text,jsonb)'::regprocedure))>0,'No is a valid answer');
 rollback;

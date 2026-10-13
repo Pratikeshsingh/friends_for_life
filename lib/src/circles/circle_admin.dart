@@ -360,8 +360,11 @@ class _CircleAdminState extends State<CircleAdmin>
     if (!weeksEdited && weeksKind != timeKind) _fillWeeks(timeKind);
   }
 
-  bool get weeksComplete => weeks.every(
-      (w) => w.title.text.trim().isNotEmpty && w.venue.text.trim().isNotEmpty);
+  /// Members are told what each week costs, so the cost is required too.
+  bool get weeksComplete => weeks.every((w) =>
+      w.title.text.trim().isNotEmpty &&
+      w.venue.text.trim().isNotEmpty &&
+      w.cost.text.trim().isNotEmpty);
 
   /// First matching weekday at least a week out, so nobody is invited to
   /// something happening in two days.
@@ -1937,14 +1940,14 @@ class _CircleAdminState extends State<CircleAdmin>
                   ]))),
       ]),
       const SizedBox(height: 8),
-      if (m.warning case final w?)
+      for (final w in [m.warning, m.ageNote].whereType<String>())
         Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Padding(
                   padding: EdgeInsets.only(top: 2),
-                  child:
-                      Icon(Icons.info_outline, size: 15, color: circleCoral)),
+                  child: Icon(Icons.info_outline,
+                      size: 15, color: circleCoralText)),
               const SizedBox(width: 6),
               Expanded(
                   child: Text(w,
@@ -1953,7 +1956,10 @@ class _CircleAdminState extends State<CircleAdmin>
                           fontWeight: FontWeight.w700,
                           color: circleCoralText))),
             ])),
-      for (final r in m.reasons.skip(2))
+      // The age warning already names the range.
+      for (final r in m.reasons
+          .skip(2)
+          .where((r) => m.ageNote == null || !r.startsWith('Ages ')))
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Padding(
               padding: EdgeInsets.only(top: 3),
@@ -2025,6 +2031,8 @@ class _CircleAdminState extends State<CircleAdmin>
             : '${blocked.length} pairs here asked not to be matched, or were in a Circle together before. Swap them out.',
       if (genderWarning(people) case final w? when people.length >= 5)
         '$w. Try to swap someone so nobody is the only one; you can still create it.',
+      if (ageWarning(people) case final w? when people.length >= 2)
+        '$w. You can still create it.',
     ];
     return CirclePanel(tint: true, children: [
       Row(children: [
@@ -2060,7 +2068,7 @@ class _CircleAdminState extends State<CircleAdmin>
         Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Icon(Icons.info_outline, size: 16, color: circleCoral),
+              const Icon(Icons.info_outline, size: 16, color: circleCoralText),
               const SizedBox(width: 6),
               Expanded(
                   child: Text(p,
@@ -2137,8 +2145,12 @@ class _CircleAdminState extends State<CircleAdmin>
       const SizedBox(height: 16),
       ..._weeksEditor(context),
       const SizedBox(height: 10),
-      const Text('Creates six weekly plans and sends the invitations.',
-          style: TextStyle(fontSize: 12, color: _muted)),
+      Text(
+          weeksComplete
+              ? 'Creates six weekly plans and sends the invitations.'
+              : 'Add an activity, a place and what it costs for all six weeks.',
+          style: TextStyle(
+              fontSize: 12, color: weeksComplete ? _muted : circleCoralText)),
       const SizedBox(height: 10),
       ElevatedButton(
           onPressed: busy ||
@@ -2267,7 +2279,8 @@ class _CircleAdminState extends State<CircleAdmin>
                   maxLength: 300,
                   enabled: !busy,
                   onChanged: edited,
-                  decoration: field('What it costs')),
+                  decoration: field('What it costs')
+                      .copyWith(hintText: t('e.g. You pay for yourself.'))),
               const SizedBox(height: 6),
               TextField(
                   controller: weeks[i].booking,

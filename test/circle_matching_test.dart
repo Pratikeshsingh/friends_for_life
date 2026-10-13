@@ -196,4 +196,35 @@ void main() {
       expect(best.members.length, 6);
     });
   });
+
+  group('age warning', () {
+    List<Json> ages(List<int> list) => [
+          for (var i = 0; i < list.length; i++)
+            {...applicant('a$i'), 'age': list[i]}
+        ];
+    test('more than 10 years apart, when anyone is under 40', () {
+      expect(ageWarning(ages([24, 30, 33])), isNull);
+      expect(ageWarning(ages([29, 39])), isNull, reason: 'exactly 10 is fine');
+      expect(
+          ageWarning(ages([29, 40])), 'Ages 29–40: more than 10 years apart');
+      expect(ageWarning(ages([28, 35, 41])),
+          'Ages 28–41: more than 10 years apart');
+      expect(
+          ageWarning(ages([38, 55])), 'Ages 38–55: more than 10 years apart');
+    });
+    test('over 40 everyone mixes, up to 20 years', () {
+      expect(ageWarning(ages([42, 50, 58])), isNull);
+      expect(ageWarning(ages([40, 60])), isNull, reason: 'exactly 20 is fine');
+      expect(
+          ageWarning(ages([41, 68])), 'Ages 41–68: more than 20 years apart');
+    });
+    test('unknown ages do not count', () {
+      expect(
+          ageWarning([
+            applicant('x'),
+            ...ages([30])
+          ]),
+          isNull);
+    });
+  });
 }

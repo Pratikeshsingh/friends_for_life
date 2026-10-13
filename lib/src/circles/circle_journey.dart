@@ -94,7 +94,8 @@ class _CircleJourneyState extends State<CircleJourney>
           style: theme.textTheme.displayMedium?.copyWith(
               color: _coral, height: 1.05, fontSize: compact ? 30 : null)),
       const SizedBox(height: 12),
-      const Text('From a first dinner to plans you make together.',
+      const Text(
+          'From a first meal to plans you make together, with optional one-to-one coffees in between.',
           style: TextStyle(color: _soft, height: 1.45)),
     ]);
     final timeline = AnimatedBuilder(

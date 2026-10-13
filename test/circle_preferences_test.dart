@@ -183,7 +183,7 @@ void main() {
                 body: SingleChildScrollView(child: CircleJourney())))));
     await tester.pumpAndSettle();
     for (final title in [
-      'Dinner together',
+      'A meal together',
       'Go beyond “what do you do?”',
       'Find out who’s secretly competitive',
       'Something new together',

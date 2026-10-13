@@ -66,7 +66,15 @@ class CircleMeetupDetail extends StatelessWidget {
                           Text(circleMeetupTitle(meetup),
                               style:
                                   Theme.of(context).textTheme.headlineMedium),
-                          if (week != null && week >= 1 && week <= 6) ...[
+                          // Weeks 2–4 describe a specific activity; only show
+                          // that when the plan still is that activity.
+                          if (week != null &&
+                              week >= 1 &&
+                              week <= 6 &&
+                              (week == 1 ||
+                                  week >= 5 ||
+                                  circleMeetupTitle(meetup) ==
+                                      circleWeekTitles[week - 1])) ...[
                             const SizedBox(height: 8),
                             Text(circleWeekNotes[week - 1],
                                 style: const TextStyle(
@@ -113,6 +121,15 @@ class CircleMeetupDetail extends StatelessWidget {
                                 style: const TextStyle(
                                     fontSize: 12, color: Color(0xFF66727C))),
                           const SizedBox(height: 20),
+                          if (circleMeetupStart(meetup) != null) ...[
+                            Text(
+                                location == 'Location to be confirmed'
+                                    ? 'The place isn’t final yet. Calendar copies don’t update, so check the app before you leave.'
+                                    : 'Calendar copies don’t update, so check the app before you leave.',
+                                style: const TextStyle(
+                                    fontSize: 12, color: Color(0xFF66727C))),
+                            const SizedBox(height: 10),
+                          ],
                           Wrap(spacing: 10, runSpacing: 10, children: [
                             if (!hidden)
                               OutlinedButton.icon(
@@ -139,7 +156,8 @@ class CircleMeetupDetail extends StatelessWidget {
                                   style: OutlinedButton.styleFrom(
                                       minimumSize: const Size(0, 48)),
                                   icon: const Icon(Icons.event_available),
-                                  label: const Text('Apple or Outlook'),
+                                  label: const Text(
+                                      'Download calendar file (Apple/Outlook)'),
                                   onPressed: () => FilePicker.platform.saveFile(
                                       dialogTitle: t('Add to calendar'),
                                       fileName: 'vriendtime-meetup.ics',
@@ -148,11 +166,6 @@ class CircleMeetupDetail extends StatelessWidget {
                                       bytes: Uint8List.fromList(utf8
                                           .encode(circleCalendarIcs(meetup))))),
                           ]),
-                          const SizedBox(height: 10),
-                          const Text(
-                              'Check this plan again before leaving. Calendar copies do not update automatically.',
-                              style: TextStyle(
-                                  fontSize: 12, color: Color(0xFF66727C))),
                           const SizedBox(height: 8),
                           TextButton.icon(
                               icon: const Icon(Icons.chat_outlined, size: 18),

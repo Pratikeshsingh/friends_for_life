@@ -62,7 +62,7 @@ void main() {
     expect(find.textContaining('€19 total'), findsNothing);
     expect(find.textContaining('Six people.'), findsNothing);
     // Week one in the six-week timeline is the dinner.
-    expect(find.text('Dinner together'), findsOneWidget);
+    expect(find.text('A meal together'), findsOneWidget);
   });
 
   testWidgets('reduced-motion loading stays still and labels its purpose',

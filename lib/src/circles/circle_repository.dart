@@ -22,7 +22,7 @@ String circleRequestId() {
 /// the weekly plan and the organiser panel. The database creates meetups
 /// with these same titles (see supabase/migrations/20261002_flexible_week_themes.sql).
 const circleWeekTitles = [
-  'Dinner together',
+  'A meal together',
   'Go beyond “what do you do?”',
   'Find out who’s secretly competitive',
   'Something new together',
@@ -35,17 +35,17 @@ const circleActivities = circleWeekTitles;
 
 /// One short line per week, for the six-week timeline.
 const circleWeekShort = [
-  'A two-hour dinner to meet everyone.',
+  'A first meal together to meet everyone.',
   'A relaxed catch-up over coffee, a drink, or a walk. Less introducing yourself, more getting to know each other.',
   'Games, a quiz, or a playful challenge. An easy way to loosen up together.',
   'Bowling, board games or something new. We plan this one too.',
   'We suggest a plan; change it together if you like.',
-  'A last get-together, then your group carries on. Nothing more to pay.',
+  'A last get-together, then your group carries on. No further VriendTime fee.',
 ];
 
 /// The fuller description, on each week's card.
 const circleWeekNotes = [
-  'A two-hour dinner. We book the table; you pay the restaurant yourself. Leaving early is always fine, but the first evening is the one worth staying for.',
+  'A first meal together, about two hours. We book the table; you pay the restaurant yourself. Leaving early is always fine, but the first meetup is the one worth staying for.',
   'A relaxed catch-up over coffee, a drink, or a walk. Less introducing yourself, more getting to know each other.',
   'Games, a quiz, or a playful challenge. An easy way to loosen up together.',
   'Something new together. We plan this one too.',
@@ -202,12 +202,8 @@ class CircleWaitEstimate {
           ? 'Usually a few days from here'
           : 'Earliest start: ${circleDate(start.toIso8601String())} at ${_hm(start)}. We’ll confirm it in your invitation.';
     }
-    return switch (stillNeeded) {
-      1 => 'Usually about a week',
-      2 => 'Usually one to two weeks',
-      3 => 'Usually two to three weeks',
-      _ => 'Usually a few weeks',
-    };
+    // No time range until the pilot shows how long it really takes.
+    return 'We’ll email you as soon as your invitation is ready.';
   }
 
   /// 'Thursday evening' reads as a single appointment; the queue is about the
@@ -222,7 +218,7 @@ class CircleWaitEstimate {
       return 'Enough people are free on $slotPhrase. Your invitation will appear here once the group is set.';
     }
     if (ready <= 1) return 'We’re gathering people for $slotPhrase.';
-    return 'Your group for $slotPhrase is coming together.';
+    return 'We’re finding people for $slotPhrase.';
   }
 
   /// The first possible meetup for the slot: the matching weekday at least
@@ -232,8 +228,8 @@ class CircleWaitEstimate {
     if (parts.length != 2) return null;
     final weekday = circleDays.indexOf(parts[0]) + 1;
     const starts = {
-      'morning': (9, 30),
-      'afternoon': (13, 0),
+      'morning': (10, 30),
+      'afternoon': (14, 0),
       'evening': (19, 0)
     };
     final time = starts[parts[1]];

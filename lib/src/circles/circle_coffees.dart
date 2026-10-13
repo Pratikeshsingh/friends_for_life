@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart' hide Text;
 import 'package:url_launcher/url_launcher.dart';
+import '../core/destructive.dart';
 import '../core/i18n.dart';
 import 'circle_home.dart' show CircleAction, circleFeelings;
 import 'circle_meetup_detail.dart' show circleCalendarIcs, circleCalendarUri;
@@ -152,7 +153,7 @@ class CircleCoffees extends StatelessWidget {
           style: const TextStyle(fontSize: 13, color: _muted)),
       const SizedBox(height: 4),
       const Text(
-          'Good to know: tables aren’t reserved. If it’s full, pick somewhere nearby or take a walk together.',
+          'Good to know: tables aren’t reserved. If it’s full, you can move to another public place nearby that you’re both comfortable with.',
           style: TextStyle(fontSize: 13, color: _muted)),
       const SizedBox(height: 12),
       if (confirmed && circleRunningLateWindow(c['starts_at'])) ...[
@@ -166,15 +167,19 @@ class CircleCoffees extends StatelessWidget {
         const SizedBox(height: 4),
       ],
       if (confirmed && !started) ...[
-        Wrap(spacing: 4, children: [
-          TextButton.icon(
+        const Text(
+            'Calendar copies don’t update, so check the app before you leave.',
+            style: TextStyle(fontSize: 12, color: _muted)),
+        const SizedBox(height: 8),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          OutlinedButton.icon(
               icon: const Icon(Icons.calendar_month, size: 18),
               label: const Text('Google Calendar'),
               onPressed: () => launchUrl(circleCalendarUri(_asMeetup(c, name)),
                   mode: LaunchMode.externalApplication)),
-          TextButton.icon(
+          OutlinedButton.icon(
               icon: const Icon(Icons.event_available, size: 18),
-              label: const Text('Apple or Outlook'),
+              label: const Text('Download calendar file (Apple/Outlook)'),
               onPressed: () => FilePicker.platform.saveFile(
                   dialogTitle: t('Add to calendar'),
                   fileName: 'vriendtime-coffee.ics',
@@ -183,6 +188,8 @@ class CircleCoffees extends StatelessWidget {
                   bytes: Uint8List.fromList(
                       utf8.encode(circleCalendarIcs(_asMeetup(c, name)))))),
         ]),
+        // Cancelling sits apart, so it never looks like a calendar option.
+        const Divider(height: 28),
       ],
       if (started)
         const SizedBox.shrink()
@@ -201,6 +208,7 @@ class CircleCoffees extends StatelessWidget {
             child: const Text('I can make it after all'))
       else
         TextButton(
+            style: destructiveTextStyle,
             onPressed: busy
                 ? null
                 : () async {

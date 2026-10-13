@@ -112,7 +112,7 @@ class CircleHome extends StatelessWidget {
               width: double.infinity,
               child: CirclePanel(tint: true, children: [
                 const Row(children: [
-                  Icon(Icons.error_outline_rounded, color: circleCoral),
+                  Icon(Icons.error_outline_rounded, color: circleCoralText),
                   SizedBox(width: 10),
                   Expanded(
                       child: Text('Finish your profile to be matched',
@@ -311,7 +311,7 @@ class CircleHome extends StatelessWidget {
           subtitle: graduated
               ? 'The programme is done, but your Circle isn’t: the chat stays open and you can keep making plans together, at no extra cost.'
               : invited && agreed
-                  ? 'Your place is held for you. Once your €19 has arrived, your Circle and its chat open.'
+                  ? 'Your place is held for you until the pay-by date below. Once your €19 has arrived, your Circle and its chat open.'
                   : invited
                       ? 'Look at the people and the six dates. If it works for you, say yes.'
                       : null),
@@ -374,8 +374,8 @@ class CircleHome extends StatelessWidget {
                               color: circleCoralText)),
                       const SizedBox(height: 4),
                       Text(agreed
-                          ? 'Your place is confirmed only once your €19 arrives, nothing else. The pay-by date has passed, so the organiser may now offer your place to someone on the waiting list. Pay now to keep it. If you have already paid, tap “I’ve sent the payment”.'
-                          : 'The pay-by date has passed, so the organiser may now offer your place to someone on the waiting list. Accept and pay now to keep it.'),
+                          ? 'Your place is confirmed only once your €19 arrives, nothing else. The pay-by date has passed, so the organiser may now offer your place to someone on the waiting list. Pay now; if your place has already gone to someone else, the organiser will let you know. If you have already paid, tap “I’ve sent the payment”.'
+                          : 'The pay-by date has passed, so the organiser may now offer your place to someone on the waiting list. You can still accept and pay; if your place has already gone to someone else, the organiser will let you know.'),
                     ])),
           ],
           // Before deciding, people look at the group and the six dates
@@ -426,11 +426,16 @@ class CircleHome extends StatelessWidget {
         const SizedBox(height: 20),
         KeyedSubtree(key: outcomeKey, child: _outcome(context))
       ],
+      // Whatever comes first is on top: the next group meetup or a coffee.
+      if (!invited && _coffeeFirst(upcoming) && state['coffees'] is Map) ...[
+        const SizedBox(height: 20),
+        CircleCoffees(state: state, members: members, busy: busy, act: act),
+      ],
       if (!invited && upcoming != null) ...[
         const SizedBox(height: 20),
         _meetup(context, upcoming, featured: true)
       ],
-      if (!invited && state['coffees'] is Map) ...[
+      if (!invited && !_coffeeFirst(upcoming) && state['coffees'] is Map) ...[
         const SizedBox(height: 26),
         CircleCoffees(state: state, members: members, busy: busy, act: act),
       ],
@@ -444,7 +449,7 @@ class CircleHome extends StatelessWidget {
           style: Theme.of(context).textTheme.headlineSmall),
       const SizedBox(height: 6),
       const Text(
-          'Dates and times are fixed. We plan weeks 1 to 4; weeks 5 and 6 start with our plan, which your group can change together. Netherlands time.',
+          'Dates and times are fixed. We plan weeks 1 to 4; weeks 5 and 6 start with our plan, which your group can change together. Between the meetups we suggest optional one-to-one coffees; saying no is always fine. Netherlands time.',
           style: TextStyle(color: Color(0xFF4F5D66), height: 1.45)),
       const SizedBox(height: 14),
       _weekList(
@@ -492,8 +497,11 @@ class CircleHome extends StatelessWidget {
             const Text(
                 'Your request is private. Our team will follow up with you.')
           ])
-        else if ((state['switch'] as Map?)?['available'] == true ||
-            (state['move'] as Map?)?['available'] == true)
+        // Only in the two days after the first meetup, when people decide
+        // whether the group feels right; leaving stays under Profile always.
+        else if (((state['switch'] as Map?)?['available'] == true ||
+                (state['move'] as Map?)?['available'] == true) &&
+            _justAfterFirstMeetup(state))
           TextButton(
               style: TextButton.styleFrom(
                   foregroundColor: const Color(0xFF4F5D66)),
@@ -503,6 +511,25 @@ class CircleHome extends StatelessWidget {
               child: const Text('Circle not feeling right?')),
       ],
     ]);
+  }
+
+  /// True when this member's next coffee comes before the next group meetup.
+  bool _coffeeFirst(Json? upcoming) {
+    final current = (state['coffees'] as Map?)?['current'];
+    if (current is! Map) return false;
+    final coffee = DateTime.tryParse('${current['starts_at'] ?? ''}');
+    if (coffee == null) return false;
+    final meetup = upcoming == null ? null : circleMeetupStart(upcoming);
+    return meetup == null || coffee.isBefore(meetup);
+  }
+
+  static bool _justAfterFirstMeetup(Json state, {DateTime? now}) {
+    final first =
+        rows(state['meetups']).where((m) => m['week'] == 1).firstOrNull;
+    final end = first == null ? null : circleMeetupEnd(first);
+    if (end == null) return false;
+    final at = (now ?? DateTime.now()).toUtc();
+    return at.isAfter(end) && at.isBefore(end.add(const Duration(hours: 48)));
   }
 
   /// Whether the member confirmed these times in the last three weeks.
@@ -570,7 +597,7 @@ class CircleHome extends StatelessWidget {
               ? 'Invitation accepted'
               : credit
                   ? 'Accept invitation — already paid'
-                  : 'Accept invitation — €19'));
+                  : 'Accept invitation'));
 
   /// Accepting, paying and declining an invitation.
   List<Widget> _decision(BuildContext context, bool agreed, bool credit) {
@@ -640,7 +667,7 @@ class CircleHome extends StatelessWidget {
         Text(
             _payLink != null
                 ? 'Accept first, then pay the €19 with iDEAL.'
-                : 'No online checkout. If you accept, the organiser will send you the payment link.',
+                : 'After you accept, the organiser sends you a payment link.',
             style: const TextStyle(fontWeight: FontWeight.w700)),
       ],
       TextButton(
@@ -751,7 +778,7 @@ class CircleHome extends StatelessWidget {
                 ? null
                 : () =>
                     scheduleCircleMeetup(context, savePlan ?? act, meetup: m),
-            child: const Text('Change it'));
+            child: const Text('Change the plan'));
       }
       return InkWell(
           onTap: () => openCircleMeetup(context, m),
@@ -838,11 +865,11 @@ class CircleHome extends StatelessWidget {
           '${start == null ? '' : ' · ${circleCoffeeWhen(coffee['starts_at'])}'}'
           '${coffee['status'] == 'asked' ? ' · ${t('waiting for answers')}' : ''}';
     } else if (info?['decided'] == true) {
-      text = t('Free week');
+      text = t('No one-to-one this week');
     } else if (info != null) {
-      text = t('One-to-one coffee · being planned');
+      text = t('One-to-one coffee (optional) · being planned');
     } else {
-      text = t('One-to-one coffee');
+      text = t('One-to-one coffee (optional)');
     }
     return Padding(
         padding: const EdgeInsets.fromLTRB(28, 2, 16, 8),
@@ -903,7 +930,7 @@ class CircleHome extends StatelessWidget {
         // The first evening is the hardest one to walk into.
         if (!done && week == 1) ...[
           const Text(
-              'Everyone is new at the first dinner, so nobody knows anyone yet. Running late or can’t find the table? Let your Circle know in the chat.'),
+              'Everyone is new at the first meetup, so nobody knows anyone yet. Running late or can’t find the table? Let your Circle know in the chat.'),
           const SizedBox(height: 8),
         ],
         if (week != null)
@@ -1252,12 +1279,12 @@ class CircleHome extends StatelessWidget {
           'outside': 'Have you met outside the scheduled meetups?',
           if (demo || state['day90_due'] == true)
             'still_meeting':
-                '${demo ? 'Preview · ' : ''}90 days on: are you still voluntarily seeing at least one Circle member?'
+                '${demo ? 'Preview · ' : ''}90 days on: do you still meet anyone from your Circle?'
         }.entries) ...[
           Text(entry.value,
               style: const TextStyle(fontWeight: FontWeight.w700)),
           Wrap(spacing: 8, children: [
-            for (final answer in ['Yes', 'Not yet'])
+            for (final answer in ['Yes', 'Not yet', 'No'])
               ChoiceChip(
                   label: Text(answer),
                   selected: (state['outcome'] as Map?)?[entry.key] == answer,
@@ -1375,7 +1402,7 @@ class _ScheduleDialogState extends State<_ScheduleDialog> {
                       labelText: t('Table booked under (optional)'))),
             if (!widget.organiser)
               const Text(
-                  'Discuss the idea in your Circle chat first. Saving shares this plan with everyone.'),
+                  'Talk it over in the chat first. Saving updates the plan for everyone.'),
             const SizedBox(height: 14),
             if (fixedSchedule) ...[
               Text(

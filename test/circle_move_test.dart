@@ -30,7 +30,22 @@ void main() {
       'members': [
         {'id': 'me', 'name': 'You'}
       ],
-      'meetups': [],
+      // The first meetup ended yesterday: the moment to ask.
+      'meetups': [
+        {
+          'id': 'w1',
+          'week': 1,
+          'title': 'Dinner together',
+          'starts_at': DateTime.now()
+              .subtract(const Duration(hours: 26))
+              .toUtc()
+              .toIso8601String(),
+          'ends_at': DateTime.now()
+              .subtract(const Duration(hours: 24))
+              .toUtc()
+              .toIso8601String(),
+        }
+      ],
       'move': {'available': true, 'used': false},
     }, calls));
     expect(find.textContaining('Request a refund'), findsNothing);
@@ -107,5 +122,33 @@ void main() {
     expect(state['move'], isNull);
     expect(state['stage'], 'waiting');
     expect(state['move_credit'], isTrue);
+  });
+
+  testWidgets('a week after the first meetup it is no longer on Home',
+      (tester) async {
+    await tester.pumpWidget(_home({
+      'stage': 'active',
+      'profile_id': 'me',
+      'circle': {'name': 'The Thursday Circle'},
+      'members': [],
+      'meetups': [
+        {
+          'id': 'w1',
+          'week': 1,
+          'title': 'Dinner together',
+          'starts_at': DateTime.now()
+              .subtract(const Duration(days: 7))
+              .toUtc()
+              .toIso8601String(),
+          'ends_at': DateTime.now()
+              .subtract(const Duration(days: 7))
+              .add(const Duration(hours: 2))
+              .toUtc()
+              .toIso8601String(),
+        }
+      ],
+      'move': {'available': true, 'used': false},
+    }, <String>[]));
+    expect(find.text('Circle not feeling right?'), findsNothing);
   });
 }

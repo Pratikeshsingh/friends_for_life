@@ -26,8 +26,8 @@ const fixed: Record<string, string> = {
   "Your Circle and its chat stay open, so keep making plans together. Want to meet new people as well? You can join a new Circle in the app.":
     "Je Circle en de chat blijven open, dus blijf samen plannen maken. Wil je ook nieuwe mensen ontmoeten? Je kunt je in de app aanmelden voor een nieuwe Circle.",
   "How is your Circle doing?": "Hoe gaat het met je Circle?",
-  "It’s been three months since your Circle started. Answer four quick yes-or-not-yet questions about whether you’re still in touch. It helps us make better groups.":
-    "Je Circle begon drie maanden geleden. Beantwoord vier korte ja-of-nog-niet-vragen over of jullie nog contact hebben. Zo maken we betere groepen.",
+  "It’s been three months since your Circle started. Answer four quick questions about whether you’re still in touch. It helps us make better groups.":
+    "Je Circle begon drie maanden geleden. Beantwoord vier korte vragen over of jullie nog contact hebben. Zo maken we betere groepen.",
   "Cancellation received": "Annulering ontvangen",
   "Your cancellation is with the organiser. We’ll be in touch about your €19.":
     "Je annulering ligt bij de organisator. We nemen contact met je op over je €19.",

@@ -544,9 +544,11 @@ class _CircleApplicationState extends State<CircleApplication> {
                           fontWeight: FontWeight.w700, color: circleNavy))),
             ]),
             const SizedBox(height: 24),
-            _choices('Let’s talk in…', circleLanguages, languages),
+            _choices('Which languages are you happy to talk in?',
+                circleLanguages, languages),
             const SizedBox(height: 10),
-            const Text('Our first Circles run in English and Dutch.',
+            const Text(
+                'Pick every language you’re comfortable chatting in, not just your first one. Comfortable in both? Pick both: you’ll meet more people, locals and newcomers alike.',
                 style: TextStyle(fontSize: 12)),
           ],
           if (step == 1) ...[

@@ -450,7 +450,8 @@ class CircleProfile extends StatelessWidget {
                               icon: const Icon(Icons.edit_outlined, size: 18),
                               label: const Text('Edit my introduction')),
                       ]),
-                  const Text('This is what your Circle sees.',
+                  const Text(
+                      'Your Circle sees your photo, first name, introduction and interests.',
                       style: TextStyle(fontSize: 13, color: circleTealText)),
                 ])),
           ])));

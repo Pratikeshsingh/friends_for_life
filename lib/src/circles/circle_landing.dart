@@ -79,7 +79,7 @@ class _CircleLandingState extends State<CircleLanding> {
                             'One payment for all six weeks. No subscription. You pay the venue for what you eat and drink.'),
                         const SizedBox(height: 18),
                         const Text(
-                            'Not the right group or time? Switch to another group once, free of charge, until your second meetup. Up to 48 hours before your first meetup you can also ask for your €19 back.',
+                            'If your Circle doesn’t feel right, we’ll help you find a way forward.',
                             style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 color: circleNavy)),
@@ -120,17 +120,22 @@ class _CircleLandingState extends State<CircleLanding> {
                 const _FaqTile(
                     question: 'Is this a subscription?',
                     answer:
-                        'No. You pay €19 once for all six weeks, and nothing more after that. Food, drinks and activity tickets are paid at the venue.'),
+                        'No. You pay €19 once for all six weeks. There’s no further VriendTime fee; food, drinks and activities are paid separately at the venue.'),
                 const Divider(height: 1),
                 const _FaqTile(
                     question: 'Where do you meet?',
                     answer:
-                        'Somewhere in Alkmaar we’ve picked for you. You see all six places, and what each one costs, as soon as you’re invited. Week one is a two-hour dinner, and leaving early is always fine.'),
+                        'Somewhere in Alkmaar we’ve picked for you. You see all six places, and what each one costs, as soon as you’re invited. Week one starts with a meal together (dinner, or lunch for daytime Circles), and leaving early is always fine.'),
                 const Divider(height: 1),
                 const _FaqTile(
                     question: 'What about food and allergies?',
                     answer:
-                        'The first dinner is all you can eat with lots of choice, including gluten-free options, so it suits most diets. The other weeks are cafés and activities where you order what suits you. Got an allergy or a question? Message us on WhatsApp.'),
+                        'The first meal is at a restaurant with plenty of choice, and the other weeks are cafés and activities where you order what suits you. Please check ingredients and allergens with the venue yourself. If a place won’t work for you, message us on WhatsApp and we’ll help.'),
+                const Divider(height: 1),
+                const _FaqTile(
+                    question: 'What are the one-to-one coffees?',
+                    answer:
+                        'Between the group meetups we suggest an optional coffee or drink with one person from your Circle, at a café and time that suit you both. Saying no is always fine, and you pay for your own order.'),
                 const Divider(height: 1),
                 const _FaqTile(
                     question: 'What happens after six weeks?',
@@ -344,7 +349,7 @@ class _CircleLandingState extends State<CircleLanding> {
       (
         Icons.diversity_3_rounded,
         'We find your group',
-        'Five or six people who share a language and a regular free time. This usually takes one to three weeks.'
+        'Five or six people who share a language and a regular free time. We email you as soon as an invitation is ready.'
       ),
       (
         Icons.celebration_rounded,
