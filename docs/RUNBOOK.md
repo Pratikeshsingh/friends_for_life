@@ -11,16 +11,32 @@ changes. No passwords or keys belong here.
 | Database, sign-in, photos | Supabase project `sageyiqyvzgoayehahyq` (EU, Free plan) | Photos in the private `profile-photos` bucket. |
 | Account deletion | Edge Function `delete-account` | Deployed. |
 | Notification emails | Edge Function `send-notifications`, called every 10 minutes by the database job `vriendtime-send-emails` | Sends app notifications through Resend from hello@vriendtime.com, replies to support@. Set up once as in "Turning on app emails" below. The email switch in Profile shows only in builds with `EMAIL_DELIVERY=true` (a Netlify environment variable). |
+| Calendar links | Edge Function `calendar` | Serves a meetup or a one-to-one coffee as an `.ics` file for Apple Calendar. Public on purpose (calendar apps can't sign in); links carry random IDs. Deploy: `supabase functions deploy calendar --no-verify-jwt`. |
+| Booking emails to places | Sent by `send-notifications` from the `circle_venue_emails` queue | The organiser's "Send booking email" button queues one; it goes out within 10 minutes. After three failed tries the organiser gets "A booking email failed". |
 | Code and checks | GitHub `Pratikeshsingh/friends_for_life` | Checks: app, database suites, server functions. |
+
+Deploying the server functions (from the project folder, signed in with
+`supabase login`): `supabase functions deploy send-notifications --no-verify-jwt`,
+`supabase functions deploy calendar --no-verify-jwt`, and
+`supabase functions deploy delete-account`.
 
 Scheduled jobs inside the database (times in UTC):
 
 | Job | Schedule | Does |
 |---|---|---|
+| `vriendtime-send-emails` | every 10 minutes | Calls `send-notifications`, only when an email or a booking email is waiting |
 | `vriendtime-circle-notifications` | hourly at :15 | Meetup-tomorrow reminders, check-in prompts and later programme messages |
+| `vriendtime-coffees` | hourly at :15 | Suggests the one-to-one coffees |
+| `vriendtime-coffee-reminders` | hourly at :00 | "Coffee with Anna today" at 08:00 Netherlands time on the day of a coffee |
+| `vriendtime-meetup-housekeeping` | hourly at :05 | Marks meetups done; organiser alerts for a week without a place (3 days ahead) or not booked (2 weeks ahead); the week 5 email, chat message and alert |
+| `vriendtime-pay-by-reminders` | hourly at :30 | The day-before pay-by reminder; open seats after 7 days; "ready to start" and 14-day alerts; moving placeholder start dates |
+| `vriendtime-circle-prompts` | hourly at :50 | After week 2: the WhatsApp group question; waiting applicants: "Still free at your times?" every four weeks |
 | `vriendtime-circle-alerts` | hourly at :45 | Tells the organiser when a Circle can be formed or someone missed two meetups (at most daily) |
+| `vriendtime-organiser-digest` | hourly at :00 | One "Things to do" email to the organiser at 09:00, 13:00 and 18:00 Netherlands time, when something new came in |
+| `vriendtime-chat-digest` | daily 17:00 | The daily email about unread group messages |
 | `vriendtime-purge-action-requests` | daily 03:30 | Deletes retry copies older than 7 days |
 | `vriendtime-purge-error-events` | daily 03:40 | Deletes error records older than 30 days |
+| `vriendtime-purge-old-records` | daily 03:50 | Deletes notifications older than a year, and reports resolved over a year ago |
 
 ## Turning on app emails
 
@@ -76,20 +92,47 @@ if the database has not since removed something that build needs.
 
 ## Payments, refunds and moves
 
-- Accepting an invitation records an agreement to pay €19; it does not take
-  money. The member pays through the WhatsApp payment link. The organiser
-  checks the bank account and confirms receipt in the organiser panel
-  (To do → Payments to confirm). Only then do the place and chat open.
-- Keep your own list of payments received (date, name, reference shown in the
-  app) so you can reconcile them with the app.
-- Refund: possible until 48 hours before the first meetup. The member cancels
-  in Profile; it appears under Refunds to send. Return the money, then press
-  Confirm refund completed.
-- Move: one free move between the start of the first and the second meetup.
-  The member appears as "Moving · already paid" in Applicants. Place them in a
-  new Circle (their acceptance is free), or press Refund instead if no group
-  fits in reasonable time.
+Circles made from 16 October 2026 pay first (migration 20261040); older
+Circles keep the old flow (meet the group, then pay).
+
+- Form a Circle as before (5–6 people for one time). Members get "We’ve found
+  people for your times": they see six seats and how many are confirmed, the
+  six weeks and their costs, but no names, photos, dates, places or chat.
+  The start date you choose when forming is only a placeholder; it moves on a
+  week at a time so it never comes within 3 days.
+- Accepting records an agreement to pay €39; it does not take money. The
+  member pays through the payment link. Check the bank and confirm receipt
+  (To do → Payments to confirm). That confirms their place.
+- Seven days without paying: they get "Your seat is open again", go back on
+  the waiting list, and you get "A seat is open". Invite someone from the
+  waiting list into that seat. The late person can still pay until the start:
+  with a free seat they join; if not, confirming their payment turns it into
+  a €39 credit for their next group (shown as "Moving · already paid").
+- With 5 paid you get "A group is ready to start" (To do → Groups ready to
+  start). Press Start this Circle and choose the first date: the group's own
+  weekday, at least 3 days ahead (usually the week after). The six weeks move
+  to it, paid members hear the date, and the group, places and chat open.
+  Then book the weeks as usual.
+- After 14 days with paid members still waiting, they get "Your group needs a
+  little longer" (no refund mentioned) and you get "A group is waiting".
+- Refund: before the start the member can cancel in Profile; it appears under
+  Refunds to send. Return the money, then press Confirm refund completed.
+  After the start there is no refund, only the free switch.
+- Never mention refunds in messages or emails; they are in the FAQ and terms.
+- Move/switch: one free switch until the second meetup. The member appears as
+  "Moving · already paid" in Applicants. Place them in a new Circle (their
+  acceptance is free), or press Refund instead if no group fits in reasonable
+  time.
 - If you cancel a Circle, everyone who paid appears under Refunds to send.
+
+## WhatsApp groups (opt-in)
+
+After week 2 each member is asked once whether they'd like a WhatsApp group
+for their Circle: "Yes, add me" (a number is then required), "No thanks", or
+"We already have a group". When two people say yes you get "A WhatsApp group
+can be made". On the Circles tab, the Circle shows who said yes with their
+numbers and a Copy numbers button: create the group in WhatsApp by hand with
+only those people. Never add anyone who didn't say yes.
 
 ## Safety reports
 

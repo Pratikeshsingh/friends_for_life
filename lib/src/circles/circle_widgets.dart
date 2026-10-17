@@ -1,10 +1,12 @@
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart' hide Text;
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../core/i18n.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/profile_photo_service.dart';
 import '../widgets/section_card.dart';
+import 'circle_repository.dart';
 
 /// A confirmation that sits over the content rather than cutting a grey slab
 /// across the bottom of it: floating, inset, rounded, and tinted from the
@@ -117,7 +119,12 @@ class CircleHeading extends StatelessWidget {
                   color: circleTealText)),
           const SizedBox(height: 12)
         ],
-        Text(title, style: Theme.of(context).textTheme.displayMedium),
+        // Already display-sized: at 200% text it would fill the first
+        // screen, so it grows to at most 1.4 times.
+        MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.4,
+            child:
+                Text(title, style: Theme.of(context).textTheme.displayMedium)),
         if (subtitle != null) ...[
           const SizedBox(height: 12),
           Text(subtitle!, style: Theme.of(context).textTheme.bodyLarge)
@@ -299,3 +306,322 @@ Future<void> showCirclePhoto(BuildContext context, String name,
                       .titleLarge
                       ?.copyWith(color: Colors.white)),
             ]))));
+
+/// Each week's kind of meetup at a glance, in one of the brand's soft
+/// colours. A photo of the place can take its spot later.
+({IconData icon, Color background, Color foreground}) circleMeetupLook(
+    Json meetup) {
+  final hour = circleMeetupHour(meetup);
+  return switch (meetup['week']) {
+    1 => (
+        icon: Icons.waving_hand_rounded,
+        background: const Color(0xFFFFE6DD),
+        foreground: circleCoralText
+      ),
+    2 || 4 when hour >= 12 => (
+        icon: Icons.emoji_events_rounded,
+        background: const Color(0xFFDDF0EC),
+        foreground: circleTealText
+      ),
+    2 => (
+        icon: Icons.extension_rounded,
+        background: const Color(0xFFDDF0EC),
+        foreground: circleTealText
+      ),
+    3 => (
+        icon:
+            hour < 12 ? Icons.brunch_dining_rounded : Icons.restaurant_rounded,
+        background: const Color(0xFFFBEED3),
+        foreground: const Color(0xFF8A5A12)
+      ),
+    4 => (
+        icon: Icons.museum_rounded,
+        background: const Color(0xFFECE7F6),
+        foreground: const Color(0xFF5B4A8B)
+      ),
+    5 => (
+        icon: Icons.groups_rounded,
+        background: const Color(0xFFE2EEF8),
+        foreground: circleNavy
+      ),
+    6 => (
+        icon: Icons.celebration_rounded,
+        background: const Color(0xFFFBE3E8),
+        foreground: const Color(0xFF9B3550)
+      ),
+    _ => (
+        icon: Icons.event_rounded,
+        background: const Color(0xFFE2EEF8),
+        foreground: circleNavy
+      ),
+  };
+}
+
+/// Which illustration a meetup gets (see docs/ui-ux/meetup-illustrations-brief.md).
+String circleMeetupArtName(Json meetup) {
+  final hour = circleMeetupHour(meetup);
+  final morning = hour < 12, evening = hour >= 17;
+  return switch (meetup['week']) {
+    1 => evening ? 'meetup-hello-evening' : 'meetup-hello-day',
+    2 => evening ? 'meetup-boules' : 'meetup-games',
+    3 => morning
+        ? 'meetup-brunch'
+        : evening
+            ? 'meetup-dinner'
+            : 'meetup-lunch',
+    4 => morning ? 'meetup-cheese' : 'meetup-rematch',
+    5 => 'meetup-your-call',
+    6 => morning ? 'meetup-brunch' : 'meetup-graduation',
+    _ => '',
+  };
+}
+
+/// Illustrations that have arrived, as `assets/generated/meetups/NAME.webp`.
+/// A week without one shows its icon tile, so they can come one by one.
+const circleMeetupArtReady = <String>{
+  'meetup-hello-evening',
+  'meetup-hello-day',
+  'meetup-boules',
+  'meetup-games',
+  'meetup-dinner',
+  'meetup-lunch',
+  'meetup-brunch',
+  'meetup-rematch',
+  'meetup-cheese',
+  'meetup-your-call',
+  'meetup-graduation',
+};
+
+/// The meetup's picture: its illustration once there is one, otherwise a
+/// rounded tile with its icon.
+class CircleMeetupTile extends StatelessWidget {
+  const CircleMeetupTile(this.meetup, {super.key, this.size = 52});
+  final Json meetup;
+  final double size;
+  @override
+  Widget build(BuildContext context) {
+    final look = circleMeetupLook(meetup);
+    final art = circleMeetupArtName(meetup);
+    final radius = BorderRadius.circular(size * .32);
+    return ExcludeSemantics(
+        child: circleMeetupArtReady.contains(art)
+            ? ClipRRect(
+                borderRadius: radius,
+                child: Image.asset('assets/generated/meetups/$art.webp',
+                    width: size,
+                    height: size,
+                    fit: BoxFit.cover,
+                    cacheWidth: (size * 3).round()))
+            : Container(
+                width: size,
+                height: size,
+                decoration:
+                    BoxDecoration(color: look.background, borderRadius: radius),
+                child:
+                    Icon(look.icon, color: look.foreground, size: size * .5)));
+  }
+}
+
+/// A compact action for cards: the main one navy, the rest in the teal
+/// tint. Buttons come in three kinds across the app: navy for the one
+/// thing to do, tinted (or white with a hairline) for the alternatives,
+/// and teal text links for the rest; red only for destructive ones.
+class CircleQuickAction extends StatelessWidget {
+  const CircleQuickAction(
+      {super.key,
+      required this.icon,
+      required this.label,
+      required this.onPressed,
+      this.primary = false});
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+  final bool primary;
+  @override
+  Widget build(BuildContext context) {
+    final style = (primary
+            ? FilledButton.styleFrom(
+                backgroundColor: circleNavy, foregroundColor: Colors.white)
+            : FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFE4F1EE),
+                foregroundColor: circleNavy))
+        .copyWith(
+            minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
+            padding: const WidgetStatePropertyAll(
+                EdgeInsets.symmetric(horizontal: 16)),
+            // The theme's label font, only smaller: a bare TextStyle would
+            // drop the app's typeface.
+            textStyle: WidgetStatePropertyAll(Theme.of(context)
+                .textTheme
+                .labelLarge
+                ?.copyWith(fontSize: 14, fontWeight: FontWeight.w700)),
+            // Rounded like every other button and the action tiles.
+            shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14))));
+    return FilledButton.icon(
+        style: style,
+        onPressed: onPressed,
+        icon: Icon(icon, size: 18),
+        label: Text(label));
+  }
+}
+
+/// One of a card's everyday actions.
+/// [icon] is a Material icon, or WhatsApp's ([circleWhatsAppIcon]).
+typedef CircleCardAction = ({Object icon, String label, VoidCallback? onTap});
+
+/// A Material icon or a brand icon (WhatsApp), drawn the same way.
+Widget circleIcon(Object icon, {double size = 20, Color? color}) =>
+    icon is FaIconData
+        ? FaIcon(icon, size: size, color: color)
+        : Icon(icon as IconData, size: size, color: color);
+
+/// A card's everyday actions as equal tiles, icon over label, so three fit
+/// side by side on the narrowest phone, like the actions on a place card in
+/// a maps app.
+class CircleActionRow extends StatelessWidget {
+  const CircleActionRow(this.actions, {super.key});
+  final List<CircleCardAction> actions;
+  @override
+  Widget build(BuildContext context) => Row(children: [
+        for (var i = 0; i < actions.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(
+              child: Semantics(
+                  button: true,
+                  enabled: actions[i].onTap != null,
+                  child: Material(
+                      color: const Color(0xFFE4F1EE),
+                      borderRadius: BorderRadius.circular(14),
+                      child: InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: actions[i].onTap,
+                          child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 10, horizontal: 4),
+                              child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    circleIcon(actions[i].icon,
+                                        size: 20, color: circleNavy),
+                                    const SizedBox(height: 4),
+                                    // Shrinks a long label rather than
+                                    // cutting it off.
+                                    FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(actions[i].label,
+                                            maxLines: 1,
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                                fontSize: 12.5,
+                                                fontWeight: FontWeight.w700,
+                                                color: circleNavy))),
+                                  ])))))),
+        ],
+      ]);
+}
+
+/// A small solid label on a card: "Included in your fee", "Your call".
+class CircleBadge extends StatelessWidget {
+  const CircleBadge(this.text,
+      {super.key,
+      required this.icon,
+      this.background = const Color(0xFFDDF3E6),
+      this.foreground = const Color(0xFF1B6B4A)});
+  final String text;
+  final IconData icon;
+  final Color background, foreground;
+  @override
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+          color: background, borderRadius: BorderRadius.circular(20)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 15, color: foreground),
+        const SizedBox(width: 6),
+        Flexible(
+            child: Text(text,
+                style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: foreground))),
+      ]));
+}
+
+/// The top of a Home screen: a small label, a title and one line, so the
+/// first thing below it (the card that matters) is on the first screen.
+class CircleHomeHeader extends StatelessWidget {
+  const CircleHomeHeader(
+      {super.key, this.eyebrow, required this.title, this.subtitle});
+  final String title;
+  final String? eyebrow;
+  final String? subtitle;
+  @override
+  Widget build(BuildContext context) => Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        if (eyebrow != null) ...[
+          Text(t(eyebrow!).toUpperCase(),
+              style: const TextStyle(
+                  fontSize: 11,
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.w800,
+                  color: circleTealText)),
+          const SizedBox(height: 8),
+        ],
+        MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.4,
+            child:
+                Text(title, style: Theme.of(context).textTheme.headlineMedium)),
+        if (subtitle != null) ...[
+          const SizedBox(height: 6),
+          Text(subtitle!,
+              style: const TextStyle(
+                  fontSize: 15, color: Color(0xFF4F5D66), height: 1.4)),
+        ],
+      ]));
+}
+
+/// WhatsApp's own icon, in its green, wherever WhatsApp is meant.
+const circleWhatsAppIcon = FontAwesomeIcons.whatsapp;
+const circleWhatsAppGreen = Color(0xFF1FA855);
+
+class CircleWhatsAppIcon extends StatelessWidget {
+  const CircleWhatsAppIcon({super.key, this.size = 20, this.color});
+  final double size;
+  final Color? color;
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+      child: FaIcon(circleWhatsAppIcon,
+          size: size, color: color ?? circleWhatsAppGreen));
+}
+
+/// A small ⓘ for the "why we ask" behind a question: there for the curious,
+/// out of the way for everyone who just fills it in.
+class CircleInfoButton extends StatelessWidget {
+  const CircleInfoButton(this.title, this.text, {super.key});
+  final String title, text;
+  @override
+  Widget build(BuildContext context) => IconButton(
+      tooltip: t('More about this'),
+      visualDensity: VisualDensity.compact,
+      iconSize: 19,
+      // Quiet slate, not teal: it explains, it doesn't act.
+      color: const Color(0xFF6B7A84),
+      icon: const Icon(Icons.info_outline_rounded),
+      onPressed: () => showModalBottomSheet<void>(
+          context: context,
+          showDragHandle: true,
+          builder: (c) => SafeArea(
+              child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title,
+                            style: Theme.of(context).textTheme.titleLarge),
+                        const SizedBox(height: 8),
+                        Text(text, style: const TextStyle(height: 1.45)),
+                      ])))));
+}

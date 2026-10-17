@@ -17,14 +17,15 @@ const circleDays = [
 const circleDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const circlePeriods = ['morning', 'afternoon', 'evening'];
 
-/// The time slots Circles run in: weekday late mornings and evenings,
-/// weekend afternoons and evenings. No Mondays and no Tuesday evenings
-/// (many places are closed).
+/// The time slots Circles run in: weekday late mornings (Tuesday to
+/// Friday, for people who work four days or have children at school),
+/// evenings, and Friday-to-Sunday afternoons. No Mondays and no Tuesday
+/// evenings (many places are closed).
 const circleSlotGrid = <String, List<String>>{
   'tue': ['morning'],
   'wed': ['morning', 'evening'],
   'thu': ['morning', 'evening'],
-  'fri': ['afternoon', 'evening'],
+  'fri': ['morning', 'afternoon', 'evening'],
   'sat': ['afternoon', 'evening'],
   'sun': ['afternoon', 'evening'],
 };
@@ -36,6 +37,17 @@ const circleSlotStart = {
   'evening': '19:00',
 };
 
+/// When a slot's meetups end; people are free to stay on.
+const circleSlotEnd = {
+  'morning': '12:00',
+  'afternoon': '16:00',
+  'evening': '22:00',
+};
+
+/// "10:30–12:00".
+String circleSlotHours(String part) =>
+    '${circleSlotStart[part]}–${circleSlotEnd[part]}';
+
 /// Only the slots in [circleSlotGrid]; older answers (Mondays, weekday
 /// afternoons…) are left out so people pick again from what runs now.
 Map<String, Set<String>> circleOfferedSlots(Map<String, Set<String>> slots) => {
@@ -44,12 +56,19 @@ Map<String, Set<String>> circleOfferedSlots(Map<String, Set<String>> slots) => {
           e.key: slots[e.key]!.where(e.value.contains).toSet()
     };
 
-/// "Tue 19:00", "Sat 14:00"…, in week order and in the app language.
+/// Someone who only picked mornings meets in cafés: the morning plan.
+bool circleMorningOnly(Map<String, Set<String>> slots) {
+  final parts = slots.values.expand((p) => p).toSet();
+  return parts.isNotEmpty && parts.every((p) => p == 'morning');
+}
+
+/// "Tue 19:00–22:00", "Sat 14:00–16:00"…, in week order and in the app
+/// language.
 List<String> circleSlotChips(Map<String, Set<String>> slots) => [
       for (final e in circleSlotGrid.entries)
         for (final part in e.value)
           if (slots[e.key]?.contains(part) == true)
-            '${t(circleDays[circleDayKeys.indexOf(e.key)]).substring(0, 3)} ${circleSlotStart[part]}'
+            '${t(circleDays[circleDayKeys.indexOf(e.key)]).substring(0, 3)} ${circleSlotHours(part)}'
     ];
 
 /// Answers to the old "A plan you'd say yes to" question, mapped onto the
@@ -140,14 +159,21 @@ const circleGenders = {
   'prefer_not': 'Prefer not to say',
 };
 
-const circleGoals = ['Regular plans', 'Shared hobbies', 'Local friends'];
+const circleGoals = [
+  'Regular plans',
+  'Shared hobbies',
+  'Local friends',
+  'Other parents',
+  'Something else'
+];
 const circleContexts = [
   'New to the area',
   'Working from home',
   'New job or studies',
   'Friends moved away',
   'A fresh start',
-  'More free time now'
+  'More free time now',
+  'Something else'
 ];
 const circleStyles = [
   'I warm up slowly',

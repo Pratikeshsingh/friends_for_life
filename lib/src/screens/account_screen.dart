@@ -66,7 +66,7 @@ class _AccountScreenState extends State<AccountScreen> {
     if (!mounted || launched) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text("We couldn't open WhatsApp. Try again in a moment."),
+        content: Text("We couldn’t open WhatsApp. Try again in a moment."),
       ),
     );
   }
@@ -76,6 +76,7 @@ class _AccountScreenState extends State<AccountScreen> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
+        scrollable: true,
         icon: const Icon(
           Icons.delete_forever_outlined,
           color: destructiveRed,
@@ -161,11 +162,13 @@ class _ProfileAccountCard extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: isSigningOut || isDeletingAccount ? null : onSignOut,
               icon: const Icon(Icons.logout_rounded, size: 18),
-              label: Text(isSigningOut ? 'Signing out...' : 'Sign out'),
+              label: Text(isSigningOut ? 'Signing out…' : 'Sign out'),
+              // The same quiet sign-out as in Profile: it isn't the main
+              // thing to do here.
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF062B55),
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: const Color(0xFF9CA9AE),
+                backgroundColor: const Color(0xFFFFE6DF),
+                foregroundColor: const Color(0xFFC2452A),
+                disabledBackgroundColor: const Color(0xFFF1E7E3),
                 minimumSize: const Size(double.infinity, 52),
               ),
             ),
@@ -185,7 +188,7 @@ class _ProfileAccountCard extends StatelessWidget {
                     )
                   : const Icon(Icons.delete_outline_rounded, size: 18),
               label: Text(
-                isDeletingAccount ? 'Deleting account...' : 'Delete account',
+                isDeletingAccount ? 'Deleting account…' : 'Delete account',
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF9C2F2F),
@@ -294,22 +297,22 @@ class _FaqPage extends StatelessWidget {
             icon: Icons.euro_rounded,
             title: 'What does a Founding Circle cost?',
             body:
-                '€19 one-off for the full six-week programme. Food, drinks and activities are separate. This is not a subscription.'),
+                '€39 one-off for the full six-week programme, with two activities included. Food and drinks are separate. This is not a subscription.'),
         _HelpAnswerCard(
             icon: Icons.groups_2_outlined,
             title: 'Will I meet the same people?',
             body:
-                'Yes. Five or six people meet once a week for six weeks. We plan the first four weeks and suggest the last two, which your Circle can change together.'),
+                'Yes. Five or six people meet once a week for six weeks. We plan and book five of the weeks, two activities included. Week five is your Circle’s own: you plan it together.'),
         _HelpAnswerCard(
             icon: Icons.favorite_border_rounded,
             title: 'What if the Circle does not feel right?',
             body:
-                'Tell us what isn’t working under Profile › Programme settings › Switch group or leave. You can switch to another group once, free of charge, until your second meetup; your €19 carries over. Up to 48 hours before your first meetup you can also ask for your €19 back. Your reasons and private check-ins are never shared with other members.'),
+                'Tell us what isn’t working under Profile › Programme settings › Switch group or leave. You can switch to another group once, free of charge, until your second meetup; your €39 carries over. Until your group is booked you can also ask for your €39 back. Your reasons and private check-ins are never shared with other members.'),
         _HelpAnswerCard(
             icon: Icons.event_repeat_outlined,
             title: 'What happens after week six?',
             body:
-                'Your Circle and its chat stay open, so you can keep making plans together at no extra cost. You can also join a new Circle with new people for €19.'),
+                'Your Circle and its chat stay open, so you can keep making plans together at no extra cost. You can also join a new Circle with new people for €39.'),
       ],
     );
   }
@@ -329,7 +332,7 @@ class _SafetyPage extends StatelessWidget {
           icon: Icons.health_and_safety_outlined,
           title: 'Trust your instincts',
           body:
-              "You can leave at any time. If something doesn't feel right, move somewhere safe and contact us.",
+              "You can leave at any time. If something doesn’t feel right, move somewhere safe and contact us.",
         ),
         _HelpAnswerCard(
           icon: Icons.people_outline,
@@ -363,19 +366,11 @@ class _HelpArticlePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // A plain surface to the bottom of the screen, like the rest of the app.
     return Scaffold(
+      backgroundColor: const Color(0xFFFFFAF4),
       body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFFFCF7),
-              Color(0xFFEAF7F5),
-              Color(0xFFF7ECE4),
-            ],
-          ),
-        ),
+        decoration: const BoxDecoration(color: Color(0xFFFFFAF4)),
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -520,13 +515,14 @@ class _NavigationTile extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(20),
+          // The same row rhythm as Profile: compact, evenly spaced.
           child: Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: 8),
             child: Ink(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFFCF7),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFDDE7E3)),
               ),
               child: LayoutBuilder(
@@ -551,7 +547,7 @@ class _NavigationTile extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               labelText,
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 2),
                               valueText,
                             ],
                           ),

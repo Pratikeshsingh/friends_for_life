@@ -9,7 +9,6 @@ import '../core/auth_redirects.dart';
 import '../core/i18n.dart';
 import '../core/responsive.dart';
 import '../widgets/brand_logo.dart';
-import '../core/image_assets.dart';
 import '../widgets/motion.dart';
 import '../widgets/section_card.dart';
 import 'legal_document_screen.dart';
@@ -125,19 +124,17 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final compact = MediaQuery.sizeOf(context).width < 700;
     final signIn = _accountMode == _AccountMode.signIn;
 
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Positioned.fill(
-            child: _AccessImmersiveBackground(
-              compact: compact,
-              semanticLabel: t('A welcoming cafe table waiting for guests'),
-            ),
-          ),
+          // The same plain warm surface for signing in and signing up.
+          const Positioned.fill(
+              child: ColoredBox(
+                  key: ValueKey('auth-access-background'),
+                  color: Color(0xFFFFFAF4))),
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -326,7 +323,7 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
               decoration: InputDecoration(
                 labelText: t('Password'),
                 hintText:
-                    isSignUp ? 'Create a password' : 'Enter your password',
+                    t(isSignUp ? 'Create a password' : 'Enter your password'),
                 suffixIcon: IconButton(
                   onPressed: () =>
                       setState(() => _obscurePassword = !_obscurePassword),
@@ -372,9 +369,9 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
                   suffixIcon: IconButton(
                     onPressed: () => setState(() =>
                         _obscureConfirmPassword = !_obscureConfirmPassword),
-                    tooltip: _obscureConfirmPassword
+                    tooltip: t(_obscureConfirmPassword
                         ? 'Show password'
-                        : 'Hide password',
+                        : 'Hide password'),
                     icon: Icon(_obscureConfirmPassword
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined),
@@ -707,78 +704,6 @@ class _AuthFlowScreenState extends State<AuthFlowScreen> {
   }
 }
 
-class _AccessImmersiveBackground extends StatelessWidget {
-  const _AccessImmersiveBackground({
-    required this.compact,
-    required this.semanticLabel,
-  });
-
-  final bool compact;
-  final String semanticLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final image = Image.asset(
-      compact
-          ? GeneratedImageAssets.landingImmersiveMobile
-          : GeneratedImageAssets.onboardingAccountImmersive,
-      fit: compact ? BoxFit.fitWidth : BoxFit.cover,
-      alignment: compact ? Alignment.bottomCenter : Alignment.center,
-      cacheWidth: compact ? 900 : 1600,
-      filterQuality: FilterQuality.medium,
-      semanticLabel: semanticLabel,
-    );
-    final wash = compact
-        ? const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xF7FFFCF7),
-              Color(0xEDFFFCF7),
-              Color(0xC8FFFCF7),
-              Color(0x78FFFCF7),
-              Color(0xA8FFFCF7),
-            ],
-            stops: [0, 0.22, 0.46, 0.74, 1],
-          )
-        : const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xEFFFFCF7),
-              Color(0xA8FFFCF7),
-              Color(0x42FFFCF7),
-              Color(0x92FFFCF7),
-              Color(0xE6FFFCF7),
-            ],
-            stops: [0, 0.2, 0.43, 0.76, 1],
-          );
-
-    return KeyedSubtree(
-      key: const ValueKey('auth-access-background'),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          const ColoredBox(color: Color(0xFFFFFCF7)),
-          image,
-          DecoratedBox(decoration: BoxDecoration(gradient: wash)),
-          if (!compact)
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [Color(0xE8FFFCF7), Color(0x10FFFCF7)],
-                  stops: [0, 0.58],
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 class _LegalConsentField extends StatelessWidget {
   const _LegalConsentField({
     required this.value,
@@ -802,14 +727,7 @@ class _LegalConsentField extends StatelessWidget {
       container: true,
       child: Container(
         key: const ValueKey('legal-consent-field'),
-        padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF5F8F6),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: value ? const Color(0xFF8BCBC1) : const Color(0xFFD5E5E2),
-          ),
-        ),
+        padding: const EdgeInsets.fromLTRB(0, 4, 0, 4),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -825,45 +743,46 @@ class _LegalConsentField extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 4),
+            // One sentence that reads as a sentence, the two links below.
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
+                padding: const EdgeInsets.only(top: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ExcludeSemantics(
                       child: Text(
-                        'I agree to the ',
-                        style: theme.textTheme.bodyMedium,
+                        'I agree to the Terms & Conditions and acknowledge that I have read the Privacy Policy.',
+                        style:
+                            theme.textTheme.bodyMedium?.copyWith(height: 1.4),
                       ),
                     ),
-                    TextButton(
-                      key: const ValueKey('open-terms'),
-                      onPressed: onOpenTerms,
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                        minimumSize: const Size(0, 40),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text('Terms & Conditions',
-                          semanticsLabel: t('Read the Terms & Conditions')),
-                    ),
-                    ExcludeSemantics(
-                      child: Text(
-                        ' and acknowledge that I have read the ',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ),
-                    TextButton(
-                      key: const ValueKey('open-privacy-policy'),
-                      onPressed: onOpenPrivacy,
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                        minimumSize: const Size(0, 40),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text('Privacy Policy.',
-                          semanticsLabel: t('Read the Privacy Policy')),
+                    Wrap(
+                      spacing: 14,
+                      children: [
+                        TextButton(
+                          key: const ValueKey('open-terms'),
+                          onPressed: onOpenTerms,
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: const Size(0, 40),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text('Read the terms',
+                              semanticsLabel: t('Read the Terms & Conditions')),
+                        ),
+                        TextButton(
+                          key: const ValueKey('open-privacy-policy'),
+                          onPressed: onOpenPrivacy,
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: const Size(0, 40),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text('Read the privacy policy',
+                              semanticsLabel: t('Read the Privacy Policy')),
+                        ),
+                      ],
                     ),
                   ],
                 ),

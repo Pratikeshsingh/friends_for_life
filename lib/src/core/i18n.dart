@@ -86,6 +86,12 @@ final _order = <String, List<int>>{};
 final _dayOrPeriod = RegExp(
     r'^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|morning|afternoon|evening)');
 
+/// Words that only occur in English: a part still containing them was not
+/// translated (names, numbers and Dutch dates pass).
+final _englishWords = RegExp(
+    r'\b(the|you|your|and|with|to|for|this|that|our|are|can|will|of charge)\b',
+    caseSensitive: false);
+
 /// Translates [en] into the current language.
 String t(String en) {
   if (!isDutch || en.isEmpty) return en;
@@ -119,12 +125,21 @@ String _translate(String en) {
     }
     return out;
   }
-  // Composite lines: translate each part on its own.
+  // Composite lines: translate each part on its own. A sentence half in
+  // Dutch and half in English is worse than one in English, so in longer
+  // text every part of more than one word must translate.
   for (final sep in ['\n', ' · ', ' — ', ': ', ' / ', ', ']) {
     if (en.contains(sep)) {
       final parts = en.split(sep);
       final translated = parts.map(t).toList();
-      if (!_same(parts, translated)) return translated.join(sep);
+      if (_same(parts, translated)) continue;
+      final partial = en.length > 40 &&
+          [
+            for (var i = 0; i < parts.length; i++)
+              if (translated[i] == parts[i] && _englishWords.hasMatch(parts[i]))
+                i
+          ].isNotEmpty;
+      if (!partial) return translated.join(sep);
     }
   }
   return en;

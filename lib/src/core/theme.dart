@@ -37,6 +37,9 @@ ThemeData buildTheme() {
       outline: outline,
       error: danger,
       onError: Colors.white,
+      // Quiet buttons (tonal) and selected toggles: the brand's teal tint.
+      secondaryContainer: const Color(0xFFE4F1EE),
+      onSecondaryContainer: ink,
     ),
   );
 
@@ -114,6 +117,19 @@ ThemeData buildTheme() {
         minimumSize: const Size.fromHeight(56),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+        textStyle: const TextStyle(
+          fontFamily: 'Manrope',
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    ),
+    // Filled buttons share the shape and type of the other big buttons.
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(64, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         textStyle: const TextStyle(
           fontFamily: 'Manrope',
           fontSize: 14,

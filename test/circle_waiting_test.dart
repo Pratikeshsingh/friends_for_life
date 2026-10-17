@@ -44,9 +44,11 @@ void main() {
       expect(wait.estimate, startsWith('Earliest start: '));
       expect(wait.estimate, contains('We’ll confirm it in your invitation.'));
       // The same date the organiser panel suggests: the matching weekday at
-      // least a week out, at the evening start time.
+      // least twelve days out (five to say yes, a week to book).
       final start = wait.earliestStart(now: DateTime(2026, 9, 30));
-      expect(start, DateTime(2026, 10, 8, 19, 0));
+      expect(start, DateTime(2026, 10, 15, 19, 0));
+      expect(wait.estimate, isNot(contains(' at ')),
+          reason: 'the date only: week one has its own start time');
     });
 
     test('no time range is promised while people are still needed', () {
@@ -153,7 +155,8 @@ void main() {
             }));
       expect(find.text('We’re finding people for Thursday evenings.'),
           findsOneWidget);
-      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      // Five seats: Asha, two found, two still empty.
+      expect(find.byIcon(Icons.person_add_alt_1_outlined), findsNWidgets(2));
       expect(find.text('2 more people needed'), findsOneWidget);
       expect(find.textContaining(' of 5 people'), findsNothing);
     });
@@ -166,7 +169,7 @@ void main() {
             ..addAll({
               'application': {'name': 'Asha'}
             }));
-      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(find.byIcon(Icons.person_add_alt_1_outlined), findsNothing);
       expect(find.textContaining('share your language'), findsOneWidget);
     });
   });

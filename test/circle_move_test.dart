@@ -57,9 +57,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
-    // A switch keeps the €19; after the first meetup there is no refund.
-    expect(find.textContaining('keep your €19'), findsOneWidget);
-    expect(find.text('I’d rather ask for my €19 back'), findsNothing);
+    // A switch keeps the €39; after the first meetup there is no refund.
+    expect(find.textContaining('keep your €39'), findsOneWidget);
+    expect(find.text('I’d rather ask for my €39 back'), findsNothing);
     await tester.tap(find.text('Switch to another group'));
     await tester.pumpAndSettle();
     expect(calls, ['switch_group']);

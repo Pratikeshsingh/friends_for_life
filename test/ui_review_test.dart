@@ -117,8 +117,8 @@ void main() {
                     act: (_, [__ = const {}]) async {},
                     onEdit: (_) {},
                     onMessages: () {})))));
-    expect(find.text('Your €19 has not arrived yet'), findsOneWidget);
-    expect(find.textContaining('confirmed only once your €19 arrives'),
+    expect(find.text('Your €39 has not arrived yet'), findsOneWidget);
+    expect(find.textContaining('confirmed only once your €39 arrives'),
         findsOneWidget);
   });
 }

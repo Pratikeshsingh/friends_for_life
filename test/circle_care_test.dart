@@ -128,13 +128,13 @@ void main() {
       await tester.pumpWidget(profile([
         {'id': 'w1', 'week': 1, 'completed': false, 'date': '2099-01-01'}
       ], calls));
-      expect(find.text('Future Circles'), findsNothing);
+      expect(find.text('Future matching'), findsNothing);
 
       await tester.pumpWidget(profile([
         {'id': 'w1', 'week': 1, 'completed': true}
       ], calls));
-      await tester.ensureVisible(find.text('Future Circles'));
-      await tester.tap(find.text('Future Circles'));
+      await tester.ensureVisible(find.text('Future matching'));
+      await tester.tap(find.text('Future matching'));
       await tester.pumpAndSettle();
       expect(find.text('Happy to meet again'), findsOneWidget);
       expect(find.text('You'), findsNothing);
@@ -263,7 +263,7 @@ void main() {
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
       expect(find.text('Switch to another group'), findsOneWidget);
-      expect(find.text('I’d rather ask for my €19 back'), findsOneWidget);
+      expect(find.text('I’d rather ask for my €39 back'), findsOneWidget);
       await tester.tap(find.text('Switch to another group'));
       await tester.pumpAndSettle();
       expect(sent, {

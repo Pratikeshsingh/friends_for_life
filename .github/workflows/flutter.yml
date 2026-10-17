@@ -30,7 +30,7 @@ jobs:
         with:
           node-version: 22
       - run: npm ci --no-audit --no-fund
-      - run: node run.mjs production_hardening_test.sql security_boundaries_test.sql security_fixes_test.sql refund_move_test.sql restore_photos_test.sql old_app_removed_test.sql go_live_fixes_test.sql payment_link_test.sql pay_by_test.sql circle_access_test.sql circle_experience_test.sql circle_release_test.sql email_delivery_test.sql second_circle_test.sql on_our_side_test.sql notifications_v2_test.sql meetup_housekeeping_test.sql programme_test.sql one_to_ones_test.sql organiser_digest_test.sql coffee_edge_cases_test.sql comfort_test.sql other_times_test.sql
+      - run: node run.mjs production_hardening_test.sql security_boundaries_test.sql security_fixes_test.sql refund_move_test.sql restore_photos_test.sql old_app_removed_test.sql go_live_fixes_test.sql payment_link_test.sql pay_by_test.sql circle_access_test.sql circle_experience_test.sql circle_release_test.sql email_delivery_test.sql second_circle_test.sql on_our_side_test.sql notifications_v2_test.sql meetup_housekeeping_test.sql programme_test.sql one_to_ones_test.sql organiser_digest_test.sql coffee_edge_cases_test.sql comfort_test.sql other_times_test.sql evening_coffees_test.sql coffee_places_test.sql time_windows_test.sql six_weeks_test.sql deadlines_and_bookings_test.sql organiser_chat_test.sql pay_first_test.sql small_wins_test.sql
   edge-functions:
     # Type-checks both server functions and runs the email worker's tests
     # against mocked services. No network or secrets needed.

@@ -8,7 +8,7 @@ import 'brand_mark_painter.dart';
 const circleLoadingPhrases = <String>[
   'Putting the kettle on…',
   'Pulling up chairs…',
-  'Checking who\'s around…',
+  'Checking who’s around…',
   'Finding a table in Alkmaar…',
   'Saving you a seat…',
 ];
@@ -80,6 +80,15 @@ class _CircleLoadingState extends State<CircleLoading>
   @override
   Widget build(BuildContext context) {
     final still = MediaQuery.disableAnimationsOf(context);
+    // Short on room (a keyboard open, a small window): the compact size,
+    // so the mark and its line never spill over.
+    // (Already compact: no LayoutBuilder, which dialogs can't size.)
+    if (widget.compact) return _build(context, still, true);
+    return LayoutBuilder(
+        builder: (context, box) => _build(context, still, box.maxHeight < 320));
+  }
+
+  Widget _build(BuildContext context, bool still, bool compact) {
     return Semantics(
       label: widget.label,
       liveRegion: true,
@@ -87,7 +96,7 @@ class _CircleLoadingState extends State<CircleLoading>
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           RepaintBoundary(
             child: SizedBox.square(
-              dimension: widget.compact ? 110 : 240,
+              dimension: compact ? 110 : 240,
               child: Center(
                 child: AnimatedBuilder(
                   animation: animation,
@@ -97,7 +106,7 @@ class _CircleLoadingState extends State<CircleLoading>
                         ? ((t - .24) / .18).clamp(0.0, 1.0)
                         : (1 - (t - .72) / .18).clamp(0.0, 1.0);
                     return CustomPaint(
-                      size: Size.square(widget.compact ? 64 : 140),
+                      size: Size.square(compact ? 64 : 140),
                       painter: VriendTimeMarkPainter(
                         top: still ? 0 : 300 * (1 - together(t, 0, .32)),
                         left: still ? 0 : 330 * (1 - together(t, .04, .36)),
@@ -111,7 +120,7 @@ class _CircleLoadingState extends State<CircleLoading>
               ),
             ),
           ),
-          SizedBox(height: widget.compact ? 6 : 18),
+          SizedBox(height: compact ? 6 : 18),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 250),
             child: Text(

@@ -55,6 +55,7 @@ class _SaveDialogState extends State<_SaveDialog> {
   Widget build(BuildContext context) => PopScope(
       canPop: !saving,
       child: AlertDialog(
+          scrollable: true,
           title: Text(widget.title),
           content: SingleChildScrollView(
               child: Column(mainAxisSize: MainAxisSize.min, children: [

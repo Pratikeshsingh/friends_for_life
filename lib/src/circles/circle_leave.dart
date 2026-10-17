@@ -15,7 +15,7 @@ const circleLeaveReasons = [
 ];
 
 /// Leaving a Circle, one careful step at a time: first why, then the option
-/// that fixes it (another group, keeping the €19), and only then a refund
+/// that fixes it (another group, keeping the €39), and only then a refund
 /// request or simply leaving. Nothing is paid out automatically: a refund is
 /// a request the organiser reviews.
 ///
@@ -43,6 +43,7 @@ Future<void> showCircleLeaveFlow(BuildContext context,
   final choice = await showDialog<String>(
       context: context,
       builder: (c) => AlertDialog(
+            scrollable: true,
             title: Text(
                 canSwitch ? 'We can find you another group' : 'Before you go'),
             content: SingleChildScrollView(
@@ -52,8 +53,8 @@ Future<void> showCircleLeaveFlow(BuildContext context,
                     children: [
                   if (canSwitch) ...[
                     Text(timeIssue
-                        ? 'Switch to a group at a time that suits you. Your €19 carries over, and you can update your days and times straight after.'
-                        : 'Switch to another group and keep your €19. You can do this once, free of charge, until your second meetup.'),
+                        ? 'Switch to a group at a time that suits you. Your €39 carries over, and you can update your days and times straight after.'
+                        : 'Switch to another group and keep your €39. You can do this once, free of charge, until your second meetup.'),
                     const SizedBox(height: 16),
                     FilledButton(
                         style: FilledButton.styleFrom(
@@ -68,7 +69,7 @@ Future<void> showCircleLeaveFlow(BuildContext context,
                   if (canCancel && paid)
                     TextButton(
                         onPressed: () => Navigator.pop(c, 'refund'),
-                        child: const Text('I’d rather ask for my €19 back'))
+                        child: const Text('I’d rather ask for my €39 back'))
                   else if (canCancel)
                     TextButton(
                         onPressed: () => Navigator.pop(c, 'cancel'),
@@ -94,7 +95,7 @@ Future<void> showCircleLeaveFlow(BuildContext context,
       final sure = await _confirm(context,
           title: 'Request a refund?',
           body:
-              'Your place will be released and your request goes to the organiser, who reviews it and gets back to you. If it’s approved, the €19 goes back to the account you paid from.',
+              'Your place will be released and your request goes to the organiser, who reviews it and gets back to you. If it’s approved, the €39 goes back to the account you paid from.',
           action: 'Request refund');
       if (sure) await act('cancel_agreement', payload);
     case 'cancel':
@@ -108,7 +109,7 @@ Future<void> showCircleLeaveFlow(BuildContext context,
       final sure = await _confirm(context,
           title: 'Leave your Circle?',
           body:
-              'Your place is released and your remaining meetups are removed from your plans. At this point the €19 isn’t refunded. Your reason stays private.',
+              'Your place is released and your remaining meetups are removed from your plans. At this point the €39 isn’t refunded. Your reason stays private.',
           action: 'Leave the Circle');
       if (sure) {
         await act('leave_circle', {
@@ -127,6 +128,7 @@ Future<bool> _confirm(BuildContext context,
     await showDialog<bool>(
         context: context,
         builder: (c) => AlertDialog(
+              scrollable: true,
               title: Text(title),
               content: Text(body),
               actions: [
@@ -164,6 +166,7 @@ class _ReasonDialogState extends State<_ReasonDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
+        scrollable: true,
         title: const Text('What isn’t working?'),
         content: SingleChildScrollView(
             child: Column(

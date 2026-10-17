@@ -1,8 +1,8 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import '../core/i18n.dart' show t;
 
+/// The three tabs along the bottom of a phone: a solid, quiet bar with a
+/// clear edge, so nothing on the page sits half-hidden behind it.
 class FloatingGlassNavigation extends StatelessWidget {
   const FloatingGlassNavigation({
     super.key,
@@ -31,91 +31,60 @@ class FloatingGlassNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const radius = BorderRadius.all(Radius.circular(30));
-
     return Semantics(
       container: true,
       label: t('Main navigation'),
-      child: RepaintBoundary(
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: radius,
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x24062B55),
-                blurRadius: 26,
-                offset: Offset(0, 10),
-              ),
-              BoxShadow(
-                color: Color(0x14FFFFFF),
-                blurRadius: 8,
-                offset: Offset(0, -2),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: radius,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: DecoratedBox(
-                key: const ValueKey('floating-glass-navigation'),
-                decoration: BoxDecoration(
-                  borderRadius: radius,
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xE8FFFCF8),
-                      Color(0xCFF5FBF8),
-                      Color(0xDCFDF8F2),
-                    ],
-                    stops: [0, 0.52, 1],
-                  ),
-                  border: Border.all(color: const Color(0xCFFFFFFF)),
+      child: DecoratedBox(
+        key: const ValueKey('floating-glass-navigation'),
+        decoration: const BoxDecoration(
+          color: Color(0xFFFFFCF8),
+          border: Border(top: BorderSide(color: Color(0x1F062B55))),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Center(
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: NavigationBar(
+                height: height,
+                backgroundColor: Colors.transparent,
+                surfaceTintColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                elevation: 0,
+                indicatorColor: const Color(0xFFE2F1EE),
+                indicatorShape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: NavigationBar(
-                  height: height,
-                  backgroundColor: Colors.transparent,
-                  surfaceTintColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  elevation: 0,
-                  indicatorColor: const Color(0xCFE2F4EF),
-                  indicatorShape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(22),
-                    side: const BorderSide(color: Color(0xBFFFFFFF)),
+                selectedIndex:
+                    showMessages ? selectedIndex : (selectedIndex == 2 ? 1 : 0),
+                onDestinationSelected: (i) =>
+                    onDestinationSelected(showMessages ? i : (i == 1 ? 2 : 0)),
+                destinations: [
+                  NavigationDestination(
+                    icon: const Icon(Icons.home_outlined),
+                    selectedIcon: const Icon(Icons.home_rounded),
+                    label: t(homeLabel ?? (circleMode ? 'My Circle' : 'Home')),
                   ),
-                  selectedIndex: showMessages
-                      ? selectedIndex
-                      : (selectedIndex == 2 ? 1 : 0),
-                  onDestinationSelected: (i) => onDestinationSelected(
-                      showMessages ? i : (i == 1 ? 2 : 0)),
-                  destinations: [
+                  if (showMessages)
                     NavigationDestination(
-                      icon: Icon(Icons.home_outlined),
-                      selectedIcon: Icon(Icons.home_rounded),
-                      label:
-                          t(homeLabel ?? (circleMode ? 'My Circle' : 'Home')),
+                      icon: Badge(
+                          isLabelVisible: messagesUnread,
+                          smallSize: 9,
+                          child: Icon(circleMode
+                              ? Icons.chat_bubble_outline_rounded
+                              : Icons.event_outlined)),
+                      selectedIcon: Icon(circleMode
+                          ? Icons.chat_bubble_rounded
+                          : Icons.event_rounded),
+                      label: t(circleMode ? 'Messages' : 'Meetups'),
                     ),
-                    if (showMessages)
-                      NavigationDestination(
-                        icon: Badge(
-                            isLabelVisible: messagesUnread,
-                            smallSize: 9,
-                            child: Icon(circleMode
-                                ? Icons.chat_bubble_outline_rounded
-                                : Icons.event_outlined)),
-                        selectedIcon: Icon(circleMode
-                            ? Icons.chat_bubble_rounded
-                            : Icons.event_rounded),
-                        label: t(circleMode ? 'Messages' : 'Meetups'),
-                      ),
-                    NavigationDestination(
-                      icon: Icon(Icons.person_outline),
-                      selectedIcon: Icon(Icons.person_rounded),
-                      label: t('Profile'),
-                    ),
-                  ],
-                ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.person_outline),
+                    selectedIcon: const Icon(Icons.person_rounded),
+                    label: t('Profile'),
+                  ),
+                ],
               ),
             ),
           ),

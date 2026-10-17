@@ -40,8 +40,8 @@ class CirclePastMeetups extends StatelessWidget {
                         padding: const EdgeInsets.only(bottom: 4),
                         child: Text(
                             past.length == 1
-                                ? 'One evening so far with ${circle['name'] ?? 'your Circle'}.'
-                                : '${past.length} evenings so far with ${circle['name'] ?? 'your Circle'}.',
+                                ? 'One meetup so far with ${circle['name'] ?? 'your Circle'}.'
+                                : '${past.length} meetups so far with ${circle['name'] ?? 'your Circle'}.',
                             style: Theme.of(context).textTheme.titleMedium));
                   }
                   final m = past[i - 1];
@@ -66,7 +66,7 @@ class CirclePastMeetups extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 6),
                     Text(
-                        '${circleDate(m['date'] as String?)} · ${m['time'] ?? '19:30'}'),
+                        '${circleDate(m['date'] as String?)} · ${circleMeetupHours(m)}'),
                     const SizedBox(height: 6),
                     // A venue is no longer a secret once the evening has
                     // happened, but an old payload may still be missing it.

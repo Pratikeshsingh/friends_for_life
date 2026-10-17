@@ -1,4 +1,6 @@
 begin;
+-- The old flow (meet the group, then pay); pay-first has its own test.
+select set_config('vriendtime.pay_first', 'off', false);
 create function pg_temp.assert_true(value boolean,message text) returns void language plpgsql as $$ begin if value is distinct from true then raise exception 'ASSERTION FAILED: %',message; end if; end; $$;
 insert into auth.users(id,email,raw_user_meta_data)
 select ('00000000-0000-0000-0000-'||lpad(i::text,12,'0'))::uuid,'hardening'||i||'@example.test',jsonb_build_object('first_name','Member '||i) from generate_series(1,8) i;
@@ -11,16 +13,25 @@ select profile_id,circle_id,'paid' from public.circle_memberships;
 insert into public.events(id,circle_id,circle_week,title,city,starts_at,ends_at,capacity,status,venue_name)
 select ('20000000-0000-0000-0000-'||lpad(i::text,12,'0'))::uuid,'10000000-0000-0000-0000-000000000001',i,'Week '||i,'Alkmaar',now()+interval '7 days'*i,now()+interval '7 days'*i+interval '2 hours',6,'open','The shared cafe' from generate_series(1,6) i;
 insert into public.chat_threads(id,circle_id,title) values('30000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','Test chat');
+-- Week 5 in the evening, so the group may choose a start between 18:00 and 21:00.
+update public.events set starts_at=((starts_at at time zone 'Europe/Amsterdam')::date+time '19:30') at time zone 'Europe/Amsterdam',
+       ends_at=((starts_at at time zone 'Europe/Amsterdam')::date+time '22:00') at time zone 'Europe/Amsterdam'
+ where id='20000000-0000-0000-0000-000000000005';
 insert into public.chat_participants(thread_id,profile_id) select '30000000-0000-0000-0000-000000000001',profile_id from public.circle_memberships;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
 select pg_temp.assert_true(public.circle_snapshot()->'meetups'->0->>'venue' is not null,'the place is visible from the start');
 select pg_temp.assert_true(public.circle_snapshot()->'meetups'->3->>'venue'='The shared cafe','group venue is visible immediately');
 select pg_temp.assert_true(public.circle_snapshot()->>'paid_members'='3','paid headcount independent of RSVP');
-select public.circle_action('schedule','{"id":"20000000-0000-0000-0000-000000000005","version":0,"title":"Games","venue":"Cafe","date":"2099-01-01","time":"10:00","request_id":"40000000-0000-0000-0000-000000000001"}');
-select public.circle_action('schedule','{"id":"20000000-0000-0000-0000-000000000005","version":0,"title":"Games","venue":"Cafe","date":"2099-01-01","time":"10:00","request_id":"40000000-0000-0000-0000-000000000001"}');
+select public.circle_action('schedule','{"id":"20000000-0000-0000-0000-000000000005","version":0,"title":"Games","venue":"Cafe","date":"2099-01-01","time":"20:00","request_id":"40000000-0000-0000-0000-000000000001"}');
+select public.circle_action('schedule','{"id":"20000000-0000-0000-0000-000000000005","version":0,"title":"Games","venue":"Cafe","date":"2099-01-01","time":"20:00","request_id":"40000000-0000-0000-0000-000000000001"}');
 select pg_temp.assert_true(public.circle_snapshot()->'meetups'->4->>'plan_version'='1','retries do not update twice');
 select pg_temp.assert_true((public.circle_snapshot()->'meetups'->4->>'starts_at')::timestamptz<now()+interval '36 days','member cannot move the weekly date');
+select pg_temp.assert_true(public.circle_snapshot()->'meetups'->4->>'time'='20:00','the group chose its start');
+do $$ begin
+ begin perform public.circle_action('schedule','{"id":"20000000-0000-0000-0000-000000000005","version":1,"title":"Games","venue":"Cafe","date":"2099-01-01","time":"23:00"}'); raise exception 'late start accepted'; exception when others then if sqlerrm='late start accepted' then raise; end if; end;
+ begin perform public.circle_action('schedule','{"id":"20000000-0000-0000-0000-000000000006","version":0,"title":"Games","venue":"Cafe","date":"2099-01-01","time":"20:00"}'); raise exception 'week 6 changed by a member'; exception when others then if sqlerrm='week 6 changed by a member' then raise; end if; end;
+end $$;
 do $$ begin
  begin perform public.circle_action('schedule','{"id":"20000000-0000-0000-0000-000000000005","version":0,"title":"Other","venue":"Elsewhere"}'); raise exception 'stale write accepted'; exception when others then if sqlerrm='stale write accepted' then raise; end if; end;
 end $$;

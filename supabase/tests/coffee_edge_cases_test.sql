@@ -1,5 +1,7 @@
 -- One-to-one coffees when people leave, block each other, or delete their account.
 begin;
+-- The old flow (meet the group, then pay); pay-first has its own test.
+select set_config('vriendtime.pay_first', 'off', false);
 create function pg_temp.assert_true(value boolean,message text) returns void language plpgsql as $$ begin if value is distinct from true then raise exception 'ASSERTION FAILED: %',message; end if; end; $$;
 insert into auth.users(id,email,raw_user_meta_data)
 select ('00000000-0000-0000-0000-'||lpad(i::text,12,'0'))::uuid,'ce'||i||'@example.test',jsonb_build_object('first_name','P'||i) from generate_series(1,4) i;

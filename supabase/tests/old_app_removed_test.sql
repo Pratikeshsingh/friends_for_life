@@ -1,5 +1,7 @@
 -- The old meetup app is gone and Circles still work. Rolled back.
 begin;
+-- The old flow (meet the group, then pay); pay-first has its own test.
+select set_config('vriendtime.pay_first', 'off', false);
 create function pg_temp.assert_true(value boolean,message text) returns void language plpgsql as $$ begin if value is distinct from true then raise exception 'ASSERTION FAILED: %',message; end if; end; $$;
 select pg_temp.assert_true(to_regproc('public.reserve_event') is null and to_regproc('public.queue_event_notifications') is null,'old meetup functions are gone');
 select pg_temp.assert_true(to_regclass('public.city_options') is null and to_regclass('public.interest_options') is null,'old lookup tables are gone');

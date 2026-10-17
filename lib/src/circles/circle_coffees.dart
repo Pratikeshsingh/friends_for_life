@@ -1,23 +1,49 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart' hide Text;
 import 'package:url_launcher/url_launcher.dart';
 import '../core/destructive.dart';
 import '../core/i18n.dart';
 import 'circle_home.dart' show CircleAction, circleFeelings;
-import 'circle_meetup_detail.dart' show circleCalendarIcs, circleCalendarUri;
+import 'circle_meetup_detail.dart'
+    show circleCalendarLink, showCircleCalendarSheet;
 import 'circle_repository.dart';
 import 'circle_widgets.dart';
 
 const _muted = Color(0xFF66727C);
 
-/// "Thu 22 Oct at 19:00", in local time.
+/// "Thu 22 Oct at 19:00", in Netherlands time like the group meetups.
 String circleCoffeeWhen(Object? raw) {
-  final d = DateTime.tryParse('${raw ?? ''}')?.toLocal();
-  if (d == null) return '';
+  final at = DateTime.tryParse('${raw ?? ''}');
+  if (at == null) return '';
+  final d = circleAmsterdam(at);
   return '${circleDate(d.toIso8601String())} ${t('at')} ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+}
+
+/// Evening one-to-ones are a drink (whatever someone likes to drink), never
+/// "coffee" at 20:00; daytime ones are a coffee.
+bool circleOneToOneEvening(Object? startsAt) {
+  final at = DateTime.tryParse('${startsAt ?? ''}');
+  return at != null && circleAmsterdam(at).hour >= 17;
+}
+
+/// "Coffee with Noor" by day, "A drink with Noor" in the evening.
+String circleOneToOneWith(Object? startsAt, String name) =>
+    t(circleOneToOneEvening(startsAt) ? 'A drink with {1}' : 'Coffee with {1}')
+        .replaceAll('{1}', name);
+
+/// The coffee place on the map: the link kept with the place, or else a
+/// search for its name and address.
+Uri circleCoffeeMapUri(Json c) {
+  final link = Uri.tryParse('${c['maps_url'] ?? ''}');
+  if (link != null && link.scheme == 'https' && link.host.isNotEmpty) {
+    return link;
+  }
+  return Uri.https('www.google.com', '/maps/search/', {
+    'api': '1',
+    'query': [c['place'], c['address'], 'Alkmaar']
+        .map((p) => '${p ?? ''}'.trim())
+        .where((p) => p.isNotEmpty)
+        .join(', ')
+  });
 }
 
 /// One-to-one coffees: this week's suggestion, and whom you've already met.
@@ -42,11 +68,10 @@ class CircleCoffees extends StatelessWidget {
         ? Map<String, dynamic>.from(coffees['current'] as Map)
         : null;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('One-to-one coffees',
-          style: Theme.of(context).textTheme.headlineSmall),
+      Text('One-to-ones', style: Theme.of(context).textTheme.headlineSmall),
       const SizedBox(height: 6),
       const Text(
-          'Between group meetups, we suggest a coffee with one person from your Circle. Say yes if it works; no is fine too.',
+          'Optional, but recommended: meet one person from your Circle between group meetups.',
           style: TextStyle(color: Color(0xFF4F5D66), height: 1.45)),
       const SizedBox(height: 14),
       if (coffees['feedback_due'] is Map) ...[
@@ -68,7 +93,7 @@ class CircleCoffees extends StatelessWidget {
           ]),
           SizedBox(height: 8),
           Text(
-              'No one-to-one coffee for you this time. See you with the whole group!'),
+              'No one-to-one for you this time. See you with the whole group!'),
         ])
       else if (coffees['started'] != true)
         const CirclePanel(tint: true, children: [
@@ -93,9 +118,10 @@ class CircleCoffees extends StatelessWidget {
     final mine = c['mine'] as String?;
     final theirs = c['theirs'] as String?;
     final confirmed = c['status'] == 'confirmed';
-    final started = DateTime.tryParse('${c['starts_at'] ?? ''}')
-            ?.isBefore(DateTime.now()) ??
-        false;
+    final starts = DateTime.tryParse('${c['starts_at'] ?? ''}');
+    final started = starts?.isBefore(DateTime.now()) ?? false;
+    // Evenings are a drink as friends, and a no there is never pulled back.
+    final evening = starts != null && circleAmsterdam(starts).hour >= 17;
     void answer(String a) => act('coffee_answer', {'id': c['id'], 'answer': a});
 
     final String heading;
@@ -111,7 +137,7 @@ class CircleCoffees extends StatelessWidget {
           : t('Waiting for {1} to answer.').replaceAll('{1}', name);
     } else if (mine == 'no') {
       heading = 'You can’t make it this time';
-      note = theirs == 'yes'
+      note = theirs == 'yes' && !evening
           ? t('{1} said yes. If your plans changed, you can still join.')
               .replaceAll('{1}', name)
           : null;
@@ -119,13 +145,17 @@ class CircleCoffees extends StatelessWidget {
       heading = c['swap'] == true
           ? t('{1} is free this week').replaceAll('{1}', name)
           : t('This week you could meet {1}').replaceAll('{1}', name);
-      note = 'A coffee, just the two of you. Can you make it?';
+      note = evening
+          ? 'A drink in the evening, just as friends: whatever you like to drink. Not for you? Tap “Can’t make it”, no reason needed.'
+          : 'A coffee, just the two of you. Can you make it?';
     }
 
-    return CirclePanel(tint: true, children: [
+    // Cream, so it complements the group meetup rather than copying it;
+    // the person is the picture.
+    return CirclePanel(children: [
       Row(children: [
         CircleMemberAvatar(name,
-            radius: 24,
+            radius: 30,
             photoUrl: other['photo_url'] as String?,
             photoPath: other['photo_path'] as String?),
         const SizedBox(width: 12),
@@ -137,24 +167,56 @@ class CircleCoffees extends StatelessWidget {
                     color: circleNavy))),
       ]),
       const SizedBox(height: 12),
-      _info(Icons.schedule_rounded, circleCoffeeWhen(c['starts_at'])),
-      _info(Icons.place_outlined, '${c['place'] ?? ''}'),
-      if ('${c['address'] ?? ''}'.isNotEmpty)
-        Padding(
-            padding: const EdgeInsets.only(left: 26, bottom: 6),
-            child: Text('${c['address']}',
-                style: const TextStyle(fontSize: 13, color: _muted))),
+      _info(evening ? Icons.local_drink_outlined : Icons.coffee_outlined,
+          '${t(evening ? 'A drink' : 'A coffee')} · ${circleCoffeeWhen(c['starts_at'])}'),
+      Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Icon(Icons.place_outlined, size: 18, color: circleTeal),
+            const SizedBox(width: 8),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text('${c['place'] ?? ''}',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700, color: circleNavy)),
+                  if ('${c['address'] ?? ''}'.isNotEmpty)
+                    Text('${c['address']}',
+                        style: const TextStyle(fontSize: 13, color: _muted)),
+                ])),
+          ])),
       if (note != null) ...[
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Text(note, style: const TextStyle(color: Color(0xFF4F5D66))),
       ],
-      const SizedBox(height: 10),
-      Text('Around an hour. You pay for yourself.',
-          style: const TextStyle(fontSize: 13, color: _muted)),
-      const SizedBox(height: 4),
+      const SizedBox(height: 8),
       const Text(
-          'Good to know: tables aren’t reserved. If it’s full, you can move to another public place nearby that you’re both comfortable with.',
-          style: TextStyle(fontSize: 13, color: _muted)),
+          'About an hour · you pay for yourself · tables aren’t reserved, so if it’s full, pick another public place nearby',
+          style: TextStyle(fontSize: 13, color: _muted, height: 1.4)),
+      const SizedBox(height: 12),
+      if (!started && '${c['place'] ?? ''}'.isNotEmpty)
+        // Once it's on, the calendar joins the directions.
+        confirmed
+            ? CircleActionRow([
+                (
+                  icon: Icons.directions_outlined,
+                  label: 'Directions',
+                  onTap: () => _openMap(context, circleCoffeeMapUri(c))
+                ),
+                (
+                  icon: Icons.event_rounded,
+                  label: 'Calendar',
+                  onTap: () => showCircleCalendarSheet(context,
+                      event: _asMeetup(c, name),
+                      appleLink: circleCalendarLink(coffeeId: '${c['id']}'),
+                      fileName: 'vriendtime-coffee.ics')
+                ),
+              ])
+            : CircleQuickAction(
+                icon: Icons.directions_outlined,
+                label: 'Directions',
+                onPressed: () => _openMap(context, circleCoffeeMapUri(c))),
       const SizedBox(height: 12),
       if (confirmed && circleRunningLateWindow(c['starts_at'])) ...[
         OutlinedButton.icon(
@@ -166,41 +228,28 @@ class CircleCoffees extends StatelessWidget {
                     kind: 'coffee', id: c['id'] as Object)),
         const SizedBox(height: 4),
       ],
-      if (confirmed && !started) ...[
-        const Text(
-            'Calendar copies don’t update, so check the app before you leave.',
-            style: TextStyle(fontSize: 12, color: _muted)),
-        const SizedBox(height: 8),
-        Wrap(spacing: 8, runSpacing: 8, children: [
-          OutlinedButton.icon(
-              icon: const Icon(Icons.calendar_month, size: 18),
-              label: const Text('Google Calendar'),
-              onPressed: () => launchUrl(circleCalendarUri(_asMeetup(c, name)),
-                  mode: LaunchMode.externalApplication)),
-          OutlinedButton.icon(
-              icon: const Icon(Icons.event_available, size: 18),
-              label: const Text('Download calendar file (Apple/Outlook)'),
-              onPressed: () => FilePicker.platform.saveFile(
-                  dialogTitle: t('Add to calendar'),
-                  fileName: 'vriendtime-coffee.ics',
-                  type: FileType.custom,
-                  allowedExtensions: ['ics'],
-                  bytes: Uint8List.fromList(
-                      utf8.encode(circleCalendarIcs(_asMeetup(c, name)))))),
-        ]),
-        // Cancelling sits apart, so it never looks like a calendar option.
-        const Divider(height: 28),
-      ],
+      // Cancelling sits apart, so it never looks like a calendar option.
+      if (confirmed && !started) const Divider(height: 20),
       if (started)
         const SizedBox.shrink()
       else if (!confirmed && mine == null)
-        Wrap(spacing: 10, runSpacing: 8, children: [
-          FilledButton(
-              onPressed: busy ? null : () => answer('yes'),
-              child: const Text('Yes, I’ll be there')),
-          OutlinedButton(
-              onPressed: busy ? null : () => answer('no'),
-              child: const Text('Can’t make it')),
+        // Two equal answers, the yes on the right where the thumb is.
+        Row(children: [
+          Expanded(
+              child: OutlinedButton(
+                  style:
+                      OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
+                  onPressed: busy ? null : () => answer('no'),
+                  child: const FittedBox(
+                      fit: BoxFit.scaleDown, child: Text('Can’t make it')))),
+          const SizedBox(width: 10),
+          Expanded(
+              child: FilledButton(
+                  style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+                  onPressed: busy ? null : () => answer('yes'),
+                  child: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Yes, I’ll be there')))),
         ])
       else if (mine == 'no')
         TextButton(
@@ -215,6 +264,7 @@ class CircleCoffees extends StatelessWidget {
                     final sure = await showDialog<bool>(
                         context: context,
                         builder: (d) => AlertDialog(
+                                scrollable: true,
                                 title: const Text('Can’t make it after all?'),
                                 content: Text(t('We’ll let {1} know it’s off.')
                                     .replaceAll('{1}', name)),
@@ -224,7 +274,7 @@ class CircleCoffees extends StatelessWidget {
                                       child: const Text('Keep it')),
                                   FilledButton(
                                       onPressed: () => Navigator.pop(d, true),
-                                      child: const Text('Cancel the coffee')),
+                                      child: const Text('Call it off')),
                                 ]));
                     if (sure == true) answer('no');
                   },
@@ -242,6 +292,7 @@ class CircleCoffees extends StatelessWidget {
         note = await showDialog<String>(
             context: context,
             builder: (d) => AlertDialog(
+                    scrollable: true,
                     title: Text(rating == 'no_show'
                         ? 'Sorry it didn’t happen'
                         : 'Sorry it wasn’t great'),
@@ -272,7 +323,7 @@ class CircleCoffees extends StatelessWidget {
     }
 
     return CirclePanel(tint: true, children: [
-      Text(t('How was your coffee with {1}?').replaceAll('{1}', name),
+      Text(t('How was meeting {1}?').replaceAll('{1}', name),
           style: const TextStyle(
               fontSize: 16, fontWeight: FontWeight.w800, color: circleNavy)),
       const SizedBox(height: 4),
@@ -300,12 +351,22 @@ class CircleCoffees extends StatelessWidget {
     final start = DateTime.tryParse('${c['starts_at'] ?? ''}');
     final address = '${c['address'] ?? ''}'.trim();
     return {
-      'title': t('Coffee with {1}').replaceAll('{1}', name),
+      'title': circleOneToOneWith(c['starts_at'], name),
       'starts_at': c['starts_at'],
       'ends_at': start?.add(const Duration(hours: 1)).toIso8601String(),
       'venue':
           address.isEmpty ? '${c['place'] ?? ''}' : '${c['place']}, $address',
     };
+  }
+
+  Future<void> _openMap(BuildContext context, Uri url) async {
+    try {
+      if (await launchUrl(url, mode: LaunchMode.externalApplication)) return;
+    } catch (_) {}
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(t('Could not open this link. Please try again.'))));
+    }
   }
 
   Widget _info(IconData icon, String text) => Padding(
@@ -330,45 +391,29 @@ class CoffeeTracker extends StatelessWidget {
   Widget build(BuildContext context) {
     final done = members.where((m) => met.contains('${m['id']}')).length;
     final total = members.length;
-    return CirclePanel(children: [
-      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Your coffees so far',
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: circleNavy)),
-          SizedBox(height: 2),
-          Text('One-to-ones with your Circle',
-              style: TextStyle(fontSize: 13, color: _muted)),
-        ])),
-        Semantics(
-            label: t('{1} of {2} met')
-                .replaceAll('{1}', '$done')
-                .replaceAll('{2}', '$total'),
-            child: ExcludeSemantics(
-                child: Text('$done/$total',
-                    style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: circleNavy)))),
-      ]),
-      const SizedBox(height: 12),
-      ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-              value: total == 0 ? 0 : done / total,
-              minHeight: 8,
-              color: circleTeal,
-              backgroundColor: const Color(0xFFEAF2EF))),
-      const SizedBox(height: 14),
-      Wrap(spacing: 8, runSpacing: 10, children: [
-        for (var i = 0; i < members.length; i++)
-          _person(members[i], i, met.contains('${members[i]['id']}')),
-      ]),
-    ]);
+    // One quiet line, not another card: who you've met, at a glance.
+    return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Semantics(
+              label: t('{1} of {2} met')
+                  .replaceAll('{1}', '$done')
+                  .replaceAll('{2}', '$total'),
+              child: ExcludeSemantics(
+                  child: Text(
+                      t('Met {1} of {2} so far')
+                          .replaceAll('{1}', '$done')
+                          .replaceAll('{2}', '$total'),
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: _muted)))),
+          const SizedBox(height: 10),
+          Wrap(spacing: 4, runSpacing: 8, children: [
+            for (var i = 0; i < members.length; i++)
+              _person(members[i], i, met.contains('${members[i]['id']}')),
+          ]),
+        ]));
   }
 
   Widget _person(Json m, int index, bool done) {
@@ -380,22 +425,22 @@ class CoffeeTracker extends StatelessWidget {
             : t('{1}: not yet').replaceAll('{1}', name),
         child: ExcludeSemantics(
             child: SizedBox(
-                width: 64,
+                width: 56,
                 child: Column(children: [
                   Stack(clipBehavior: Clip.none, children: [
                     Opacity(
                         opacity: done ? 1 : .55,
                         child: CircleMemberAvatar(name,
                             index: index,
-                            radius: 22,
+                            radius: 18,
                             photoUrl: m['photo_url'] as String?,
                             photoPath: m['photo_path'] as String?)),
                     Positioned(
                         right: -4,
                         bottom: -4,
                         child: Container(
-                            width: 22,
-                            height: 22,
+                            width: 18,
+                            height: 18,
                             decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: done ? circleTeal : Colors.white,
@@ -407,15 +452,15 @@ class CoffeeTracker extends StatelessWidget {
                                 done
                                     ? Icons.check_rounded
                                     : Icons.coffee_outlined,
-                                size: 14,
+                                size: 11,
                                 color: done ? Colors.white : _muted))),
                   ]),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w700)),
+                          fontSize: 12, fontWeight: FontWeight.w600)),
                 ]))));
   }
 }

@@ -9,7 +9,7 @@ class ProfilePhotoService {
   static const maxUploadLabel = '8 MB';
   static const supportedFormatsLabel = 'JPG, PNG or WebP';
   static const genericUploadErrorMessage =
-      "We couldn't upload your photo. Please try again. Your current photo has not changed.";
+      "We couldn’t upload your photo. Please try again. Your current photo has not changed.";
   static final Map<String, _SignedUrlCacheEntry> _signedUrlCache = {};
 
   /// Links being fetched right now, so a second ask waits for the first

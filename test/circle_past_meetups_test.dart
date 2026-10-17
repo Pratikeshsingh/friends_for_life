@@ -63,11 +63,11 @@ void main() {
           meetup('c', 3, '2026-10-22', title: 'Not yet', completed: false),
         ]));
     expect(find.text('Not yet'), findsNothing);
-    expect(find.text('2 evenings so far with The Thursday Circle.'),
+    expect(find.text('2 meetups so far with The Thursday Circle.'),
         findsOneWidget);
     final bowling = tester.getTopLeft(find.text('Bowling')).dy;
     final dinner = tester.getTopLeft(find.text('Dinner')).dy;
-    expect(bowling, lessThan(dinner), reason: 'newest evening comes first');
+    expect(bowling, lessThan(dinner), reason: 'newest meetup comes first');
   });
 
   testWidgets('shows the venue, which is no longer a secret afterwards',

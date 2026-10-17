@@ -51,7 +51,8 @@ Future<void> showInviteFriend(BuildContext context) => showModalBottomSheet<
                               })
                         else
                           FilledButton.icon(
-                              icon: const Icon(Icons.chat_outlined, size: 18),
+                              icon: const CircleWhatsAppIcon(
+                                  size: 18, color: Colors.white),
                               label: const Text('Share on WhatsApp'),
                               onPressed: () => launchUrl(
                                   Uri.https('wa.me', '/',

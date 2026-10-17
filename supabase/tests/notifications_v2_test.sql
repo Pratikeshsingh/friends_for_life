@@ -1,5 +1,7 @@
 -- Notification wording, destinations, language and email categories.
 begin;
+-- The old flow (meet the group, then pay); pay-first has its own test.
+select set_config('vriendtime.pay_first', 'off', false);
 create function pg_temp.assert_true(value boolean,message text) returns void language plpgsql as $$ begin if value is distinct from true then raise exception 'ASSERTION FAILED: %',message; end if; end; $$;
 insert into auth.users(id,email,raw_user_meta_data) values('00000000-0000-0000-0000-000000000001','nv1@example.test','{"first_name":"Noor"}');
 update public.profiles set language='nl' where id='00000000-0000-0000-0000-000000000001';

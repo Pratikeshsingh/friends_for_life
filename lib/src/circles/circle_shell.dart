@@ -10,6 +10,7 @@ import '../core/photo_preparation.dart';
 import '../core/profile_photo_service.dart';
 import 'circle_profile.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart' hide Text;
 import '../core/i18n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,12 +22,12 @@ import '../screens/legal_document_screen.dart';
 import '../screens/account_screen.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/circle_loading.dart';
-import '../widgets/continuous_immersive_scene.dart';
 import '../widgets/floating_glass_navigation.dart';
 import 'circle_admin.dart';
 import 'circle_application.dart';
 import 'circle_home.dart';
 import 'circle_landing.dart';
+import 'circle_welcome.dart';
 import 'circle_past_meetups.dart';
 import 'circle_repository.dart';
 import 'circle_widgets.dart';
@@ -108,6 +109,7 @@ class _CircleShellState extends State<CircleShell> {
     showDialog<void>(
         context: context,
         builder: (c) => AlertDialog(
+              scrollable: true,
               title: const Text('This link has expired'),
               content: const Text(
                   'Email links work once and only for a short time. To reset your password, tap Sign in, then Forgot password, and use the newest email. To confirm your email, sign in and tap Resend confirmation email.'),
@@ -183,7 +185,8 @@ class _CircleShellState extends State<CircleShell> {
 
   Future<List<Json>> _fetchNotes() async => rows(await Supabase.instance.client
       .from('notifications')
-      .select('id,kind,title,body,created_at,read_at,event_id,metadata')
+      // All columns: works before and after expires_at (20261041) exists.
+      .select()
       .eq('recipient_profile_id', widget.session!.user.id)
       .order('created_at', ascending: false)
       .limit(60));
@@ -291,7 +294,7 @@ class _CircleShellState extends State<CircleShell> {
                 'refresh_commitment' => 'Availability confirmed.',
                 'exclude' => 'Noted. This stays between you and us.',
                 'request_move' =>
-                  'You’re moving to a new group. Your €19 carries over.',
+                  'You’re moving to a new group. Your €39 carries over.',
                 'email_notifications' => data['enabled'] == true
                     ? 'We’ll email you about your Circle.'
                     : 'Emails turned off. Your Circle updates stay in the app.',
@@ -301,7 +304,7 @@ class _CircleShellState extends State<CircleShell> {
                 'leave_circle' =>
                   'You’ve left the Circle. We’ll be in touch about anything outstanding.',
                 'switch_group' =>
-                  'You’re switching groups. Your €19 carries over. Check your days and times below.',
+                  'You’re switching groups. Your €39 carries over. Check your days and times below.',
                 'cancel_agreement' =>
                   'Your place is released. We’ll be in touch about anything outstanding.',
                 'rejoin' => 'You’re back on the waiting list.',
@@ -363,7 +366,9 @@ class _CircleShellState extends State<CircleShell> {
       case 'meetup':
         final m = meetup();
         if (m != null) {
-          openCircleMeetup(context, m);
+          openCircleMeetup(context, m,
+              onPlan: circlePlanWeek5(context, act, m,
+                  invited: state?['stage'] == 'invited'));
         } else {
           _goHome();
         }
@@ -384,6 +389,7 @@ class _CircleShellState extends State<CircleShell> {
           }
         });
       case 'payments':
+      case 'profile':
         setState(() => tab = 2);
       case 'organiser':
         if (state?['is_admin'] == true) {
@@ -439,6 +445,7 @@ class _CircleShellState extends State<CircleShell> {
   }
 
   final _outcomeKey = GlobalKey();
+  final _coffeeKey = GlobalKey();
 
   bool get _authAsModal => MediaQuery.sizeOf(context).width >= 760;
 
@@ -482,205 +489,354 @@ class _CircleShellState extends State<CircleShell> {
   Widget build(BuildContext context) {
     if (repo == null) {
       if (auth && !_authAsModal) {
-        return AuthFlowScreen(
-            startInSignIn: signIn, onClose: () => setState(() => auth = false));
+        // Back on Android (or a swipe on iPhone) returns to the landing page
+        // instead of leaving the site.
+        return PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, _) {
+              if (!didPop) setState(() => auth = false);
+            },
+            child: AuthFlowScreen(
+                startInSignIn: signIn,
+                onClose: () => setState(() => auth = false)));
+      }
+      // The installed app: a short welcome (they already chose VriendTime);
+      // the website: the full landing page.
+      if (!kIsWeb) {
+        return CircleWelcome(
+            onApply: () => _openAuth(signIn: false),
+            onSignIn: () => _openAuth(signIn: true));
       }
       return CircleLanding(
           onApply: () => _openAuth(signIn: false),
           onSignIn: () => _openAuth(signIn: true));
     }
     final demo = repo!.isDemo;
-    return Scaffold(
-        extendBody: true,
-        body: ContinuousImmersiveScene(
-            assetName: tab == 2
-                ? 'assets/generated/profile-continuous-scene-v3.webp'
-                : 'assets/generated/home-continuous-scene-v3.webp',
-            child: SafeArea(
-                bottom: false,
-                child: Column(children: [
-                  if (_stale && state != null)
-                    MaterialBanner(
-                        content: const Text(
-                            'Updates paused. Showing your last loaded Circle.'),
-                        actions: [
-                          TextButton(
-                              onPressed: () => load(),
-                              child: const Text('Retry'))
-                        ]),
-                  if (demo)
-                    Container(
-                        width: double.infinity,
-                        color: const Color(0xFFE4F3EF),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 6),
-                        child: Row(children: [
-                          const Icon(Icons.science_outlined,
-                              size: 17, color: circleTeal),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                              child: Text(
-                                  'Preview · example people · no charges',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700))),
-                          PopupMenuButton<String>(
-                              tooltip: t('Explore preview stages'),
-                              onSelected: (v) => safeAct(
-                                  v == 'reset' ? 'reset' : 'preview',
-                                  {'stage': v}),
-                              itemBuilder: (_) => [
-                                    for (final e in {
-                                      'apply': 'Application',
-                                      'waiting': 'Waiting for a Circle',
-                                      'invited': 'Circle invitation',
-                                      'active': 'Six-week experience',
-                                      'completed': 'Graduation',
-                                      'reset': 'Reset preview'
-                                    }.entries)
-                                      PopupMenuItem(
-                                          value: e.key, child: Text(e.value))
-                                  ],
-                              child: const Padding(
-                                  padding: EdgeInsets.all(8),
-                                  child: Text('Explore ▾',
+    // Back goes to the first tab (or ends an edit) before it leaves the site,
+    // the way Android apps behave.
+    final editingOne = editing && editFocused;
+    return PopScope(
+        canPop: tab == 0 && !editingOne,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) return;
+          if (editingOne) {
+            setState(() {
+              editing = false;
+              editStep = 0;
+              editFocused = false;
+            });
+          } else {
+            _goHome();
+          }
+        },
+        child: Scaffold(
+            // A calm, plain warm surface: the people and plans are the
+            // picture, not a painted room behind them.
+            body: DecoratedBox(
+                decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                      Color(0xFFFFFAF4),
+                      Color(0xFFFBF7F0),
+                      Color(0xFFF8F2EA),
+                    ])),
+                child: SafeArea(
+                    bottom: false,
+                    child: Column(children: [
+                      if (_stale && state != null)
+                        MaterialBanner(
+                            content: const Text(
+                                'Updates paused. Showing your last loaded Circle.'),
+                            actions: [
+                              TextButton(
+                                  onPressed: () => load(),
+                                  child: const Text('Retry'))
+                            ]),
+                      if (demo)
+                        Container(
+                            width: double.infinity,
+                            color: const Color(0xFFE4F3EF),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 6),
+                            child: Row(children: [
+                              const Icon(Icons.science_outlined,
+                                  size: 17, color: circleTeal),
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                  child: Text(
+                                      'Preview · example people · no charges',
                                       style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w800))))
-                        ])),
-                  Container(
-                      // Solid, so the scene's lamp never sits behind the
-                      // icons and content never looks cut off under it.
-                      decoration: const BoxDecoration(
-                          color: Color(0xF2FFFAF4),
-                          border: Border(
-                              bottom: BorderSide(color: Color(0x14062B55)))),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 22, vertical: 12),
-                      child: Row(children: [
-                        const Expanded(
-                            child: BrandLockup(
-                                logoSize: 38, foregroundColor: circleNavy)),
-                        if (state?['is_admin'] == true)
-                          IconButton(
-                              onPressed: openAdmin,
-                              tooltip: t('Circle organiser'),
-                              icon: const Icon(Icons.tune_rounded)),
-                        IconButton(
-                            onPressed: () => _notifications(context),
-                            tooltip: t('Notifications'),
-                            icon: Badge(
-                                isLabelVisible:
-                                    (state?['unread_notifications'] as num? ??
-                                            0) >
-                                        0,
-                                child: const Icon(
-                                    Icons.notifications_none_rounded))),
-                        if (demo)
-                          IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  repo = widget.session == null
-                                      ? null
-                                      : SupabaseCircleRepository(
-                                          Supabase.instance.client);
-                                  state = null;
-                                  tab = 0;
-                                });
-                                if (repo != null) load();
-                              },
-                              tooltip: t('Exit preview'),
-                              icon: const Icon(Icons.close))
-                      ])),
-                  Expanded(
-                      child: state == null
-                          ? Center(
-                              child: Padding(
-                                  padding: const EdgeInsets.all(28),
-                                  child: error == null
-                                      ? const CircleLoading()
-                                      : Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                              Text(error!,
-                                                  textAlign: TextAlign.center),
-                                              const SizedBox(height: 20),
-                                              ElevatedButton(
-                                                  onPressed: load,
-                                                  child:
-                                                      const Text('Try again')),
-                                              TextButton(
-                                                  onPressed: () => Supabase
-                                                      .instance.client.auth
-                                                      .signOut(),
-                                                  child: const Text('Sign out'))
-                                            ])))
-                          : RefreshIndicator(
-                              onRefresh: load,
-                              child: SingleChildScrollView(
-                                  controller: scroll,
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  padding: EdgeInsets.fromLTRB(
-                                      22, 16, 22, chatOpen ? 220 : 130),
-                                  child: Center(
-                                      child: ConstrainedBox(
-                                          constraints: const BoxConstraints(
-                                              maxWidth: 900),
-                                          child: Column(children: [
-                                            if (editing ||
-                                                (state!['stage'] == 'apply' &&
-                                                    state!['left_circle'] ==
-                                                        null &&
-                                                    !applicationParked))
-                                              Offstage(
-                                                  offstage: tab != 0,
-                                                  child: TickerMode(
-                                                      enabled: tab == 0,
-                                                      child: _application(
-                                                          context))),
-                                            if (tab != 0 ||
-                                                !(editing ||
-                                                    (state!['stage'] ==
-                                                            'apply' &&
-                                                        state!['left_circle'] ==
-                                                            null &&
-                                                        !applicationParked)))
-                                              _body(context),
-                                          ])))))),
-                ]))),
-        bottomNavigationBar: repo == null
-            ? null
-            : SafeArea(
-                child: Center(
-                    heightFactor: 1,
-                    child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 600),
-                        child: Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                            child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (chatOpen) _composer(context),
-                                  FloatingGlassNavigation(
-                                      height: 70,
-                                      circleMode: true,
-                                      // Always shown, so people know a group
-                                      // chat is coming; locked until then.
-                                      showMessages: true,
-                                      messagesUnread: _chatUnread,
-                                      homeLabel: hasChat ? null : 'Home',
-                                      selectedIndex: tab,
-                                      onDestinationSelected: (v) {
-                                        setState(() => tab = v);
-                                        if (v == 1) {
-                                          _markChatSeen();
-                                          _scrollToLatest();
-                                        } else if (scroll.hasClients) {
-                                          scroll.jumpTo(0);
-                                        }
-                                      }),
-                                ]))))));
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700))),
+                              PopupMenuButton<String>(
+                                  tooltip: t('Explore preview stages'),
+                                  onSelected: (v) => safeAct(
+                                      v == 'reset' ? 'reset' : 'preview',
+                                      {'stage': v}),
+                                  itemBuilder: (_) => [
+                                        for (final e in {
+                                          'apply': 'Application',
+                                          'waiting': 'Waiting for a Circle',
+                                          'invited': 'Circle invitation',
+                                          'confirmed': 'Paid, waiting to start',
+                                          'active': 'Six-week experience',
+                                          'completed': 'Graduation',
+                                          'reset': 'Reset preview'
+                                        }.entries)
+                                          PopupMenuItem(
+                                              value: e.key,
+                                              child: Text(e.value))
+                                      ],
+                                  child: const Padding(
+                                      padding: EdgeInsets.all(8),
+                                      child: Text('Explore ▾',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w800))))
+                            ])),
+                      _topBar(context, demo),
+                      Expanded(
+                          child: state == null
+                              ? Center(
+                                  child: Padding(
+                                      padding: const EdgeInsets.all(28),
+                                      child: error == null
+                                          ? const CircleLoading()
+                                          : Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                  Text(error!,
+                                                      textAlign:
+                                                          TextAlign.center),
+                                                  const SizedBox(height: 20),
+                                                  ElevatedButton(
+                                                      onPressed: load,
+                                                      child: const Text(
+                                                          'Try again')),
+                                                  TextButton(
+                                                      onPressed: () => Supabase
+                                                          .instance.client.auth
+                                                          .signOut(),
+                                                      child: const Text(
+                                                          'Sign out'))
+                                                ])))
+                              : RefreshIndicator(
+                                  onRefresh: load,
+                                  child: SingleChildScrollView(
+                                      controller: scroll,
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      padding: EdgeInsets.fromLTRB(
+                                          22, 16, 22, chatOpen ? 16 : 40),
+                                      child: Center(
+                                          child: ConstrainedBox(
+                                              constraints: const BoxConstraints(
+                                                  maxWidth: 900),
+                                              child: Column(children: [
+                                                if (_applicationOpen)
+                                                  Offstage(
+                                                      offstage: tab != 0,
+                                                      child: TickerMode(
+                                                          enabled: tab == 0,
+                                                          child: _application(
+                                                              context))),
+                                                if (tab != 0 ||
+                                                    !_applicationOpen)
+                                                  _body(context),
+                                              ])))))),
+                      // In the page, not under it: when the keyboard opens the
+                      // page gets shorter and the box rides up with it.
+                      if (chatOpen) _composerBar(context),
+                    ]))),
+            bottomNavigationBar: _showTabs(context)
+                ? FloatingGlassNavigation(
+                    height: 64,
+                    circleMode: true,
+                    // Always shown, so people know a group chat is coming;
+                    // locked until then.
+                    showMessages: true,
+                    messagesUnread: _chatUnread,
+                    homeLabel: hasChat ? null : 'Home',
+                    selectedIndex: tab,
+                    onDestinationSelected: _goTab)
+                : null));
+  }
+
+  /// The tabs along the bottom: phones only, and out of the way while
+  /// someone fills in the application or types with the keyboard open.
+  bool _showTabs(BuildContext context) =>
+      repo != null &&
+      !_wideLayout(context) &&
+      !_onboarding &&
+      MediaQuery.viewInsetsOf(context).bottom == 0;
+
+  /// The message box under the conversation, above the tabs (or the
+  /// keyboard).
+  Widget _composerBar(BuildContext context) => SafeArea(
+      top: false,
+      bottom: !_showTabs(context),
+      child: Center(
+          heightFactor: 1,
+          child: ConstrainedBox(
+              constraints:
+                  BoxConstraints(maxWidth: _wideLayout(context) ? 760 : 600),
+              child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+                  child: _composer(context)))));
+
+  /// The application form is on screen (first run, or an edit).
+  bool get _applicationOpen =>
+      state != null &&
+      (editing ||
+          (state!['stage'] == 'apply' &&
+              state!['left_circle'] == null &&
+              !applicationParked));
+
+  /// Filling in the application: one task, so no tabs leading away from it.
+  bool get _onboarding => tab == 0 && _applicationOpen;
+
+  /// What this page is, for the top bar: the chat's Circle, or the
+  /// application. Elsewhere the bar shows the name of the app.
+  String? get _pageTitle {
+    if (state == null) return null;
+    if (_onboarding) {
+      return editing && editFocused ? 'Edit your answers' : 'Your application';
+    }
+    // The tab bar already says where you are; only the chat needs its
+    // Circle's name in sight while reading.
+    if (tab == 1 && chatOpen) {
+      return '${_openPast?['name'] ?? (state?['circle'] as Map?)?['name'] ?? t('Your Circle')}';
+    }
+    return null;
+  }
+
+  /// One compact bar: a small mark, where you are, and the bell. 54 high
+  /// with its edge, including a 2-pixel line that shows while something saves, so a tap on a
+  /// slow connection never looks like it did nothing.
+  Widget _topBar(BuildContext context, bool demo) {
+    final wide = _wideLayout(context);
+    final title = wide ? null : _pageTitle;
+    return Container(
+        key: const ValueKey('circle-top-bar'),
+        decoration: const BoxDecoration(
+            color: Color(0xFFFFFAF4),
+            border: Border(bottom: BorderSide(color: Color(0x14062B55)))),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 51),
+              child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 1, 6, 1),
+                  child: Row(children: [
+                    Expanded(
+                        child: title == null
+                            ? const Align(
+                                alignment: Alignment.centerLeft,
+                                child: BrandLockup(
+                                    logoSize: 30, foregroundColor: circleNavy))
+                            : Row(children: [
+                                const BrandLogoMark(size: 28),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                    child: Semantics(
+                                        header: true,
+                                        child: Text(title,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                                fontSize: 17,
+                                                fontWeight: FontWeight.w800,
+                                                color: circleNavy)))),
+                              ])),
+                    if (wide && repo != null) _headerTabs(context),
+                    if (state?['is_admin'] == true)
+                      IconButton(
+                          onPressed: openAdmin,
+                          tooltip: t('Circle organiser'),
+                          icon: const Icon(Icons.tune_rounded)),
+                    IconButton(
+                        onPressed: () => _notifications(context),
+                        tooltip: t('Notifications'),
+                        icon: Badge(
+                            isLabelVisible:
+                                (state?['unread_notifications'] as num? ?? 0) >
+                                    0,
+                            child:
+                                const Icon(Icons.notifications_none_rounded))),
+                    if (demo)
+                      IconButton(
+                          onPressed: () {
+                            setState(() {
+                              repo = widget.session == null
+                                  ? null
+                                  : SupabaseCircleRepository(
+                                      Supabase.instance.client);
+                              state = null;
+                              tab = 0;
+                            });
+                            if (repo != null) load();
+                          },
+                          tooltip: t('Exit preview'),
+                          icon: const Icon(Icons.close))
+                  ]))),
+          SizedBox(
+              height: 2,
+              child: busy
+                  ? Semantics(
+                      liveRegion: true,
+                      label: t('Saving…'),
+                      child: const LinearProgressIndicator(
+                          key: ValueKey('saving-bar'),
+                          minHeight: 2,
+                          color: circleTeal,
+                          backgroundColor: Colors.transparent))
+                  : null),
+        ]));
+  }
+
+  /// Wide screens get a header with tabs; phones the floating menu.
+  static bool _wideLayout(BuildContext context) =>
+      MediaQuery.sizeOf(context).width >= 900;
+
+  void _goTab(int v) {
+    setState(() => tab = v);
+    if (v == 1) {
+      _markChatSeen();
+      _scrollToLatest();
+    } else if (scroll.hasClients) {
+      scroll.jumpTo(0);
+    }
+  }
+
+  /// The three places, as tabs in the header on a wide screen.
+  Widget _headerTabs(BuildContext context) {
+    Widget item(int i, IconData icon, String label, {bool dot = false}) {
+      final on = tab == i;
+      return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 3),
+          child: TextButton.icon(
+              style: TextButton.styleFrom(
+                  foregroundColor: on ? circleNavy : const Color(0xFF4F5D66),
+                  backgroundColor:
+                      on ? const Color(0xFFE4F1EE) : Colors.transparent,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10)),
+              onPressed: () => _goTab(i),
+              icon: Badge(
+                  isLabelVisible: dot,
+                  smallSize: 8,
+                  child: Icon(icon, size: 20)),
+              label: Text(label)));
+    }
+
+    return Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          item(0, Icons.home_rounded, hasChat ? 'My Circle' : 'Home'),
+          item(1, Icons.chat_bubble_rounded, 'Messages', dot: _chatUnread),
+          item(2, Icons.person_rounded, 'Profile'),
+        ]));
   }
 
   /// The group chat exists once someone has joined a Circle.
@@ -744,43 +900,40 @@ class _CircleShellState extends State<CircleShell> {
     } catch (_) {}
   }
 
-  /// Pinned above the bottom menu, so it never scrolls away from the
-  /// conversation.
-  Widget _composer(BuildContext context) => Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-          color: Colors.white,
-          elevation: 3,
-          shadowColor: const Color(0x33062B55),
-          borderRadius: BorderRadius.circular(24),
-          child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 6, 4),
-              child: Row(children: [
-                Expanded(
-                    child: TextField(
-                        controller: message,
-                        minLines: 1,
-                        maxLines: 4,
-                        maxLength: 2000,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (_) => _send(),
-                        decoration: InputDecoration(
-                            hintText: t('Message your Circle…'),
-                            counterText: '',
-                            filled: false,
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none))),
-                IconButton.filled(
-                    style: IconButton.styleFrom(
-                        backgroundColor: circleNavy,
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: const Color(0x33062B55),
-                        disabledForegroundColor: Colors.white),
-                    tooltip: t('Send'),
-                    onPressed: busy ? null : _send,
-                    icon: const Icon(Icons.send_rounded)),
-              ]))));
+  /// Pinned under the conversation, so it never scrolls away from it.
+  Widget _composer(BuildContext context) => Material(
+      color: Colors.white,
+      elevation: 3,
+      shadowColor: const Color(0x33062B55),
+      borderRadius: BorderRadius.circular(24),
+      child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 6, 4),
+          child: Row(children: [
+            Expanded(
+                child: TextField(
+                    controller: message,
+                    minLines: 1,
+                    maxLines: 4,
+                    maxLength: 2000,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => _send(),
+                    decoration: InputDecoration(
+                        hintText: t('Message your Circle…'),
+                        counterText: '',
+                        filled: false,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none))),
+            IconButton.filled(
+                style: IconButton.styleFrom(
+                    backgroundColor: circleNavy,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: const Color(0x33062B55),
+                    disabledForegroundColor: Colors.white),
+                tooltip: t('Send'),
+                onPressed: busy ? null : _send,
+                icon: const Icon(Icons.send_rounded)),
+          ])));
 
   void _openApplication(int step, {bool focused = false}) => setState(() {
         _applicationKey = GlobalKey();
@@ -814,6 +967,7 @@ class _CircleShellState extends State<CircleShell> {
         act: safeAct,
         savePlan: act,
         outcomeKey: _outcomeKey,
+        coffeeKey: _coffeeKey,
         onEdit: _openApplication,
         onMessages: () {
           setState(() => tab = 1);
@@ -909,7 +1063,8 @@ class _CircleShellState extends State<CircleShell> {
     final messages = rows(circle['messages']);
     final names = strings(circle['members']);
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      CircleHeading('${circle['name'] ?? 'Your Circle'}',
+      CircleHomeHeader(
+          title: '${circle['name'] ?? 'Your Circle'}',
           eyebrow: 'Your finished Circle',
           subtitle: names.isEmpty
               ? 'Still yours. Keep in touch and make plans.'
@@ -926,23 +1081,34 @@ class _CircleShellState extends State<CircleShell> {
   /// The Messages tab before there is a group to talk to: what unlocks it.
   Widget _messagesLocked() {
     final invited = state?['stage'] == 'invited';
+    // Pay first: the chat opens when the group is booked, not at payment.
+    final filling = state?['pay_first'] is Map &&
+        (state?['pay_first'] as Map)['started'] != true;
+    final paid = state?['stage'] == 'confirmed';
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const CircleHeading('Your group chat',
-          eyebrow: 'Messages',
+      const CircleHomeHeader(
+          title: 'Your group chat',
           subtitle: 'Talk with your Circle before the first meetup.'),
       CirclePanel(tint: true, children: [
-        const Row(children: [
-          Icon(Icons.lock_outline_rounded, color: circleTeal),
-          SizedBox(width: 10),
+        Row(children: [
+          const Icon(Icons.lock_outline_rounded, color: circleTeal),
+          const SizedBox(width: 10),
           Expanded(
-              child: Text('Opens when your place is confirmed',
-                  style: TextStyle(
+              child: Text(
+                  filling
+                      ? 'Opens when your group is booked'
+                      : 'Opens when your place is confirmed',
+                  style: const TextStyle(
                       fontWeight: FontWeight.w800, color: circleNavy))),
         ]),
         const SizedBox(height: 10),
-        Text(invited
-            ? 'Accept your invitation and pay the €19. As soon as the organiser confirms your payment, your Circle’s chat opens here.'
-            : 'Once we’ve matched you with a Circle and your place is confirmed, you can chat with your group here.'),
+        Text(filling
+            ? paid
+                ? 'Your place is confirmed. As soon as your group is booked, you’ll get the dates and can chat with everyone here.'
+                : 'Pay your €39 to confirm your place. As soon as your group is booked, you’ll get the dates and can chat with everyone here.'
+            : invited
+                ? 'Accept your invitation and pay the €39. As soon as the organiser confirms your payment, your Circle’s chat opens here.'
+                : 'Once we’ve matched you with a Circle and your place is confirmed, you can chat with your group here.'),
       ]),
     ]);
   }
@@ -956,11 +1122,15 @@ class _CircleShellState extends State<CircleShell> {
     final messages = byId.values.toList()
       ..sort((a, b) => '${a['created_at']}'.compareTo('${b['created_at']}'));
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const CircleHeading('A little hello goes a long way.',
-          eyebrow: 'Circle messages',
-          subtitle:
+      // On a phone the Circle's name is in the bar above, so it stays in
+      // sight while reading; a big heading here would only repeat it.
+      if (_wideLayout(context))
+        CircleHomeHeader(
+            title: '${(state?['circle'] as Map?)?['name'] ?? t('Your Circle')}',
+            eyebrow: 'Circle messages'),
+      const _ModeratedNote(
+          rules:
               'Plans, small updates and “see you Thursday”. Be kind, and ask before sharing someone’s details.'),
-      const _ModeratedNote(),
       if (messages.isEmpty)
         const Padding(
             padding: EdgeInsets.symmetric(vertical: 24),
@@ -1011,11 +1181,18 @@ class _CircleShellState extends State<CircleShell> {
           out.add(Padding(
               padding: const EdgeInsets.symmetric(vertical: 10),
               child: Center(
-                  child: Text(label,
-                      style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF66727C))))));
+                  child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: .85),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFDDE7E3))),
+                      child: Text(label,
+                          style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF4F5D66)))))));
           last = label;
         }
       }
@@ -1067,6 +1244,32 @@ class _CircleShellState extends State<CircleShell> {
   }
 
   Widget _bubble(BuildContext context, Json m) {
+    if (m['system'] == true) {
+      // A note from VriendTime: centred, nobody's bubble, nothing to report.
+      // Quiet and inline: news, not an alarm.
+      return Center(
+          child: Container(
+              constraints: const BoxConstraints(maxWidth: 460),
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 9),
+              decoration: BoxDecoration(
+                  color: const Color(0xFFF3EEE6),
+                  borderRadius: BorderRadius.circular(12)),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Text('VriendTime',
+                    style: TextStyle(
+                        color: circleTealText,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800)),
+                const SizedBox(height: 2),
+                Text('${m['body'] ?? ''}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontSize: 13.5,
+                        height: 1.35,
+                        color: Color(0xFF3F4C55))),
+              ])));
+    }
     final own = m['own'] == true;
     final time = m['pending'] == true
         ? t('Sending…')
@@ -1077,14 +1280,17 @@ class _CircleShellState extends State<CircleShell> {
             constraints: const BoxConstraints(maxWidth: 520),
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+            // Your own messages in the brand navy, everyone else's in white,
+            // so a conversation reads at a glance.
             decoration: BoxDecoration(
-                color: own ? const Color(0xFFDFF1EA) : Colors.white,
+                color: own ? circleNavy : Colors.white,
                 borderRadius: BorderRadius.only(
                     topLeft: const Radius.circular(18),
                     topRight: const Radius.circular(18),
                     bottomLeft: Radius.circular(own ? 18 : 4),
                     bottomRight: Radius.circular(own ? 4 : 18)),
-                border: Border.all(color: const Color(0xFFDDE7E3))),
+                border:
+                    own ? null : Border.all(color: const Color(0xFFDDE7E3))),
             child: Row(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1101,14 +1307,21 @@ class _CircleShellState extends State<CircleShell> {
                                           color: circleTealText,
                                           fontSize: 12,
                                           fontWeight: FontWeight.w800)),
-                                SelectableText(m['body'] as String? ?? ''),
+                                SelectableText(m['body'] as String? ?? '',
+                                    style: own
+                                        ? const TextStyle(
+                                            color: Colors.white, height: 1.35)
+                                        : null),
                                 if (time.isNotEmpty)
                                   Padding(
                                       padding: const EdgeInsets.only(top: 4),
                                       child: Text(time,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                               fontSize: 11,
-                                              color: Color(0xFF66727C)))),
+                                              color: own
+                                                  ? Colors.white
+                                                      .withValues(alpha: .75)
+                                                  : const Color(0xFF66727C)))),
                               ]))),
                   if (!own && m['id'] != null)
                     PopupMenuButton<String>(
@@ -1187,7 +1400,7 @@ class _CircleShellState extends State<CircleShell> {
         mode: LaunchMode.externalApplication);
     if (!mounted || launched) return;
     showCircleToast(
-        context, "We couldn't open WhatsApp. Try again in a moment.",
+        context, "We couldn’t open WhatsApp. Try again in a moment.",
         icon: Icons.error_outline_rounded);
   }
 
@@ -1198,6 +1411,7 @@ class _CircleShellState extends State<CircleShell> {
     final result = await showDialog<Json>(
         context: context,
         builder: (c) => AlertDialog(
+              scrollable: true,
               title: const Text('Your first hello'),
               content: SingleChildScrollView(
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -1274,20 +1488,21 @@ class _CircleShellState extends State<CircleShell> {
         builder: (c) => PopScope(
             canPop: false,
             child: AlertDialog(
+                scrollable: true,
                 content: Row(children: [
-              const SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(strokeWidth: 3)),
-              const SizedBox(width: 18),
-              Expanded(
-                  child: ValueListenableBuilder<String>(
-                      valueListenable: step,
-                      builder: (_, value, __) => Text(value,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: circleNavy)))),
-            ])))).whenComplete(() => open = false);
+                  const SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(strokeWidth: 3)),
+                  const SizedBox(width: 18),
+                  Expanded(
+                      child: ValueListenableBuilder<String>(
+                          valueListenable: step,
+                          builder: (_, value, __) => Text(value,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: circleNavy)))),
+                ])))).whenComplete(() => open = false);
     return () {
       if (open && mounted) Navigator.of(context, rootNavigator: true).pop();
       open = false;
@@ -1461,7 +1676,9 @@ class _CircleShellState extends State<CircleShell> {
         .where((m) => m['id'] == n['event_id'])
         .firstOrNull;
     if (meetup != null) {
-      openCircleMeetup(context, meetup);
+      openCircleMeetup(context, meetup,
+          onPlan: circlePlanWeek5(context, act, meetup,
+              invited: state?['stage'] == 'invited'));
       return;
     }
     _goHome();
@@ -1497,13 +1714,19 @@ class _CircleShellState extends State<CircleShell> {
         showDragHandle: true,
         builder: (sheet) => StatefulBuilder(builder: (sheet, update) {
               refreshSheet = update;
+              // About something that is over (a coffee, a meetup): no longer
+              // new, and greyed under Earlier.
+              bool over(Json n) =>
+                  DateTime.tryParse('${n['expires_at'] ?? ''}')
+                      ?.isBefore(DateTime.now()) ??
+                  false;
               final unread = [
                 for (final n in notes)
-                  if (n['read_at'] == null) n
+                  if (n['read_at'] == null && !over(n)) n
               ];
               final read = [
                 for (final n in notes)
-                  if (n['read_at'] != null) n
+                  if (n['read_at'] != null || over(n)) n
               ];
               void markLocal(Iterable<Json> items) {
                 final now = DateTime.now().toUtc().toIso8601String();
@@ -1513,7 +1736,7 @@ class _CircleShellState extends State<CircleShell> {
               }
 
               Widget tile(Json n) {
-                final isNew = n['read_at'] == null;
+                final isNew = n['read_at'] == null && !over(n);
                 final leadsToAdmin =
                     n['kind'] == 'support' && state?['is_admin'] == true;
                 return Material(
@@ -1531,48 +1754,55 @@ class _CircleShellState extends State<CircleShell> {
                         },
                         child: Padding(
                             padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
-                            child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                      padding: const EdgeInsets.only(top: 6),
-                                      child: Container(
-                                          width: 9,
-                                          height: 9,
-                                          decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: isNew
-                                                  ? circleCoral
-                                                  : Colors.transparent))),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                      child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                        Text('${n['title'] ?? ''}',
-                                            style: TextStyle(
-                                                fontWeight: isNew
-                                                    ? FontWeight.w800
-                                                    : FontWeight.w600,
-                                                color: circleNavy)),
-                                        const SizedBox(height: 2),
-                                        Text('${n['body'] ?? ''}',
-                                            style: const TextStyle(
-                                                color: Color(0xFF4F5D66),
-                                                height: 1.35)),
-                                        const SizedBox(height: 4),
-                                        Text(_ago(n['created_at']?.toString()),
-                                            style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Color(0xFF66727C))),
-                                      ])),
-                                  Icon(
-                                      leadsToAdmin
-                                          ? Icons.admin_panel_settings_outlined
-                                          : Icons.chevron_right_rounded,
-                                      color: const Color(0xFF66727C)),
-                                ]))));
+                            child: Opacity(
+                                opacity: over(n) ? .55 : 1,
+                                child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 6),
+                                          child: Container(
+                                              width: 9,
+                                              height: 9,
+                                              decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color: isNew
+                                                      ? circleCoral
+                                                      : Colors.transparent))),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                          child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                            Text('${n['title'] ?? ''}',
+                                                style: TextStyle(
+                                                    fontWeight: isNew
+                                                        ? FontWeight.w800
+                                                        : FontWeight.w600,
+                                                    color: circleNavy)),
+                                            const SizedBox(height: 2),
+                                            Text('${n['body'] ?? ''}',
+                                                style: const TextStyle(
+                                                    color: Color(0xFF4F5D66),
+                                                    height: 1.35)),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                                _ago(n['created_at']
+                                                    ?.toString()),
+                                                style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: Color(0xFF66727C))),
+                                          ])),
+                                      Icon(
+                                          leadsToAdmin
+                                              ? Icons
+                                                  .admin_panel_settings_outlined
+                                              : Icons.chevron_right_rounded,
+                                          color: const Color(0xFF66727C)),
+                                    ])))));
               }
 
               Widget label(String text) => Padding(
@@ -1584,10 +1814,15 @@ class _CircleShellState extends State<CircleShell> {
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF4F5D66))));
 
+              // As tall as it needs to be, up to three quarters of the
+              // screen: an empty list is a small sheet, not a big one.
+              final empty = !loading && !failed && notes.isEmpty;
               return SafeArea(
-                  child: SizedBox(
-                      height: MediaQuery.sizeOf(sheet).height * .75,
+                  child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                          maxHeight: MediaQuery.sizeOf(sheet).height * .75),
                       child: ListView(
+                          shrinkWrap: true,
                           padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                           children: [
                             Row(children: [
@@ -1623,11 +1858,19 @@ class _CircleShellState extends State<CircleShell> {
                                   padding: EdgeInsets.only(top: 12),
                                   child: Text(
                                       'Could not load notifications. Please retry.'))
-                            else if (notes.isEmpty)
+                            else if (empty)
                               const Padding(
-                                  padding: EdgeInsets.only(top: 12),
-                                  child: Text(
-                                      'You’re all caught up. Circle updates will appear here.')),
+                                  padding: EdgeInsets.fromLTRB(0, 24, 0, 16),
+                                  child: Column(children: [
+                                    Icon(Icons.notifications_none_rounded,
+                                        size: 40, color: Color(0xFFB9D8CF)),
+                                    SizedBox(height: 10),
+                                    Text(
+                                        'You’re all caught up. Circle updates will appear here.',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                            color: Color(0xFF4F5D66))),
+                                  ])),
                             if (!loading && notes.isNotEmpty) ...[
                               label('New'),
                               if (unread.isEmpty)
@@ -1658,16 +1901,26 @@ class _CircleShellState extends State<CircleShell> {
 
 /// Members are told plainly that the chat is moderated.
 class _ModeratedNote extends StatelessWidget {
-  const _ModeratedNote();
+  const _ModeratedNote({this.rules});
+
+  /// A line about how to talk here, before the moderation note.
+  final String? rules;
 
   @override
-  Widget build(BuildContext context) => const Padding(
-      padding: EdgeInsets.only(bottom: 12),
-      child: Row(children: [
-        Icon(Icons.shield_outlined, size: 16, color: Color(0xFF66727C)),
-        SizedBox(width: 6),
+  Widget build(BuildContext context) => Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Padding(
+            padding: EdgeInsets.only(top: 1),
+            child: Icon(Icons.shield_outlined,
+                size: 16, color: Color(0xFF66727C))),
+        const SizedBox(width: 6),
         Expanded(
-            child: Text('This chat is moderated to keep Circles safe.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF66727C)))),
+            child: Text(
+                rules == null
+                    ? t('This chat is moderated to keep Circles safe.')
+                    : '${t(rules!)} ${t('This chat is moderated to keep Circles safe.')}',
+                style: const TextStyle(
+                    fontSize: 12.5, height: 1.4, color: Color(0xFF66727C)))),
       ]));
 }

@@ -11,14 +11,10 @@ const nlStrings = <String, String>{
   'No place yet': 'Nog geen plek',
   'Use Report a concern in your profile, message us on WhatsApp, or email support@vriendtime.com. In an emergency, call 112.':
       'Gebruik Meld een zorg in je profiel, stuur ons een bericht via WhatsApp of mail naar support@vriendtime.com. Bel bij nood 112.',
-  'Your Circle and its chat stay open, so you can keep making plans together at no extra cost. You can also join a new Circle with new people for €19.':
-      'Je Circle en de chat blijven open, zodat jullie zonder extra kosten plannen kunnen blijven maken. Je kunt je ook voor €19 aanmelden voor een nieuwe Circle met nieuwe mensen.',
-  'Tell us what isn’t working under Profile › Programme settings › Switch group or leave. You can switch to another group once, free of charge, until your second meetup; your €19 carries over. Up to 48 hours before your first meetup you can also ask for your €19 back. Your reasons and private check-ins are never shared with other members.':
-      'Laat ons weten wat er niet werkt via Profiel › Programma-instellingen › Overstappen of stoppen. Je kunt één keer gratis overstappen naar een andere groep, tot je tweede meetup; je €19 gaat mee. Tot 48 uur voor je eerste meetup kun je ook je €19 terugvragen. Je redenen en privé check-ins worden nooit met andere leden gedeeld.',
-  'Your Circle stays together: the group chat and meetup planning stay open, so you can keep making plans at no extra cost. Want to meet new people too? You can join a new Circle for €19.':
-      'Je Circle blijft bij elkaar: de groepschat en het plannen van meetups blijven open, zodat jullie zonder extra kosten plannen kunnen blijven maken. Wil je ook nieuwe mensen ontmoeten? Je kunt je voor €19 aanmelden voor een nieuwe Circle.',
-  'Not the right group or time? Switch to another group once, free of charge, until your second meetup. Up to 48 hours before your first meetup you can also ask for your €19 back.':
-      'Niet de juiste groep of tijd? Stap één keer gratis over naar een andere groep, tot je tweede meetup. Tot 48 uur voor je eerste meetup kun je ook je €19 terugvragen.',
+  'Your Circle and its chat stay open, so you can keep making plans together at no extra cost. You can also join a new Circle with new people for €39.':
+      'Je Circle en de chat blijven open, zodat jullie zonder extra kosten plannen kunnen blijven maken. Je kunt je ook voor €39 aanmelden voor een nieuwe Circle met nieuwe mensen.',
+  'Your Circle stays together: the group chat and meetup planning stay open, so you can keep making plans at no extra cost. Want to meet new people too? You can join a new Circle for €39.':
+      'Je Circle blijft bij elkaar: de groepschat en het plannen van meetups blijven open, zodat jullie zonder extra kosten plannen kunnen blijven maken. Wil je ook nieuwe mensen ontmoeten? Je kunt je voor €39 aanmelden voor een nieuwe Circle.',
   'A switch is possible until your second meetup starts.':
       'Overstappen kan tot je tweede meetup begint.',
   'Ask this applicant to finish their birthday, photo and times first.':
@@ -86,8 +82,8 @@ const nlStrings = <String, String>{
   '{1} said yes to {2} {3} {4} at {5}. If your plans changed, you can still say yes in the app.':
       '{1} zei ja tegen {2} {3} {4} om {5}. Als je plannen veranderd zijn, kun je in de app alsnog ja zeggen.',
   '{1} can’t make it after all': '{1} kan toch niet',
-  'Your coffee on {1} {2} {3} at {4} is off. See you with the whole group!':
-      'Je koffie op {1} {2} {3} om {4} gaat niet door. Tot ziens met de hele groep!',
+  'Your one-to-one on {1} {2} {3} at {4} is off. See you with the whole group!':
+      'Je één-op-ééntje op {1} {2} {3} om {4} gaat niet door. Tot ziens met de hele groep!',
   'In front of {1}': 'Voor {1}',
   'Nobody has planned week {1} of {2} yet. Pick an activity and a place together in the app.':
       'Nog niemand heeft week {1} van {2} gepland. Kies samen een activiteit en plek in de app.',
@@ -100,20 +96,12 @@ const nlStrings = <String, String>{
   'The programme is done, but your Circle isn’t: the chat stays open and you can keep making plans together, at no extra cost.':
       'Het programma zit erop, maar je Circle niet: de chat blijft open en jullie kunnen samen plannen blijven maken, zonder extra kosten.',
   'Programme complete': 'Programma afgerond',
-  'With one time a week, finding five or six people who are all free then can take a long while. Add another day or time to be matched sooner.':
-      'Met één moment per week kan het lang duren om vijf of zes mensen te vinden die dan allemaal kunnen. Voeg nog een dag of tijd toe om sneller gematcht te worden.',
-  'Adding one or two more days or times makes it much easier to find your group.':
-      'Met één of twee extra dagen of tijden vinden we veel makkelijker een groep voor je.',
-  'Good choice. More options means we can match you sooner.':
-      'Goede keuze. Meer opties betekent dat we je sneller kunnen matchen.',
-  'Plenty of options. We can match you as soon as a group fits.':
-      'Genoeg opties. We kunnen je matchen zodra er een groep past.',
-  'To refund: find their €19 in your bank app (the Tikkie payment shows their name, and usually their account number) and transfer it back. No account number? Ask them for it.':
-      'Terugbetalen: zoek de €19 in je bankapp (bij de Tikkie-betaling staat hun naam, en meestal hun rekeningnummer) en maak het bedrag terug over. Geen rekeningnummer? Vraag het hen.',
+  'To refund: find their {1} in your bank app (the Tikkie payment shows their name, and usually their account number) and transfer it back. No account number? Ask them for it.':
+      'Terugbetalen: zoek de {1} in je bankapp (bij de Tikkie-betaling staat hun naam, en meestal hun rekeningnummer) en maak het bedrag terug over. Geen rekeningnummer? Vraag het hen.',
   'Ask for bank details': 'Rekeninggegevens vragen',
   'Your VriendTime refund': 'Je terugbetaling van VriendTime',
-  'Hi! To return your €19, could you reply with the IBAN and account holder name you’d like it sent to? Thanks, VriendTime':
-      'Hoi! Om je €19 terug te storten: wil je antwoorden met het IBAN en de naam van de rekeninghouder waar het naartoe mag? Bedankt, VriendTime',
+  'Hi! To return your {1}, could you reply with the IBAN and account holder name you’d like it sent to? Thanks, VriendTime':
+      'Hoi! Om je {1} terug te storten: wil je antwoorden met het IBAN en de naam van de rekeninghouder waar het naartoe mag? Bedankt, VriendTime',
   'Finished Circles': 'Afgeronde Circles',
   'Their chats stay open for the members.':
       'De chats blijven open voor de leden.',
@@ -151,32 +139,32 @@ const nlStrings = <String, String>{
   'Meet your group and see all six dates. Accept and pay by the date shown in the app to keep your place.':
       'Maak kennis met je groep en bekijk alle zes de data. Accepteer en betaal vóór de datum in de app om je plek te houden.',
   'You’re in! Your place is confirmed': 'Je bent erbij! Je plek is bevestigd',
-  'We’ve received your €19. Say hello to your Circle in the chat and look at the details of your first meetup.':
-      'We hebben je €19 ontvangen. Zeg hallo tegen je Circle in de chat en bekijk de details van je eerste meetup.',
-  'Your €19 from your previous Circle covers this one. Say hello to your new Circle in the chat.':
-      'Je €19 van je vorige Circle geldt ook voor deze. Zeg hallo tegen je nieuwe Circle in de chat.',
+  'We’ve received your €39. Say hello to your Circle in the chat and look at the details of your first meetup.':
+      'We hebben je €39 ontvangen. Zeg hallo tegen je Circle in de chat en bekijk de details van je eerste meetup.',
+  'Your €39 from your previous Circle covers this one. Say hello to your new Circle in the chat.':
+      'Je €39 van je vorige Circle geldt ook voor deze. Zeg hallo tegen je nieuwe Circle in de chat.',
   'Six weeks together: well done!': 'Zes weken samen: goed gedaan!',
   'Your Circle and its chat stay open, so keep making plans together. Want to meet new people as well? You can join a new Circle in the app.':
       'Je Circle en de chat blijven open, dus blijf samen plannen maken. Wil je ook nieuwe mensen ontmoeten? Je kunt je in de app aanmelden voor een nieuwe Circle.',
   'How is your Circle doing?': 'Hoe gaat het met je Circle?',
-  'Your cancellation is with the organiser. We’ll be in touch about your €19.':
-      'Je annulering ligt bij de organisator. We nemen contact met je op over je €19.',
-  'We’re sorry, this Circle can’t go ahead. If you paid, your €19 will be returned. Reply to this email if you have any questions.':
-      'Het spijt ons, deze Circle kan niet doorgaan. Heb je betaald, dan krijg je je €19 terug. Heb je vragen? Beantwoord dan deze e-mail.',
+  'Your cancellation is with the organiser. We’ll be in touch about your €39.':
+      'Je annulering ligt bij de organisator. We nemen contact met je op over je €39.',
+  'We’re sorry, this Circle can’t go ahead. If you paid, your €39 will be returned. Reply to this email if you have any questions.':
+      'Het spijt ons, deze Circle kan niet doorgaan. Heb je betaald, dan krijg je je €39 terug. Heb je vragen? Beantwoord dan deze e-mail.',
   'New messages in your Circle': 'Nieuwe berichten in je Circle',
-  'We’ll refund your €19': 'We betalen je €19 terug',
-  'We couldn’t find a new group in time, so the organiser will return your €19.':
-      'We konden niet op tijd een nieuwe groep vinden, dus de organisator stort je €19 terug.',
+  'We’ll refund your €39': 'We betalen je €39 terug',
+  'We couldn’t find a new group in time, so the organiser will return your €39.':
+      'We konden niet op tijd een nieuwe groep vinden, dus de organisator stort je €39 terug.',
   'You’ve left the Circle': 'Je hebt de Circle verlaten',
   'Your place is released and your refund request is with the organiser. We’ll be in touch about it.':
       'Je plek is vrijgegeven en je verzoek om terugbetaling ligt bij de organisator. We nemen er contact over op.',
   'Your place and your unpaid agreement are cancelled.':
       'Je plek en je onbetaalde afspraak zijn geannuleerd.',
   'You’re switching groups': 'Je stapt over naar een andere groep',
-  'Your €19 carries over to your next Circle. We’ll invite you when a group fits your times.':
-      'Je €19 gaat mee naar je volgende Circle. We nodigen je uit zodra er een groep bij je tijden past.',
-  'We’ll match you with a new Circle. Your €19 carries over, so you won’t pay again.':
-      'We koppelen je aan een nieuwe Circle. Je €19 gaat mee, dus je betaalt niet opnieuw.',
+  'Your €39 carries over to your next Circle. We’ll invite you when a group fits your times.':
+      'Je €39 gaat mee naar je volgende Circle. We nodigen je uit zodra er een groep bij je tijden past.',
+  'We’ll match you with a new Circle. Your €39 carries over, so you won’t pay again.':
+      'We koppelen je aan een nieuwe Circle. Je €39 gaat mee, dus je betaalt niet opnieuw.',
   'Thanks for your report': 'Bedankt voor je melding',
   'The organiser has looked into it. If anything else happens, report it again or email support@vriendtime.com.':
       'De organisator heeft ernaar gekeken. Gebeurt er nog iets, meld het dan opnieuw of mail naar support@vriendtime.com.',
@@ -197,12 +185,12 @@ const nlStrings = <String, String>{
       '{1} nieuwe berichten in {2}. Open VriendTime om te lezen en te antwoorden.',
   '{1} new message in {2}. Open VriendTime to read and reply.':
       '{1} nieuw bericht in {2}. Open VriendTime om te lezen en te antwoorden.',
-  '{1} left {2} and asked for their €19 back. Open the organiser panel to review it.':
-      '{1} heeft {2} verlaten en vraagt de €19 terug. Open het organisatorpaneel om het te bekijken.',
+  '{1} left {2} and asked for their €39 back. Open the organiser panel to review it.':
+      '{1} heeft {2} verlaten en vraagt de €39 terug. Open het organisatorpaneel om het te bekijken.',
   '{1} is no longer joining {2}. Invite someone from the Circles tab.':
       '{1} doet niet meer mee aan {2}. Nodig iemand uit via het tabblad Circles.',
-  '{1} left {2} and keeps their €19 for a new group. Reason: {3}':
-      '{1} heeft {2} verlaten en houdt de €19 voor een nieuwe groep. Reden: {3}',
+  '{1} left {2} and keeps their €39 for a new group. Reason: {3}':
+      '{1} heeft {2} verlaten en houdt de €39 voor een nieuwe groep. Reden: {3}',
   'Who came?': 'Wie was er?',
   'Record who was actually there. An RSVP alone does not count.':
       'Noteer wie er echt was. Alleen een aanmelding telt niet.',
@@ -216,8 +204,6 @@ const nlStrings = <String, String>{
   'The organiser has removed you from this Circle. If you think this is a mistake, email support@vriendtime.com.':
       'De organisator heeft je uit deze Circle gehaald. Denk je dat dit een vergissing is? Mail dan naar support@vriendtime.com.',
   'Almost there.': 'Bijna zover.',
-  'Your place is held for you. Once your €19 has arrived, your Circle and its chat open.':
-      'Je plek wordt voor je vastgehouden. Zodra je €19 binnen is, gaan je Circle en de chat open.',
   'Enough people are free on {1}. Your invitation will appear here once the group is set.':
       'Er zijn genoeg mensen vrij op {1}. Je uitnodiging verschijnt hier zodra de groep vaststaat.',
   'A note (optional)': 'Een opmerking (optioneel)',
@@ -228,23 +214,23 @@ const nlStrings = <String, String>{
   'Something else': 'Iets anders',
   'We can find you another group': 'We kunnen een andere groep voor je zoeken',
   'Before you go': 'Voordat je gaat',
-  'Switch to a group at a time that suits you. Your €19 carries over, and you can update your days and times straight after.':
-      'Stap over naar een groep op een tijd die bij je past. Je €19 gaat mee, en je kunt daarna meteen je dagen en tijden aanpassen.',
-  'Switch to another group and keep your €19. You can do this once, free of charge, until your second meetup.':
-      'Stap over naar een andere groep en houd je €19. Dat kan één keer gratis, tot je tweede meetup.',
+  'Switch to a group at a time that suits you. Your €39 carries over, and you can update your days and times straight after.':
+      'Stap over naar een groep op een tijd die bij je past. Je €39 gaat mee, en je kunt daarna meteen je dagen en tijden aanpassen.',
+  'Switch to another group and keep your €39. You can do this once, free of charge, until your second meetup.':
+      'Stap over naar een andere groep en houd je €39. Dat kan één keer gratis, tot je tweede meetup.',
   'Switch to another group': 'Overstappen naar een andere groep',
   'We’re sorry it isn’t working out. Your reason helps us make better groups.':
       'Jammer dat het niet werkt. Je reden helpt ons betere groepen te maken.',
-  'I’d rather ask for my €19 back': 'Ik vraag liever mijn €19 terug',
+  'I’d rather ask for my €39 back': 'Ik vraag liever mijn €39 terug',
   'Give up my place': 'Mijn plek opgeven',
-  'Your place will be released and your request goes to the organiser, who reviews it and gets back to you. If it’s approved, the €19 goes back to the account you paid from.':
-      'Je plek komt vrij en je verzoek gaat naar de organisator, die het bekijkt en contact met je opneemt. Wordt het goedgekeurd, dan gaat de €19 terug naar de rekening waarmee je betaalde.',
+  'Your place will be released and your request goes to the organiser, who reviews it and gets back to you. If it’s approved, the €39 goes back to the account you paid from.':
+      'Je plek komt vrij en je verzoek gaat naar de organisator, die het bekijkt en contact met je opneemt. Wordt het goedgekeurd, dan gaat de €39 terug naar de rekening waarmee je betaalde.',
   'Request refund': 'Terugbetaling aanvragen',
   'Give up your place?': 'Je plek opgeven?',
   'Your place goes to someone on the waiting list. Nothing has been paid, so there is nothing to refund.':
       'Je plek gaat naar iemand op de wachtlijst. Er is niets betaald, dus er valt niets terug te betalen.',
-  'Your place is released and your remaining meetups are removed from your plans. At this point the €19 isn’t refunded. Your reason stays private.':
-      'Je plek komt vrij en je resterende meetups verdwijnen uit je planning. Op dit moment wordt de €19 niet terugbetaald. Je reden blijft privé.',
+  'Your place is released and your remaining meetups are removed from your plans. At this point the €39 isn’t refunded. Your reason stays private.':
+      'Je plek komt vrij en je resterende meetups verdwijnen uit je planning. Op dit moment wordt de €39 niet terugbetaald. Je reden blijft privé.',
   'What isn’t working?': 'Wat werkt er niet?',
   'Tell us, and we’ll see what we can do. It stays between you and us.':
       'Vertel het ons, dan kijken we wat we kunnen doen. Het blijft tussen jou en ons.',
@@ -259,8 +245,8 @@ const nlStrings = <String, String>{
       'Je antwoorden zijn bewaard. Zet je weer op de wachtlijst, dan nodigen we je uit zodra er een nieuwe groep bij je tijden past.',
   'Update my answers first': 'Eerst mijn antwoorden aanpassen',
   'Circle not feeling right?': 'Voelt je Circle niet goed?',
-  'The organiser will send you the payment link. Your place and group chat open once your €19 has arrived.':
-      'De organisator stuurt je de betaallink. Je plek en groepschat gaan open zodra je €19 binnen is.',
+  'The organiser will send you the payment link. Your place and group chat open once your €39 has arrived.':
+      'De organisator stuurt je de betaallink. Je plek en groepschat gaan open zodra je €39 binnen is.',
   'Pay from an account in your own name, so the organiser can match it. Your place and group chat open once it has arrived.':
       'Betaal vanaf een rekening op je eigen naam, zodat de organisator de betaling kan koppelen. Je plek en groepschat gaan open zodra het geld binnen is.',
   'I’ve already paid': 'Ik heb al betaald',
@@ -268,8 +254,6 @@ const nlStrings = <String, String>{
   'The organiser will confirm it soon. You don’t need to pay again.':
       'De organisator bevestigt het binnenkort. Je hoeft niet opnieuw te betalen.',
   'Pay by {1}': 'Betaal vóór {1}',
-  'One payment for all six weeks. Food and drinks are paid at the venue. Not the right group or time? You can switch to another group once, free of charge, until your second meetup.':
-      'Eén betaling voor alle zes weken. Eten en drinken betaal je op locatie. Niet de juiste groep of tijd? Je kunt één keer gratis overstappen naar een andere groep, tot je tweede meetup.',
   'Thursday evenings · English': 'Donderdagavonden · Engels',
   'Remove {1} from this Circle?': '{1} uit deze Circle halen?',
   'They lose access to the Circle and its chat, and are told they were removed. They are not put back on the waiting list. Any refund is up to you and arranged separately. Note why, for your own records; it is not shown to them.':
@@ -288,8 +272,8 @@ const nlStrings = <String, String>{
   'Select {1} for a Circle': '{1} selecteren voor een Circle',
   'Nobody is ready to match yet. People need a birthday, photo and times first.':
       'Nog niemand is klaar om te matchen. Mensen hebben eerst een geboortedatum, foto en tijden nodig.',
-  'You’re switching groups. Your €19 carries over. Check your days and times below.':
-      'Je stapt over naar een andere groep. Je €19 gaat mee. Kijk hieronder je dagen en tijden na.',
+  'You’re switching groups. Your €39 carries over. Check your days and times below.':
+      'Je stapt over naar een andere groep. Je €39 gaat mee. Kijk hieronder je dagen en tijden na.',
   'Your place is released. We’ll be in touch about anything outstanding.':
       'Je plek is vrijgegeven. We nemen contact op over wat nog openstaat.',
   'You’re back on the waiting list.': 'Je staat weer op de wachtlijst.',
@@ -306,28 +290,18 @@ const nlStrings = <String, String>{
       'We konden je account nu niet verwijderen. Probeer het later opnieuw, of mail support@vriendtime.com, dan doen wij het voor je.',
   'We couldn’t send that email right now. Please try again later, or email support@vriendtime.com.':
       'We konden die e-mail nu niet versturen. Probeer het later opnieuw, of mail support@vriendtime.com.',
-  'A welcoming cafe table waiting for guests':
-      'Een uitnodigende cafétafel die op gasten wacht',
   'On your device, the app stores your sign-in session and your language choice, so you stay signed in and see the right language. We do not use tracking or advertising cookies.':
       'Op je apparaat bewaart de app je inlogsessie en je taalkeuze, zodat je ingelogd blijft en de juiste taal ziet. We gebruiken geen tracking- of advertentiecookies.',
   'We keep personal data only as long as needed: account, profile, application and Circle data, and your messages, while your account exists; notifications for up to one year; safety reports for one year after they are resolved; error logs for 30 days; backups for up to eight weeks; and payment and refund records for seven years, because Dutch tax law requires it.':
       'We bewaren persoonsgegevens niet langer dan nodig: account-, profiel-, aanmeldings- en Circle-gegevens en je berichten zolang je account bestaat; meldingen maximaal één jaar; veiligheidsmeldingen één jaar nadat ze zijn afgehandeld; foutlogs 30 dagen; back-ups maximaal acht weken; en betalings- en terugbetalingsgegevens zeven jaar, omdat de Nederlandse belastingwet dat vereist.',
-  'You pay the €19 with a payment link (during the pilot a Tikkie or bank payment link). The payment provider and your bank process that payment under their own privacy policies; we see the name, amount and date of the payment so we can match it to your place.':
-      'Je betaalt de €19 via een betaallink (tijdens de pilot een Tikkie- of bankbetaallink). De betaaldienst en je bank verwerken die betaling onder hun eigen privacybeleid; wij zien de naam, het bedrag en de datum van de betaling, zodat we die aan jouw plek kunnen koppelen.',
+  'You pay the €39 with a payment link (during the pilot a Tikkie or bank payment link). The payment provider and your bank process that payment under their own privacy policies; we see the name, amount and date of the payment so we can match it to your place.':
+      'Je betaalt de €39 via een betaallink (tijdens de pilot een Tikkie- of bankbetaallink). De betaaldienst en je bank verwerken die betaling onder hun eigen privacybeleid; wij zien de naam, het bedrag en de datum van de betaling, zodat we die aan jouw plek kunnen koppelen.',
   'We use Supabase for sign-in, the database and file storage (on servers in the EU), Netlify to host the website, Resend to send account and app emails, and Zoho Mail for our support mailbox (support@vriendtime.com). These providers process data on our instructions and under appropriate contractual safeguards. We also keep private backup copies of the database and photos, for up to eight weeks, so we can recover from mistakes or outages.':
       'We gebruiken Supabase voor inloggen, de database en bestandsopslag (op servers in de EU), Netlify voor het hosten van de website, Resend voor het versturen van account- en app-e-mails en Zoho Mail voor onze supportmailbox (support@vriendtime.com). Deze dienstverleners verwerken gegevens in onze opdracht en met passende contractuele waarborgen. We bewaren ook privé-back-ups van de database en foto’s, maximaal acht weken, zodat we fouten of storingen kunnen herstellen.',
   'You can report content or behaviour that breaks these terms with Report a concern in the app, or by email to support@vriendtime.com. We may remove messages, photos or other content that break these terms, and we may take a member out of a Circle when that is needed to keep members safe. If we remove your content or take you out of a Circle, we tell you, and you can email support@vriendtime.com to ask why or to object.':
       'Je kunt inhoud of gedrag dat tegen deze voorwaarden ingaat melden via Meld een zorg in de app, of per e-mail aan support@vriendtime.com. We kunnen berichten, foto’s of andere inhoud verwijderen die tegen deze voorwaarden ingaan, en we kunnen een lid uit een Circle halen als dat nodig is voor de veiligheid van leden. Verwijderen we jouw inhoud of halen we je uit een Circle, dan laten we je dat weten, en kun je via support@vriendtime.com vragen waarom of bezwaar maken.',
-  'After that: the €19 is not refunded. If your Circle does not feel right, you can switch to another group once, free of charge, until your second meetup starts (also before your first meetup). You keep your place on the waiting list and your €19 covers the new Circle. If we cannot offer you a new group within a reasonable time, we refund your €19. After your second meetup has started, no switch or refund is possible, and joining a further Circle means paying again.':
-      'Daarna wordt de €19 niet terugbetaald. Voelt je Circle niet goed, dan kun je één keer gratis naar een andere groep overstappen, tot je tweede meetup begint (ook al voor je eerste meetup). Je houdt je plek op de wachtlijst en je €19 geldt voor de nieuwe Circle. Kunnen we je binnen redelijke tijd geen nieuwe groep aanbieden, dan betalen we je €19 terug. Na de start van je tweede meetup is overstappen of terugbetalen niet meer mogelijk en betaal je opnieuw voor een volgende Circle.',
-  'Before your first meetup: until 48 hours before the first meetup starts, you can leave your Circle in the app and ask for your €19 back. We may ask why you are leaving, so we can offer you another group instead. If you still want a refund, we check your request and refund the full €19 to the account you paid from.':
-      'Voor je eerste meetup: tot 48 uur voor de eerste meetup kun je je Circle in de app verlaten en je €19 terugvragen. We kunnen vragen waarom je stopt, zodat we je een andere groep kunnen aanbieden. Wil je toch je geld terug, dan controleren we je verzoek en storten we de volledige €19 terug op de rekening waarmee je betaalde.',
-  'Information is shared with the other members of your Circle only where needed for the programme: your first name, profile photo, short introduction, interests, and the messages you send to your Circle. If you give a WhatsApp number, the organiser sees it so they can contact you.':
-      'Met de andere leden van je Circle delen we alleen wat nodig is voor het programma: je voornaam, profielfoto, korte introductie, interesses en de berichten die je naar je Circle stuurt. Als je een WhatsApp-nummer opgeeft, ziet de organisator dat, zodat die contact met je kan opnemen.',
   'VriendTime is run by Pratikesh Singh, a private individual in the Netherlands, who is the controller responsible for the processing described in this policy. You can raise privacy questions and data-rights requests by email at support@vriendtime.com or through Help & contact in the app.':
       'VriendTime wordt gerund door Pratikesh Singh, een particulier in Nederland, die verwerkingsverantwoordelijke is voor de verwerking die in dit beleid staat beschreven. Vragen over privacy en verzoeken over je rechten kun je stellen per e-mail via support@vriendtime.com of via Hulp en contact in de app.',
-  'Accepting an invitation requires an explicit agreement to pay €19. You pay with the payment link shown in the app; during the pilot this is a Tikkie or bank payment link from the organiser. Accepting does not collect money. Your place and group chat open when the organiser confirms receipt.':
-      'Voor het accepteren van een uitnodiging moet je uitdrukkelijk akkoord gaan met het betalen van €19. Je betaalt met de betaallink in de app; tijdens de pilot is dat een Tikkie- of bankbetaallink van de organisator. Bij het accepteren wordt geen geld geïnd. Je plek en groepschat gaan open zodra de organisator de ontvangst bevestigt.',
   'VriendTime is run by Pratikesh Singh, a private individual in the Netherlands. You can reach us at support@vriendtime.com.':
       'VriendTime wordt gerund door Pratikesh Singh, een particulier in Nederland. Je bereikt ons via support@vriendtime.com.',
   "We could not read this photo. Please choose it again.":
@@ -352,16 +326,8 @@ const nlStrings = <String, String>{
   'Go beyond “what do you do?”': 'Meer dan “wat doe je voor werk?”',
   'Find out who’s secretly competitive.':
       'Ontdek wie stiekem graag wil winnen.',
-  'A relaxed catch-up over coffee, a drink, or a walk. Less introducing yourself, more getting to know each other.':
-      'Bijpraten met koffie, een drankje of een wandeling. Minder voorstellen, meer elkaar leren kennen.',
-  'Games, a quiz, or a playful challenge. An easy way to loosen up together.':
-      'Spelletjes, een quiz of een speelse uitdaging. Een makkelijke manier om samen los te komen.',
 
   'Programme settings': 'Programma-instellingen',
-  'Your place is included in the programme. Can’t make it? Let your Circle know in the chat.':
-      'Je plek is inbegrepen in het programma. Kun je niet? Laat het je Circle weten in de chat.',
-  'The weekly date and time are fixed. Choose the activity and place together.':
-      'De wekelijkse datum en tijd staan vast. Kies samen de activiteit en plek.',
   ' and acknowledge that I have read the ': ' en bevestig dat ik het ',
   '1 selected': '1 gekozen',
   '1. About VriendTime': '1. Over VriendTime',
@@ -391,8 +357,6 @@ const nlStrings = <String, String>{
   '8. Your choices and rights': '8. Jouw keuzes en rechten',
   '9. Changes': '9. Wijzigingen',
   '9. Security and children': '9. Beveiliging en kinderen',
-  '90 days on: are you still voluntarily seeing at least one Circle member?':
-      '90 dagen later: zie je nog uit jezelf minstens één lid van je Circle?',
   '90 days on: how is your Circle?':
       '90 dagen later: hoe gaat het met je Circle?',
   'A Circle can be formed': 'Er kan een Circle worden gevormd',
@@ -434,17 +398,15 @@ const nlStrings = <String, String>{
       'Een restaurant in het centrum van Alkmaar',
   'A shared language. A time that works.':
       'Een gedeelde taal. Een moment dat past.',
-  'A table set for company, with a view over an Alkmaar canal':
-      'Een gedekte tafel met uitzicht op een Alkmaarse gracht',
   'A two-hour dinner to meet everyone.':
       'Een diner van twee uur om iedereen te leren kennen.',
   'A walk': 'Een wandeling',
   'A walk & a warm drink': 'Een wandeling en iets warms',
   'ANOTHER PLAN': 'NOG EEN PLAN',
   'Absent': 'Afwezig',
-  'Accept first, then pay the €19 with iDEAL.':
-      'Eerst accepteren, dan de €19 betalen met iDEAL.',
-  'Accept invitation — €19': 'Uitnodiging accepteren — €19',
+  'Accept first, then pay the €39 with iDEAL.':
+      'Eerst accepteren, dan de €39 betalen met iDEAL.',
+  'Accept invitation — €39': 'Uitnodiging accepteren — €39',
   'Accept your invitation': 'Accepteer je uitnodiging',
   'Accepted, not yet paid': 'Geaccepteerd, nog niet betaald',
   'Account': 'Account',
@@ -472,8 +434,6 @@ const nlStrings = <String, String>{
   'Add to new Circle': 'Toevoegen aan nieuwe Circle',
   'Add your WhatsApp number so the organiser can reach you.':
       'Vul je WhatsApp-nummer in, zodat de organisator je kan bereiken.',
-  'Only for the organiser, if they need to reach you quickly. Updates come by email and in the app.':
-      'Alleen voor de organisator, als die je snel moet bereiken. Updates krijg je per e-mail en in de app.',
   'Add your date of birth. Circles are for adults 18+.':
       'Vul je geboortedatum in. Circles zijn voor volwassenen van 18+.',
   'Add your first name to continue.': 'Vul je voornaam in om verder te gaan.',
@@ -483,21 +443,17 @@ const nlStrings = <String, String>{
   'Add your photo': 'Voeg je foto toe',
   'Add {1} more (5–6 people).': 'Voeg er nog {1} toe (5–6 mensen).',
   'Address: {1}': 'Adres: {1}',
-  'Adults 18+ around Alkmaar. Our first groups focus on ages 25–45 and meet in English or Dutch.':
-      'Volwassenen van 18+ in en rond Alkmaar. Onze eerste groepen richten zich op 25–45 jaar en spreken Engels of Nederlands.',
   'Afternoon': 'Middag',
   'Ages {1}–{2}': 'Leeftijd {1}–{2}',
   'Agree & accept': 'Akkoord en accepteren',
   'Agree to the Terms & Conditions and acknowledge the Privacy Policy to create an account.':
       'Ga akkoord met de Algemene voorwaarden en het Privacybeleid om een account aan te maken.',
-  'Agreement to the Terms and Conditions and acknowledgement of the Privacy Policy':
-      'Akkoord met de Algemene voorwaarden en kennisname van het Privacybeleid',
   'Alkmaar': 'Alkmaar',
   'Alkmaar Founding Circle': 'Alkmaar Founding Circle',
   'Alkmaar founding pilot': 'Founding pilot Alkmaar',
   'Alkmaar · choose together': 'Alkmaar · samen kiezen',
-  'All clear. No payments, reports or refunds waiting.':
-      'Alles in orde. Er wachten geen betalingen, meldingen of terugbetalingen.',
+  'All clear. No payments, bookings, reports or refunds waiting.':
+      'Alles in orde. Er wachten geen betalingen, reserveringen, meldingen of terugbetalingen.',
   'All into {1}': 'Allemaal fan van {1}',
   'All languages': 'Alle talen',
   'All speak {1}': 'Iedereen spreekt {1}',
@@ -570,7 +526,7 @@ const nlStrings = <String, String>{
   'Check in after the meetup.': 'Check in na de meetup.',
   'Check your WhatsApp number, for example 06 12345678.':
       'Controleer je WhatsApp-nummer, bijvoorbeeld 06 12345678.',
-  'Checking who\'s around…': 'Kijken wie er is…',
+  'Checking who’s around…': 'Kijken wie er is…',
   'Choose 5–6 applicants.': 'Kies 5–6 mensen.',
   'Choose English, Dutch, or both.': 'Kies Engels, Nederlands of allebei.',
   'Choose Yes or Not yet for the outcome questions.':
@@ -646,17 +602,17 @@ const nlStrings = <String, String>{
   'Confirm password': 'Bevestig wachtwoord',
   'Confirm payment received': 'Betaling ontvangen bevestigen',
   'Confirm refund completed': 'Terugbetaling bevestigen',
-  'Confirm that the €19 has been returned.':
-      'Bevestig dat de €19 is teruggestort.',
+  'Confirm that the €39 has been returned.':
+      'Bevestig dat de €39 is teruggestort.',
   'Confirm that you can make time for six weekly meetups.':
       'Bevestig dat je tijd hebt voor zes wekelijkse meetups.',
-  'Confirm that you have received €19.': 'Bevestig dat je €19 hebt ontvangen.',
+  'Confirm that you have received €39.': 'Bevestig dat je €39 hebt ontvangen.',
   'Confirm that you have reviewed the concern and followed up with the member.':
       'Bevestig dat je de zorg hebt bekeken en contact hebt gehad met het lid.',
   'Confirm your email first, then come back to sign in.':
       'Bevestig eerst je e-mailadres en kom daarna terug om in te loggen.',
-  'Confirm €19 received?': '€19 ontvangen bevestigen?',
-  'Confirm €19 returned?': 'Terugbetaling van €19 bevestigen?',
+  'Confirm {1} received?': '{1} ontvangen bevestigen?',
+  'Confirm {1} returned?': 'Terugbetaling van {1} bevestigen?',
   'Contact the organiser before leaving.':
       'Neem contact op met de organisator voordat je stopt.',
   'Contact the organiser for cancellation help.':
@@ -694,7 +650,7 @@ const nlStrings = <String, String>{
   'Delete account': 'Account verwijderen',
   'Delete permanently': 'Definitief verwijderen',
   'Delete your account?': 'Je account verwijderen?',
-  'Deleting account...': 'Account verwijderen...',
+  'Deleting account…': 'Account verwijderen...',
   'Dinner': 'Diner',
   'Dinner together': 'Samen eten',
   'Do not post or send unlawful, abusive, misleading, or privacy-invasive content. Do not share another person’s contact details, photos, messages, or precise location without permission.':
@@ -703,8 +659,8 @@ const nlStrings = <String, String>{
   'Dutch': 'Nederlands',
   'EN': 'EN',
   'Earlier': 'Eerder',
-  'Earliest start: {1} at {2}. We’ll confirm it in your invitation.':
-      'Vroegste start: {1} om {2}. We bevestigen het in je uitnodiging.',
+  'Earliest start: {1}. We’ll confirm it in your invitation.':
+      'Vroegste start: {1}. We bevestigen het in je uitnodiging.',
   'Edit interests': 'Interesses bewerken',
   'Edit intro': 'Intro bewerken',
   'Edit my availability': 'Mijn beschikbaarheid bewerken',
@@ -752,12 +708,10 @@ const nlStrings = <String, String>{
       'Maak je profiel af om gematcht te worden',
   'First name': 'Voornaam',
   'Fit {1}': 'Match {1}',
-  'Five or six people who share a language and a regular free time. This usually takes one to three weeks.':
-      'Vijf of zes mensen die een taal en een vast vrij moment delen. Dit duurt meestal één tot drie weken.',
   'Five or six people. Everyone shares a language and has the same regular time free, so the same faces come back every week.':
       'Vijf of zes mensen. Iedereen deelt een taal en heeft hetzelfde vaste moment vrij, dus elke week zie je dezelfde gezichten.',
-  'Five or six people. Six weekly meetups. €19 for all six weeks.':
-      'Vijf of zes mensen. Zes wekelijkse meetups. €19 voor alle zes weken.',
+  'Five or six people. Six weekly meetups. €39 for all six weeks.':
+      'Vijf of zes mensen. Zes wekelijkse meetups. €39 voor alle zes weken.',
   'Food': 'Eten',
   'Food and drinks are prepared and supplied by independent venues, not VriendTime. You are responsible for deciding what you consume, checking ingredients and allergens directly with the venue, communicating dietary needs, and deciding whether a venue’s food or hygiene practices are suitable for you. VriendTime cannot guarantee that food is allergen-free, safe for a particular diet, or that you will enjoy it.':
       'Eten en drinken worden bereid en geleverd door onafhankelijke locaties, niet door VriendTime. Je bent zelf verantwoordelijk voor wat je nuttigt, voor het rechtstreeks bij de locatie navragen van ingrediënten en allergenen, voor het doorgeven van dieetwensen en voor de beoordeling of het eten of de hygiëne van een locatie bij je past. VriendTime kan niet garanderen dat eten vrij is van allergenen, geschikt is voor een bepaald dieet, of dat je het lekker vindt.',
@@ -765,9 +719,7 @@ const nlStrings = <String, String>{
   'Form Circles': 'Circles vormen',
   'Form Circles · {1}': 'Circles vormen · {1}',
   'Forming': 'In vorming',
-  'Founding Circle · €19': 'Founding Circle · €19',
-  'Four short steps, about three minutes. No payment yet.':
-      'Vier korte stappen, ongeveer drie minuten. Nog niets betalen.',
+  'Founding Circle · €39': 'Founding Circle · €39',
   'Free': 'Vrij',
   'Free {1}': 'Vrij op {1}',
   'Fri': 'Vr',
@@ -784,8 +736,6 @@ const nlStrings = <String, String>{
   'Fridays': 'Vrijdagen',
   'Friends beyond week six.': 'Vrienden na week zes.',
   'Friends moved away': 'Vrienden zijn verhuisd',
-  'From a first dinner to plans you make together.':
-      'Van een eerste diner tot plannen die jullie samen maken.',
   'Full': 'Vol',
   'Games': 'Spellen',
   'Gender': 'Gender',
@@ -812,8 +762,8 @@ const nlStrings = <String, String>{
       'Hoi {1}! Met de organisator van VriendTime. We vormen een Circle op {2} met mensen die jouw interesses delen. Zou dat tijdstip jou ook passen? Voeg het dan toe aan je beschikbaarheid in de app.',
   'Hi {1}! This is the VriendTime organiser. You’re nearly on the list for a Circle. Could you open the app and finish your profile? Then we can match you.':
       'Hoi {1}! Met de organisator van VriendTime. Je staat bijna op de lijst voor een Circle. Wil je de app openen en je profiel afmaken? Dan kunnen we je matchen.',
-  'Hi {1}! This is the VriendTime organiser, about your place in "{2}" and the one-off €19 fee. ':
-      'Hoi {1}! Je spreekt met de organisator van VriendTime, over je plek in "{2}" en de eenmalige bijdrage van €19. ',
+  'Hi {1}! This is the VriendTime organiser, about your place in "{2}" and the one-off {3} fee. ':
+      'Hoi {1}! Je spreekt met de organisator van VriendTime, over je plek in "{2}" en de eenmalige bijdrage van {3}. ',
   'Hide password': 'Wachtwoord verbergen',
   'Home': 'Home',
   'Hopes: {1}': 'Hoopt op: {1}',
@@ -825,8 +775,8 @@ const nlStrings = <String, String>{
   'How friendship gets a chance': 'Hoe vriendschap een kans krijgt',
   'How it works': 'Hoe het werkt',
   'How your Circle sees you': 'Zo ziet je Circle je',
-  'I agree to pay the one-off €19 programme fee.':
-      'Ik ga akkoord met de eenmalige programmabijdrage van €19.',
+  'I agree to pay the one-off €39 programme fee.':
+      'Ik ga akkoord met de eenmalige programmabijdrage van €39.',
   'I agree to the ': 'Ik ga akkoord met de ',
   'I can make time for one meetup a week for six weeks':
       'Ik heb zes weken lang tijd voor één meetup per week',
@@ -916,8 +866,8 @@ const nlStrings = <String, String>{
       'Leden moeten minstens 18 jaar oud zijn.',
   'Members need to be at least 18 years old to join.':
       'Leden moeten minstens 18 jaar oud zijn.',
-  'Members will be notified, upcoming meetups cancelled, and refund requests created for received payments. Return the money separately and then confirm each refund on the To do tab.':
-      'Leden krijgen bericht, komende meetups worden geannuleerd en voor ontvangen betalingen worden terugbetalingen klaargezet. Betaal het geld apart terug en bevestig daarna elke terugbetaling op het tabblad Te doen.',
+  'Members will be notified, upcoming meetups cancelled, and refund requests created for received payments. Return the money separately and then confirm each refund on the To do tab. Cancel any bookings you made with the places too.':
+      'Leden krijgen bericht, komende meetups worden geannuleerd en voor ontvangen betalingen worden terugbetalingen klaargezet. Betaal het geld apart terug en bevestig daarna elke terugbetaling op het tabblad Te doen. Annuleer ook de reserveringen die je bij de plekken hebt gemaakt.',
   'Message not found in your Circle.': 'Bericht niet gevonden in je Circle.',
   'Message on WhatsApp': 'Bericht via WhatsApp',
   'Message options': 'Berichtopties',
@@ -954,8 +904,6 @@ const nlStrings = <String, String>{
   'Nearly there': 'Bijna klaar',
   'Netherlands time': 'Nederlandse tijd',
   'New': 'Nieuw',
-  'New Circle applications require a primary profile photo for recognition. A profile photo is not identity verification. That photo is available only to your assigned Circle and authorised matching organisers. It is never shown publicly.':
-      'Voor een nieuwe Circle-aanmelding is een duidelijke profielfoto nodig, zodat anderen je herkennen. Een profielfoto is geen identiteitscontrole. Alleen je eigen Circle en bevoegde organisatoren kunnen die foto zien. Hij wordt nooit openbaar getoond.',
   'New Circle is full': 'Nieuwe Circle is vol',
   'New job or studies': 'Nieuwe baan of studie',
   'New password': 'Nieuw wachtwoord',
@@ -975,8 +923,6 @@ const nlStrings = <String, String>{
   'No online checkout. If you accept, the organiser will send you the payment link.':
       'Geen online afrekenen. Als je accepteert, stuurt de organisator je de betaallink.',
   'No payment is due yet.': 'Je hoeft nog niets te betalen.',
-  'No payment now. €19 once, only if you accept a Circle. Food, drinks and tickets are paid at the venue.':
-      'Nu nog niets betalen. Eenmalig €19, alleen als je een Circle accepteert. Eten, drinken en tickets betaal je ter plekke.',
   'No received payment to refund.':
       'Er is geen ontvangen betaling om terug te storten.',
   'No refund requests.': 'Geen terugbetalingsverzoeken.',
@@ -986,8 +932,8 @@ const nlStrings = <String, String>{
   'No shared time: these people have no day and time in common.':
       'Geen gedeelde tijd: deze mensen hebben geen dag en tijd gemeen.',
   'No times yet': 'Nog geen tijden',
-  'No. You pay €19 once for all six weeks, and nothing more after that. Food, drinks and activity tickets are paid at the venue.':
-      'Nee. Je betaalt eenmalig €19 voor alle zes weken, en daarna niets meer. Eten, drinken en tickets voor activiteiten betaal je ter plekke.',
+  'No. You pay €39 once for all six weeks, and nothing more after that. Food, drinks and activity tickets are paid at the venue.':
+      'Nee. Je betaalt eenmalig €39 voor alle zes weken, en daarna niets meer. Eten, drinken en tickets voor activiteiten betaal je ter plekke.',
   'Nobody else shares a language and a time with them yet. Asking them to add more times helps.':
       'Nog niemand deelt een taal en tijd met hen. Vraag ze meer tijden toe te voegen, dat helpt.',
   'Nobody matches these filters.': 'Niemand past bij deze filters.',
@@ -1004,8 +950,6 @@ const nlStrings = <String, String>{
   'Noted. This stays between you and us.':
       'Genoteerd. Dit blijft tussen jou en ons.',
   'Nothing behind you yet.': 'Nog niets achter de rug.',
-  'Nothing is charged for a declined invitation. If you have already sent payment, contact the organiser first.':
-      'Een afgewezen uitnodiging kost niets. Heb je al betaald? Neem dan eerst contact op met de organisator.',
   'Nothing needs you right now. Form a Circle when a group fits.':
       'Er wacht nu niets op je. Vorm een Circle zodra een groep past.',
   'Nothing new. You’re all caught up.': 'Niets nieuws. Je bent helemaal bij.',
@@ -1021,7 +965,7 @@ const nlStrings = <String, String>{
       'Eén middag per week.\nDezelfde vijf of zes mensen.',
   'One evening a week.\nThe same five or six people.':
       'Eén avond per week.\nDezelfde vijf of zes mensen.',
-  'One evening so far with {1}': 'Tot nu toe één avond met {1}',
+  'One meetup so far with {1}': 'Tot nu toe één meetup met {1}',
   'One hello is nice.\nFamiliar is better.':
       'Eén hallo is leuk.\nVertrouwd is beter.',
   'One last get-together': 'Nog één keer samen',
@@ -1070,10 +1014,10 @@ const nlStrings = <String, String>{
       'Wachtwoord bijwerken mislukt. Controleer de link of probeer het opnieuw.',
   'Password updated': 'Wachtwoord bijgewerkt',
   'Passwords do not match yet.': 'De wachtwoorden komen nog niet overeen.',
-  'Pay €19 with iDEAL': 'Betaal €19 met iDEAL',
+  'Pay €39 with iDEAL': 'Betaal €39 met iDEAL',
   'Payment agreement not found.': 'Betaalafspraak niet gevonden.',
-  'Payment data: the €19 agreement and its version and timestamp, contact email, and organiser confirmations of payment or refund. Bank and card details are not collected through the app. Payment records and the contact email needed to resolve refunds may be retained after account deletion for accounting and dispute purposes.':
-      'Betaalgegevens: de afspraak over €19 met versie en tijdstempel, contact-e-mailadres en bevestigingen van de organisator over betaling of terugbetaling. Bank- en kaartgegevens worden niet via de app verzameld. Betaalgegevens en het contact-e-mailadres dat nodig is om terugbetalingen af te handelen, kunnen na het verwijderen van je account bewaard blijven voor de boekhouding en bij geschillen.',
+  'Payment data: the €39 agreement and its version and timestamp, contact email, and organiser confirmations of payment or refund. Bank and card details are not collected through the app. Payment records and the contact email needed to resolve refunds may be retained after account deletion for accounting and dispute purposes.':
+      'Betaalgegevens: de afspraak over €39 met versie en tijdstempel, contact-e-mailadres en bevestigingen van de organisator over betaling of terugbetaling. Bank- en kaartgegevens worden niet via de app verzameld. Betaalgegevens en het contact-e-mailadres dat nodig is om terugbetalingen af te handelen, kunnen na het verwijderen van je account bewaard blijven voor de boekhouding en bij geschillen.',
   'Payment history': 'Betaalgeschiedenis',
   'Payments are not open yet. No charge has been made.':
       'Betalen is nog niet mogelijk. Er is niets afgeschreven.',
@@ -1091,8 +1035,8 @@ const nlStrings = <String, String>{
       'Kies een dag. Ga terug naar een favoriete plek. Het hoeft niet groots te zijn.',
   'Plan our next meetup': 'Plan onze volgende meetup',
   'Planned': 'Gepland',
-  'Please agree to the one-off €19 programme fee.':
-      'Ga akkoord met de eenmalige programmabijdrage van €19.',
+  'Please agree to the one-off €39 programme fee.':
+      'Ga akkoord met de eenmalige programmabijdrage van €39.',
   'Please describe the concern in 5–2000 characters.':
       'Beschrijf je zorg in 5–2000 tekens.',
   'Please keep your address under 200 characters.':
@@ -1107,8 +1051,8 @@ const nlStrings = <String, String>{
   'Prefer not to say': 'Zeg ik liever niet',
   'Preferences': 'Voorkeuren',
   'Preview': 'Voorbeeld',
-  'Preview checkout · €19 one-off. No money is collected in this preview.':
-      'Voorbeeld afrekenen · eenmalig €19. In dit voorbeeld wordt geen geld geïnd.',
+  'Preview checkout · €39 one-off. No money is collected in this preview.':
+      'Voorbeeld afrekenen · eenmalig €39. In dit voorbeeld wordt geen geld geïnd.',
   'Preview organiser · example applicants':
       'Voorbeeld organisator · voorbeeldaanmeldingen',
   'Preview · example people · no charges':
@@ -1118,8 +1062,6 @@ const nlStrings = <String, String>{
   'Privacy': 'Privacy',
   'Privacy Policy': 'Privacybeleid',
   'Privacy Policy.': 'Privacybeleid heb gelezen.',
-  'Private. Never shown to your Circle. We use it to put you with people in a similar moment.':
-      'Privé. Je Circle ziet dit nooit. We gebruiken het om je te koppelen aan mensen in een vergelijkbare fase.',
   'Profile': 'Profiel',
   'Profile details': 'Profielgegevens',
   'Profile photo': 'Profielfoto',
@@ -1214,8 +1156,6 @@ const nlStrings = <String, String>{
   'See how your photo looks to your Circle':
       'Bekijk hoe je Circle je foto ziet',
   'See your Circle tomorrow': 'Morgen zie je je Circle',
-  'See your group and all six dates first. Only then accept for €19.':
-      'Je ziet eerst je groep en alle zes data. Pas dan accepteer je voor €19.',
   'Send': 'Versturen',
   'WhatsApp number (optional)': 'WhatsApp-nummer (optioneel)',
   'Send private report': 'Privémelding versturen',
@@ -1235,7 +1175,7 @@ const nlStrings = <String, String>{
   'Sign in to see what’s next.': 'Log in om te zien wat er komt.',
   'Sign out': 'Uitloggen',
   'Sign up': 'Registreren',
-  'Signing out...': 'Uitloggen...',
+  'Signing out…': 'Uitloggen...',
   'Six weeks, a little closer': 'Zes weken, steeds iets dichterbij',
   'Six weeks.': 'Zes weken.',
   'Six weeks.\nA real shot at friends.':
@@ -1243,8 +1183,6 @@ const nlStrings = <String, String>{
   'Six-week experience': 'Zes weken samen',
   'Skip': 'Overslaan',
   'Small-group meetups': 'Meetups in kleine groepen',
-  'So your group wants the same kind of friendship.':
-      'Zodat je groep dezelfde soort vriendschap zoekt.',
   'Social style': 'Sociale stijl',
   'Some service providers may process data outside the European Economic Area. Where required, we use an approved transfer mechanism, such as an adequacy decision or the European Commission’s standard contractual clauses, together with appropriate safeguards.':
       'Sommige dienstverleners kunnen gegevens buiten de Europese Economische Ruimte verwerken. Waar nodig gebruiken we een goedgekeurd doorgiftemechanisme, zoals een adequaatheidsbesluit of de standaardcontractbepalingen van de Europese Commissie, samen met passende waarborgen.',
@@ -1259,13 +1197,9 @@ const nlStrings = <String, String>{
   'Sport': 'Sport',
   'Spots available': 'Plekken vrij',
   'Start with these people': 'Begin met deze mensen',
-  'Start with what needs you, then form the next Circle.':
-      'Begin met wat op je wacht en vorm dan de volgende Circle.',
   'Start with you.': 'Begin bij jou.',
   'Starts {1}': 'Start {1}',
   'Stay': 'Blijven',
-  'Stay at the location shared in the app. If plans change, only go somewhere you feel comfortable.':
-      'Blijf op de locatie uit de app. Veranderen de plannen, ga dan alleen ergens heen waar je je prettig voelt.',
   'Step {1} of {2}': 'Stap {1} van {2}',
   'Still free at these times?': 'Nog steeds vrij op deze tijden?',
   'Strangers on week one.\nFriends by week six.':
@@ -1311,22 +1245,18 @@ const nlStrings = <String, String>{
       'Die foto is {1}. Kies een foto tot {2}.',
   'The 90-day check-in is not due yet.':
       'De check-in na 90 dagen is nog niet aan de beurt.',
-  'The Thursday Circle': 'De donderdag-Circle',
-  'The founding Circle programme costs €19 once for six weeks. Food, drinks, travel, and activity purchases are separate. There is no subscription or further programme fee after graduation. Your group and schedule are shown before you accept the invitation.':
-      'Het founding Circle-programma kost eenmalig €19 voor zes weken. Eten, drinken, reiskosten en aankopen voor activiteiten zijn apart. Er is geen abonnement en na de afronding geen verdere programmabijdrage. Je ziet je groep en schema voordat je de uitnodiging accepteert.',
-  'The next Circle that matches your times usually takes one to three weeks. Widening your availability is the fastest way to shorten that.':
-      'Een volgende Circle die bij je tijden past, duurt meestal één tot drie weken. Meer beschikbaarheid opgeven maakt dat het snelst korter.',
-  'The organiser has confirmed that your €19 has been returned. Contact us if it has not arrived.':
-      'De organisator heeft bevestigd dat je €19 is teruggestort. Neem contact op als het niet is aangekomen.',
-  'The organiser has confirmed your €19 was returned. Contact us if it hasn’t arrived.':
-      'De organisator heeft bevestigd dat je €19 is teruggestort. Neem contact op als het niet is aangekomen.',
+  'The founding Circle programme costs €39 once for six weeks. It includes two group activities, in weeks two and four, which we book and pay for. Food, drinks, travel and other purchases are separate. There is no subscription or further programme fee after graduation. Your group and schedule are shown before you accept the invitation.':
+      'Het founding Circle-programma kost eenmalig €39 voor zes weken. Daarbij zijn twee groepsactiviteiten inbegrepen, in week twee en vier, die wij boeken en betalen. Eten, drinken, reiskosten en andere aankopen zijn apart. Er is geen abonnement en na de afronding geen verdere programmabijdrage. Je ziet je groep en schema voordat je de uitnodiging accepteert.',
+  'The organiser has confirmed that your €39 has been returned. Contact us if it has not arrived.':
+      'De organisator heeft bevestigd dat je €39 is teruggestort. Neem contact op als het niet is aangekomen.',
+  'The organiser has confirmed your €39 was returned. Contact us if it hasn’t arrived.':
+      'De organisator heeft bevestigd dat je €39 is teruggestort. Neem contact op als het niet is aangekomen.',
   'The people in your Circle': 'De mensen in je Circle',
   'The refund window is 48 hours after your first meetup ends. Contact the organiser for help.':
       'Je kunt tot 48 uur na afloop van je eerste meetup je geld terugvragen. Neem contact op met de organisator voor hulp.',
   'The same faces every week.': 'Elke week dezelfde gezichten.',
   'The upload was interrupted. Check your connection and try again; your current photo is unchanged.':
       'Het uploaden werd onderbroken. Controleer je verbinding en probeer het opnieuw; je huidige foto is niet veranderd.',
-  'The {1} Circle': 'De {1}-Circle',
   'These Terms & Conditions govern your use of VriendTime. By creating an account, you agree to these terms.':
       'Deze Algemene voorwaarden gelden voor je gebruik van VriendTime. Door een account aan te maken, ga je akkoord met deze voorwaarden.',
   'These people fit together. The group still needs more people who share their language and time.':
@@ -1370,8 +1300,8 @@ const nlStrings = <String, String>{
   "Talk with your Circle before the first meetup.":
       "Praat met je Circle voor de eerste meetup.",
   "Opens when your place is confirmed": "Gaat open zodra je plek bevestigd is",
-  "Accept your invitation and pay the €19. As soon as the organiser confirms your payment, your Circle’s chat opens here.":
-      "Accepteer je uitnodiging en betaal de €19. Zodra de organisator je betaling bevestigt, gaat de chat van je Circle hier open.",
+  "Accept your invitation and pay the €39. As soon as the organiser confirms your payment, your Circle’s chat opens here.":
+      "Accepteer je uitnodiging en betaal de €39. Zodra de organisator je betaling bevestigt, gaat de chat van je Circle hier open.",
   "Once we’ve matched you with a Circle and your place is confirmed, you can chat with your group here.":
       "Zodra we je aan een Circle hebben gekoppeld en je plek bevestigd is, kun je hier met je groep chatten.",
   "{1} of {2} chosen. Remove one to pick another.":
@@ -1414,14 +1344,14 @@ const nlStrings = <String, String>{
   "Meet a new group too?": "Ook een nieuwe groep ontmoeten?",
   "We’ll invite you when a group fits your times. This Circle and its chat stay yours.":
       "We nodigen je uit zodra er een groep bij je tijden past. Deze Circle en de chat blijven van jou.",
-  "Join another Circle with new people: six weekly meetups, €19. This Circle and its chat stay yours, and we won’t put you with the same people again.":
-      "Doe mee met een nieuwe Circle met nieuwe mensen: zes wekelijkse meetups, €19. Deze Circle en de chat blijven van jou, en we zetten je niet opnieuw bij dezelfde mensen.",
+  "Join another Circle with new people: six weekly meetups, €39. This Circle and its chat stay yours, and we won’t put you with the same people again.":
+      "Doe mee met een nieuwe Circle met nieuwe mensen: zes wekelijkse meetups, €39. Deze Circle en de chat blijven van jou, en we zetten je niet opnieuw bij dezelfde mensen.",
   "Check my times": "Mijn tijden bekijken",
   "Stop looking": "Stoppen met zoeken",
   "Join a new Circle": "Nieuwe Circle zoeken",
   "Join a new Circle?": "Een nieuwe Circle zoeken?",
-  "We’ll put you back on the waiting list with your saved answers. When a group fits, you’ll get an invitation and pay €19 for the new six weeks. You keep this Circle and its chat. Check that your days and times are still right.":
-      "We zetten je weer op de wachtlijst met je opgeslagen antwoorden. Past er een groep, dan krijg je een uitnodiging en betaal je €19 voor de nieuwe zes weken. Deze Circle en de chat houd je. Kijk even of je dagen en tijden nog kloppen.",
+  "We’ll put you back on the waiting list with your saved answers. When a group fits, you’ll get an invitation and pay €39 for the new six weeks. You keep this Circle and its chat. Check that your days and times are still right.":
+      "We zetten je weer op de wachtlijst met je opgeslagen antwoorden. Past er een groep, dan krijg je een uitnodiging en betaal je €39 voor de nieuwe zes weken. Deze Circle en de chat houd je. Kijk even of je dagen en tijden nog kloppen.",
   "Not now": "Nu niet",
   "Join the waiting list": "Op de wachtlijst",
   "New Circle": "Nieuwe Circle",
@@ -1534,7 +1464,7 @@ const nlStrings = <String, String>{
       'We konden het instellen niet afronden. Controleer je verbinding en probeer het opnieuw.',
   'We could not open the payment page. The organiser can send you the link.':
       'We konden de betaalpagina niet openen. De organisator kan je de link sturen.',
-  'We couldn\'t open WhatsApp. Try again in a moment.':
+  'We couldn’t open WhatsApp. Try again in a moment.':
       'We konden WhatsApp niet openen. Probeer het zo nog eens.',
   'We couldn’t load your Circle right now. Please try again in a moment.':
       'We konden je Circle nu niet laden. Probeer het zo nog eens.',
@@ -1548,7 +1478,8 @@ const nlStrings = <String, String>{
       'We kunnen de dienst of deze voorwaarden aanpassen. Als een wijziging je rechten wezenlijk raakt, laten we dat op redelijke termijn weten in de app, per e-mail of via een ander passend kanaal. Waar nodig vragen we je de nieuwe voorwaarden te accepteren voordat je de dienst verder gebruikt.',
   'We may update this policy as the service or law changes. We will post the new version and update its effective date. We will provide additional notice when a change is material or when the law requires it.':
       'We kunnen dit beleid aanpassen als de dienst of de wet verandert. We publiceren dan de nieuwe versie en passen de ingangsdatum aan. Bij een wezenlijke wijziging, of als de wet dat vereist, laten we het extra weten.',
-  'We plan the start. You show up.': 'Wij plannen het begin. Jij komt opdagen.',
+  'We plan and book. You show up.':
+      'Wij plannen en reserveren. Jij komt gewoon.',
   'We process age information to enforce the adults-only eligibility rule and to support safety. We use security, diagnostic, and limited service-usage information for our legitimate interests in preventing misuse, protecting members, fixing problems, and improving VriendTime, balanced against your rights.':
       'We verwerken leeftijdsgegevens om de regel te handhaven dat alleen volwassenen mogen meedoen en om de veiligheid te ondersteunen. We gebruiken beveiligings-, diagnose- en beperkte gebruiksgegevens voor ons gerechtvaardigd belang om misbruik te voorkomen, leden te beschermen, problemen op te lossen en VriendTime te verbeteren, afgewogen tegen jouw rechten.',
   'We take reasonable steps to design safer meetups, set conduct rules, protect private venue details, and respond to concerns. Those steps cannot eliminate every risk. Use your judgment, protect your belongings, arrange your own safe travel, leave any situation that feels unsafe, and contact local emergency services if there is immediate danger.':
@@ -1576,12 +1507,8 @@ const nlStrings = <String, String>{
   'Welcome back': 'Welkom terug',
   'Welcoming you back…': 'Welkom terug…',
   'We’ll email you about your Circle.': 'We mailen je over je Circle.',
-  'We’ll release this invitation and put you back on the waiting list. You keep your place from the day you first applied, so you go back to the front, not the back.':
-      'We geven deze uitnodiging vrij en zetten je terug op de wachtlijst. Je houdt je plek vanaf de dag dat je je aanmeldde, dus je komt vooraan, niet achteraan.',
   'We’ll stop looking for a Circle for you. If you apply again later, you’ll join at the back of the line.':
       'We stoppen met zoeken naar een Circle voor je. Meld je je later opnieuw aan, dan sluit je achteraan aan.',
-  'We’re finding five or six people who fit you. Your invitation will appear here, and we’ll let you know.':
-      'We zoeken vijf of zes mensen die bij je passen. Je uitnodiging verschijnt hier, en we laten het je weten.',
   'We’re gathering people for {1}.': 'We verzamelen mensen voor {1}.',
   'We’re looking for people who share your language and a time that fits.':
       'We zoeken mensen die je taal delen en op een passend moment kunnen.',
@@ -1625,14 +1552,12 @@ const nlStrings = <String, String>{
   'You already have a meetup on this day.':
       'Je hebt op deze dag al een meetup.',
   'You applied today.': 'Je hebt je vandaag aangemeld.',
-  'You approve the exact schedule before joining':
-      'Je keurt het precieze schema goed voordat je meedoet',
   'You are not in a Circle.': 'Je zit niet in een Circle.',
   'You can choose up to three upcoming meetups.':
       'Je kunt maximaal drie komende meetups kiezen.',
   'You can download your own account and Circle data from your Circle profile. Email support@vriendtime.com to make other requests. We may need to verify your identity. You also have the right to complain to the Dutch Data Protection Authority (Autoriteit Persoonsgegevens) or the supervisory authority where you live or work.':
       'Je kunt je eigen account- en Circle-gegevens downloaden via je Circle-profiel. Mail naar support@vriendtime.com voor andere verzoeken. Mogelijk moeten we je identiteit controleren. Je hebt ook het recht om een klacht in te dienen bij de Autoriteit Persoonsgegevens of bij de toezichthouder waar je woont of werkt.',
-  'You can leave at any time. If something doesn\'t feel right, move somewhere safe and contact us.':
+  'You can leave at any time. If something doesn’t feel right, move somewhere safe and contact us.':
       'Je kunt altijd weggaan. Voelt iets niet goed, ga dan naar een veilige plek en neem contact met ons op.',
   'You can only do this for someone from one of your Circles.':
       'Dit kan alleen voor iemand uit een van je Circles.',
@@ -1662,8 +1587,6 @@ const nlStrings = <String, String>{
   'Your Circle is now yours': 'Je Circle is nu van jullie',
   'Your Circle is ready': 'Je Circle is klaar',
   'Your Circle plan changed': 'Het plan van je Circle is veranderd',
-  'Your Circle sees your first name, photo, interests and this line. The photo helps people recognise you; it isn’t an ID check.':
-      'Je Circle ziet je voornaam, foto, interesses en deze zin. De foto helpt mensen je te herkennen; het is geen ID-controle.',
   'Your Founding Circle': 'Je Founding Circle',
   'Your answers are saved. Pick up where you left off.':
       'Je antwoorden zijn bewaard. Ga verder waar je gebleven was.',
@@ -1671,14 +1594,12 @@ const nlStrings = <String, String>{
       'Je antwoorden konden niet worden opgeslagen. Probeer het opnieuw.',
   'Your application': 'Je aanmelding',
   'Your application\nis waiting for you.': 'Je aanmelding\nwacht op je.',
-  'Your cancellation has been received. The organiser will arrange your €19 refund.':
-      'Je annulering is ontvangen. De organisator regelt dat je je €19 terugkrijgt.',
+  'Your cancellation has been received. The organiser will arrange your €39 refund.':
+      'Je annulering is ontvangen. De organisator regelt dat je je €39 terugkrijgt.',
   'Your concern': 'Je zorg',
   'Your details.': 'Je gegevens.',
   'Your first hello': 'Je eerste hallo',
   'Your first hello.': 'Je eerste hallo.',
-  'Your group and six Thursdays are ready. The first dinner is on 8 October.':
-      'Je groep en zes donderdagen staan klaar. Het eerste diner is op 8 oktober.',
   'Your group for {1} is coming together.': 'Je groep voor {1} komt samen.',
   'Your invitation': 'Je uitnodiging',
   'Your kind of company.': 'Jouw soort mensen.',
@@ -1707,8 +1628,8 @@ const nlStrings = <String, String>{
   'Your times': 'Je tijden',
   'Your week': 'Je week',
   'Your weekly rhythm': 'Je wekelijkse ritme',
-  'Your €19 payment has been received. Open your Circle to meet the group and RSVP.':
-      'Je betaling van €19 is ontvangen. Open je Circle om de groep te ontmoeten en je aan te melden.',
+  'Your €39 payment has been received. Open your Circle to meet the group and RSVP.':
+      'Je betaling van €39 is ontvangen. Open je Circle om de groep te ontmoeten en je aan te melden.',
   'You’ll lose your place on the waiting list, and this can’t be undone.':
       'Je verliest je plek op de wachtlijst, en dat kun je niet terugdraaien.',
   'You’ll lose your place on the waiting list.':
@@ -1771,7 +1692,7 @@ const nlStrings = <String, String>{
   '{1} applicants, longest waiting first':
       '{1} aanmeldingen, langst wachtend eerst',
   '{1} complete': '{1} compleet',
-  '{1} evenings so far with {2}': 'Tot nu toe {1} avonden met {2}',
+  '{1} meetups so far with {2}': 'Tot nu toe {1} meetups met {2}',
   '{1} fit together': '{1} passen bij elkaar',
   '{1} fit well': '{1} passen goed',
   '{1} forming': '{1} in vorming',
@@ -1806,9 +1727,9 @@ const nlStrings = <String, String>{
   '{1}. {2}': '{1}. {2}',
   '{1}/{2} confirmed': '{1}/{2} bevestigd',
   '{1}’s profile photo': 'Profielfoto van {1}',
-  '€19 one-off for the full six-week programme. Food, drinks and activities are separate. This is not a subscription.':
-      'Eenmalig €19 voor het hele programma van zes weken. Eten, drinken en activiteiten zijn apart. Dit is geen abonnement.',
-  '€19 · {1} · agreed {2}': '€19 · {1} · akkoord {2}',
+  '€39 one-off for the full six-week programme, with two activities included. Food and drinks are separate. This is not a subscription.':
+      'Eenmalig €39 voor het hele programma van zes weken, met twee activiteiten inbegrepen. Eten en drinken zijn apart. Dit is geen abonnement.',
+  '€39 · {1} · agreed {2}': '€39 · {1} · akkoord {2}',
   '😐 Okay': '😐 Oké',
   '🙁 Not for me': '🙁 Niet voor mij',
   '🙂 Good': '🙂 Goed',
@@ -1828,8 +1749,6 @@ const nlStrings = <String, String>{
   'Meeting point (optional)': 'Verzamelpunt (optioneel)',
   'Costs (optional)': 'Kosten (optioneel)',
   'Accessibility (optional)': 'Toegankelijkheid (optioneel)',
-  'Discuss the idea in your Circle chat first. Saving shares this plan with everyone.':
-      'Bespreek het idee eerst in de chat van je Circle. Als je opslaat, ziet iedereen dit plan.',
   'Could not save. Your plan is still here. Please retry.':
       'Opslaan is niet gelukt. Je plan staat er nog. Probeer het opnieuw.',
   'Saving…': 'Opslaan…',
@@ -1839,10 +1758,8 @@ const nlStrings = <String, String>{
   'Meeting point': 'Verzamelpunt',
   'Costs': 'Kosten',
   'Accessibility': 'Toegankelijkheid',
-  'Directions': 'Routebeschrijving',
+  'Directions': 'Route',
   'Add to calendar': 'Aan agenda toevoegen',
-  'Check this plan again before leaving. Calendar copies do not update automatically.':
-      'Kijk het plan nog even na voordat je vertrekt. Een agenda-afspraak wordt niet automatisch bijgewerkt.',
   'Email preference unavailable': 'E-mailvoorkeur niet beschikbaar',
   'Refresh to load your saved choice.':
       'Vernieuw om je opgeslagen keuze te laden.',
@@ -1883,8 +1800,8 @@ const nlStrings = <String, String>{
   'Extra plan cancelled': 'Extra plan geannuleerd',
   'Open the plan to see the latest details.':
       'Open het plan voor de laatste details.',
-  'Your €19 payment has been received. Your six programme meetups are included. Open your Circle to meet the group.':
-      'Je betaling van €19 is ontvangen. Je zes programma-meetups zijn inbegrepen. Open je Circle om de groep te ontmoeten.',
+  'Your €39 payment has been received, so your place is confirmed. Open your Circle to meet the group and see the six weeks.':
+      'Je betaling van €39 is ontvangen, dus je plek is bevestigd. Open je Circle om de groep te ontmoeten en de zes weken te bekijken.',
   'No eligible agreement found. Contact the organiser for help.':
       'Geen afspraak gevonden die je kunt annuleren. Neem contact op met de organisator voor hulp.',
   'No pending payment agreement.': 'Er staat geen betaling open.',
@@ -1927,7 +1844,7 @@ const nlStrings = <String, String>{
   '{1} hasn’t written an introduction yet.':
       '{1} heeft nog geen introductie geschreven.',
   'You both like {1}.': 'Jullie houden allebei van {1}.',
-  'Future Circles': 'Toekomstige Circles',
+  'Future matching': 'Toekomstige matches',
   'Who you’d rather not be matched with again':
       'Met wie je liever niet opnieuw wordt gematcht',
   'When we form new Circles, we can keep you apart from someone. They are never told, and your current Circle stays as it is.':
@@ -1935,23 +1852,23 @@ const nlStrings = <String, String>{
   'Not in my next Circle': 'Niet in mijn volgende Circle',
   'Happy to meet again': 'Graag weer samen',
   'You’re moving to a new group': 'Je gaat naar een nieuwe groep',
-  'Your €19 carries over, so your next Circle is free. We’ll invite you as soon as we find a group that fits.':
-      'Je €19 gaat mee, dus je volgende Circle is gratis. We nodigen je uit zodra we een groep vinden die past.',
+  'Your €39 carries over, so your next Circle is free. We’ll invite you as soon as we find a group that fits.':
+      'Je €39 gaat mee, dus je volgende Circle is gratis. We nodigen je uit zodra we een groep vinden die past.',
   'Accept invitation — already paid': 'Uitnodiging accepteren — al betaald',
-  'Your €19 from your previous Circle covers this one. Food and drinks are paid at the venue.':
-      'Je €19 van je vorige Circle dekt deze ook. Eten en drinken betaal je zelf op locatie.',
+  'Your €39 from your previous Circle covers this one. Food and drinks are paid at the venue.':
+      'Je €39 van je vorige Circle dekt deze ook. Eten en drinken betaal je zelf op locatie.',
   'Stay in my Circle': 'In mijn Circle blijven',
   'Move me': 'Verplaats me',
-  'You’re moving to a new group. Your €19 carries over.':
-      'Je gaat naar een nieuwe groep. Je €19 gaat mee.',
+  'You’re moving to a new group. Your €39 carries over.':
+      'Je gaat naar een nieuwe groep. Je €39 gaat mee.',
   'Moving · already paid': 'Verhuist · al betaald',
   'Moving from another Circle': 'Komt uit een andere Circle',
   'Already paid: their next Circle is free. Place them first. If no group fits in time, refund them instead.':
       'Al betaald: de volgende Circle is gratis. Plaats deze persoon eerst. Past er op tijd geen groep, betaal dan terug.',
   'Refund instead': 'Terugbetalen',
   'Refund instead of moving?': 'Terugbetalen in plaats van verplaatsen?',
-  'They leave the waiting list and appear under Refunds to send. Confirm there once you have returned the €19.':
-      'Diegene verlaat de wachtlijst en verschijnt onder Terug te betalen. Bevestig daar zodra je de €19 hebt teruggestort.',
+  'They leave the waiting list and appear under Refunds to send. Confirm there once you have returned the €39.':
+      'Diegene verlaat de wachtlijst en verschijnt onder Terug te betalen. Bevestig daar zodra je de €39 hebt teruggestort.',
   'Meet your Circle first. Before the first meetup you can still cancel for a refund.':
       'Ontmoet eerst je Circle. Voor de eerste meetup kun je nog annuleren en je geld terugkrijgen.',
   'Refunds are possible until 48 hours before your first meetup. Between your first and second meetup you can move to another group once, free of charge.':
@@ -1994,15 +1911,11 @@ const nlStrings = <String, String>{
   'Does this group work for you?': 'Past deze groep bij jou?',
   'Already paid from your previous Circle. The group and all six dates are below.':
       'Al betaald via je vorige Circle. De groep en alle zes de data staan hieronder.',
-  '€19 for all six weeks. The group, all six dates and the refund terms are below.':
-      '€19 voor alle zes weken. De groep, alle zes de data en de terugbetaalregels staan hieronder.',
   'We couldn’t reach VriendTime. Check your connection and try again.':
       'We konden VriendTime niet bereiken. Controleer je verbinding en probeer het opnieuw.',
   'agreed': 'afgesproken',
   'VriendTime helps adults join a small Friendship Circle that meets weekly for six weeks. VriendTime forms the group, sets the schedule, and provides meetup details, reminders, a group chat, and links that help you add a meetup to your calendar.':
       'VriendTime helpt volwassenen mee te doen aan een kleine Friendship Circle die zes weken lang wekelijks samenkomt. VriendTime stelt de groep samen, legt het schema vast en zorgt voor meetupdetails, herinneringen, een groepschat en links waarmee je een meetup aan je agenda toevoegt.',
-  'Meetup details such as the venue, time or activity may change. For the weeks we plan, the venue is shown in the app from the invitation on. Venue details must not be used to disrupt the venue or compromise another member’s safety. If a meetup is cancelled or materially changed, we tell your Circle in the app.':
-      'Meetupdetails zoals de locatie, tijd of activiteit kunnen veranderen. Voor de weken die wij plannen, staat de locatie vanaf de uitnodiging in de app. Locatiegegevens mogen niet worden gebruikt om de locatie te verstoren of de veiligheid van een ander lid in gevaar te brengen. Wordt een meetup geannuleerd of wezenlijk gewijzigd, dan laten we dat je Circle weten in de app.',
   'Venue purchases and services supplied directly by a third party may be governed by that third party’s own terms.':
       'Aankopen bij een locatie en diensten die rechtstreeks door een derde worden geleverd, kunnen onder de eigen voorwaarden van die derde vallen.',
   'Treat other members, venue staff, and the public with respect. Harassment, discrimination, threats, violence, unwanted sexual conduct, stalking, fraud, spam, illegal activity, and conduct that puts anyone at risk are prohibited.':
@@ -2035,9 +1948,9 @@ const nlStrings = <String, String>{
   'Add payment link': 'Betaallink toevoegen',
   'Change': 'Wijzigen',
   'Payment link': 'Betaallink',
-  'Make one Tikkie for €19 for this Circle, allowing as many payers as there are members, and paste its link here. Members of this Circle get it behind their Pay button.':
-      'Maak één Tikkie van €19 voor deze Circle, met zoveel betalers als er leden zijn, en plak de link hier. Leden van deze Circle krijgen hem achter hun Betaal-knop.',
-  'Pay €19': 'Betaal €19',
+  'Make one Tikkie for €39 for this Circle, allowing as many payers as there are members, and paste its link here. Members of this Circle get it behind their Pay button.':
+      'Maak één Tikkie van €39 voor deze Circle, met zoveel betalers als er leden zijn, en plak de link hier. Leden van deze Circle krijgen hem achter hun Betaal-knop.',
+  'Pay €39': 'Betaal €39',
   'Accept and pay by {1}': 'Accepteer en betaal vóór {1}',
   'Overdue': 'Te laat',
   'pay by was': 'betalen vóór was',
@@ -2060,24 +1973,22 @@ const nlStrings = <String, String>{
   'Not free then, no shared language, or excluded':
       'Niet vrij op dat moment, geen gedeelde taal of uitgesloten',
   'Invite {1} to {2}?': '{1} uitnodigen voor {2}?',
-  'They get the invitation and the six dates, with 5 days to accept and pay.':
-      'Diegene krijgt de uitnodiging en de zes data, met 5 dagen om te accepteren en te betalen.',
+  'They get the invitation and the six dates, with 5 days to accept and pay, but no later than a week before the first meetup. Invited later? Then they have until the end of the next day.':
+      'Diegene krijgt de uitnodiging en de zes data, met 5 dagen om te accepteren en te betalen, maar uiterlijk een week voor de eerste meetup. Later uitgenodigd? Dan tot het eind van de volgende dag.',
   'Not available in the preview.': 'Niet beschikbaar in het voorbeeld.',
-  'Your €19 has not arrived yet': 'Je €19 is nog niet binnen',
+  'Your €39 has not arrived yet': 'Je €39 is nog niet binnen',
   'Your invitation is still open': 'Je uitnodiging staat nog open',
-  'Your place is confirmed only once your €19 arrives, nothing else. The pay-by date has passed, so the organiser may now offer your place to someone on the waiting list. Pay now to keep it. If you have already paid, tap “I’ve sent the payment”.':
-      'Je plek is pas bevestigd als je €19 binnen is, verder niets. De betaaldatum is voorbij, dus de organisator kan je plek nu aanbieden aan iemand op de wachtlijst. Betaal nu om je plek te houden. Heb je al betaald, tik dan op „Ik heb betaald”.',
   'The pay-by date has passed, so the organiser may now offer your place to someone on the waiting list. Accept and pay now to keep it.':
       'De betaaldatum is voorbij, dus de organisator kan je plek nu aanbieden aan iemand op de wachtlijst. Accepteer en betaal nu om je plek te houden.',
   'Your place was released: payment not received':
       'Je plek is vrijgegeven: betaling niet ontvangen',
-  'We did not receive your €19 for {1} by your pay-by date, so your place has been released. That is the only reason. You are back on the waiting list, keeping your place in the queue, and we will invite you to another Circle.':
-      'We hebben je €19 voor {1} niet vóór je betaaldatum ontvangen, dus je plek is vrijgegeven. Dat is de enige reden. Je staat weer op de wachtlijst, op je oude plek in de rij, en we nodigen je uit voor een andere Circle.',
-  'Your place in {1} is confirmed once your €19 arrives. Pay by the end of tomorrow to keep it.':
-      'Je plek in {1} is bevestigd zodra je €19 binnen is. Betaal uiterlijk morgen om je plek te houden.',
+  'We did not receive your €39 for {1} by your pay-by date, so your place has been released. That is the only reason. You are back on the waiting list, keeping your place in the queue, and we will invite you to another Circle.':
+      'We hebben je €39 voor {1} niet vóór je betaaldatum ontvangen, dus je plek is vrijgegeven. Dat is de enige reden. Je staat weer op de wachtlijst, op je oude plek in de rij, en we nodigen je uit voor een andere Circle.',
+  'Your place in {1} is confirmed once your €39 arrives. Pay by the end of tomorrow to keep it.':
+      'Je plek in {1} is bevestigd zodra je €39 binnen is. Betaal uiterlijk morgen om je plek te houden.',
   '{1} has not paid for {2} by the pay-by date. Check Tikkie, then confirm the payment or release the place.':
       '{1} heeft niet vóór de betaaldatum betaald voor {2}. Kijk in Tikkie en bevestig de betaling of geef de plek vrij.',
-  'A place is overdue': 'Een plek is te laat betaald',
+  'A place is overdue': 'Een plek is over tijd',
   'Questions about these terms: email support@vriendtime.com, or use Help & contact in the app.':
       'Vragen over deze voorwaarden: mail naar support@vriendtime.com of gebruik Hulp en contact in de app.',
   'For privacy questions, requests or complaints, email support@vriendtime.com. This works even if you no longer have an account.':
@@ -2085,16 +1996,12 @@ const nlStrings = <String, String>{
   'Email us': 'Mail ons',
   'Opens your email app': 'Opent je e-mailapp',
   'When are you free?': 'Wanneer ben je vrij?',
-  'Tap every time that works. Netherlands time.':
-      'Tik alle tijden aan die passen. Nederlandse tijd.',
   'All evenings': 'Alle avonden',
-  'Fewer people choose weekday daytimes, so finding a group for those can take longer.':
-      'Minder mensen kiezen overdag doordeweeks, dus een groep vinden kan dan langer duren.',
+  'Between group meetups, we also suggest an optional coffee or drink with one person from your Circle, at a time you’re both free. Rather meet in the daytime? Add a daytime slot too.':
+      'Tussen de groepsmeetups stellen we ook een vrijblijvende koffie of een drankje voor met één persoon uit je Circle, op een moment dat jullie allebei kunnen. Liever overdag afspreken? Kies dan ook een tijd overdag.',
   'None of these work? Tell us your times':
       'Past niets hiervan? Laat ons je tijden weten',
   'e.g. Monday evenings after 22:00': 'bijv. maandagavond na 22:00',
-  'Optional. If enough people need the same time, we add it.':
-      'Optioneel. Als genoeg mensen dezelfde tijd nodig hebben, voegen we die toe.',
   'Daytime': 'Overdag',
   'How do you describe yourself?': 'Hoe omschrijf je jezelf?',
   'Choose one of the options.': 'Kies een van de opties.',
@@ -2114,24 +2021,22 @@ const nlStrings = <String, String>{
       'Opgeslagen als suggesties voor de avond, voor de volgende keer.',
   'Saved as the daytime suggestions for next time.':
       'Opgeslagen als suggesties voor overdag, voor de volgende keer.',
+  'Use the morning suggestions': 'Gebruik de suggesties voor de ochtend',
+  'Use the afternoon suggestions': 'Gebruik de suggesties voor de middag',
+  'Save as morning suggestions': 'Opslaan als suggesties voor de ochtend',
+  'Save as afternoon suggestions': 'Opslaan als suggesties voor de middag',
+  'Saved as the morning suggestions for next time.':
+      'Opgeslagen als suggesties voor de ochtend, voor de volgende keer.',
+  'Saved as the afternoon suggestions for next time.':
+      'Opgeslagen als suggesties voor de middag, voor de volgende keer.',
   'the group can change this': 'de groep kan dit aanpassen',
   'Activity': 'Activiteit',
   'Place': 'Plek',
   'Add an activity and a place for all six weeks.':
       'Voeg voor alle zes weken een activiteit en een plek toe.',
   'Something new together': 'Samen iets nieuws',
-  'Bowling, board games or something new. We plan this one too.':
-      'Bowlen, bordspellen of iets nieuws. Deze plannen wij ook.',
-  'We suggest a plan; change it together if you like.':
-      'Wij stellen een plan voor; pas het samen aan als je wilt.',
-  'A last get-together, then your group carries on. Nothing more to pay.':
-      'Een laatste keer samen, daarna gaat je groep gewoon door. Niets meer te betalen.',
   'Something new together. We plan this one too.':
       'Samen iets nieuws. Deze plannen wij ook.',
-  'We suggest a plan for this week. Your group can change it together.':
-      'Wij stellen een plan voor deze week voor. Je groep kan het samen aanpassen.',
-  'We suggest a plan for your last week. Change it together, and keep the good thing going.':
-      'Wij stellen een plan voor je laatste week voor. Pas het samen aan en houd het goede gaande.',
   'Find out who’s secretly competitive': 'Ontdek wie stiekem competitief is',
   'Shared soon · Alkmaar': 'Volgt binnenkort · Alkmaar',
   'Your group can change this': 'Je groep kan dit aanpassen',
@@ -2140,10 +2045,8 @@ const nlStrings = <String, String>{
   'Dates and times are fixed. We plan weeks 1 to 4; weeks 5 and 6 start with our plan, which your group can change together. Netherlands time.':
       'Data en tijden staan vast. Wij plannen week 1 tot en met 4; week 5 en 6 beginnen met ons plan, dat je groep samen kan aanpassen. Nederlandse tijd.',
   'We plan weeks 1 to 4': 'Wij plannen week 1 tot en met 4',
-  'Weeks 5 and 6: our plan, yours to change':
-      'Week 5 en 6: ons plan, door jullie aan te passen',
-  'Yes. Five or six people meet once a week for six weeks. We plan the first four weeks and suggest the last two, which your Circle can change together.':
-      'Ja. Vijf of zes mensen spreken zes weken lang één keer per week af. Wij plannen de eerste vier weken en stellen de laatste twee voor, die je Circle samen kan aanpassen.',
+  'Yes. Five or six people meet once a week for six weeks. We plan and book five of the weeks, two activities included. Week five is your Circle’s own: you plan it together.':
+      'Ja. Vijf of zes mensen spreken zes weken lang één keer per week af. Wij plannen en boeken vijf van de weken, met twee activiteiten inbegrepen. Week vijf is van je Circle zelf: die plannen jullie samen.',
   'Plans, small updates and “see you Thursday”. Be kind, and ask before sharing someone’s details.':
       'Plannen, kleine updates en “tot donderdag”. Wees aardig, en vraag het eerst voordat je iemands gegevens deelt.',
   'This chat is moderated to keep Circles safe.':
@@ -2156,30 +2059,19 @@ const nlStrings = <String, String>{
   'Let members know by email': 'Laat leden het per e-mail weten',
   'Leave this off for small fixes, like a typo.':
       'Zet dit uit bij kleine correcties, zoals een typfout.',
-  'Keep the start within the Circle’s part of the day: morning 09:00–11:00, afternoon 12:00–15:00, evening 18:00–20:00.':
-      'Houd de begintijd binnen het dagdeel van de Circle: ochtend 09:00–11:00, middag 12:00–15:00, avond 18:00–20:00.',
-  'Pay by 1 hour before your first meetup':
-      'Betaal uiterlijk 1 uur voor je eerste meetup',
-  'Accept and pay by 1 hour before your first meetup':
-      'Accepteer en betaal uiterlijk 1 uur voor je eerste meetup',
-  'Paid just now? Message us on WhatsApp so we can confirm your place in time.':
-      'Net betaald? Stuur ons een WhatsApp, zodat we je plek op tijd kunnen bevestigen.',
+  'Keep the start within the Circle’s part of the day: morning 09:00–11:30, afternoon 12:00–16:00, evening 18:00–21:00.':
+      'Houd de begintijd binnen het dagdeel van de Circle: ochtend 09:00–11:30, middag 12:00–16:00, avond 18:00–21:00.',
   'Profile data: first name, date of birth, gender (you can choose “Prefer not to say”), profile photo, a short introduction, the languages you speak, your interests, the days and times you are free, and, if you choose to give it, a WhatsApp number. Optional fields are identified in the app.':
       'Profielgegevens: voornaam, geboortedatum, gender (je kunt kiezen voor “Zeg ik liever niet”), profielfoto, een korte introductie, de talen die je spreekt, je interesses, de dagen en tijden waarop je vrij bent en, als je dat wilt, een WhatsApp-nummer. Optionele velden staan als zodanig in de app.',
   'Communication and safety data: messages you send in your Circle’s group chat, reports, support enquiries, and information needed to investigate safety or policy concerns. Circle chats are moderated: the VriendTime team can read messages when needed for moderation and safety.':
       'Communicatie- en veiligheidsgegevens: berichten die je in de groepschat van je Circle stuurt, meldingen, vragen aan support en informatie die nodig is om zorgen over veiligheid of regels te onderzoeken. Circle-chats worden gemodereerd: het VriendTime-team kan berichten lezen als dat nodig is voor moderatie en veiligheid.',
-  'Your email address, date of birth, gender, WhatsApp number, matching answers and private account details are never shown to other members. We use your gender only to help balance groups, so we try to avoid anyone being the only man or the only woman in their Circle. Avoid placing private information in your introduction or in messages that other members can read.':
-      'Je e-mailadres, geboortedatum, gender, WhatsApp-nummer, matchingantwoorden en privé accountgegevens worden nooit aan andere leden getoond. We gebruiken je gender alleen om groepen in balans te brengen, zodat we proberen te voorkomen dat iemand de enige man of de enige vrouw in de Circle is. Zet geen privé-informatie in je introductie of in berichten die andere leden kunnen lezen.',
+  'Your email address, date of birth, gender, WhatsApp number (unless you join a WhatsApp group for your Circle), matching answers and private account details are never shown to other members. We use your gender for two things only: to help balance groups, so we try to avoid anyone being the only man or the only woman in their Circle; and to time one-to-ones, where we suggest a daytime you’re both free before an evening, unless you are both men or both women. Avoid placing private information in your introduction or in messages that other members can read.':
+      'Je e-mailadres, geboortedatum, gender, WhatsApp-nummer (tenzij je meedoet aan een WhatsApp-groep van je Circle), matchingantwoorden en privé accountgegevens worden nooit aan andere leden getoond. We gebruiken je gender maar voor twee dingen: om groepen in balans te brengen, zodat we proberen te voorkomen dat iemand de enige man of de enige vrouw in de Circle is; en om één-op-ééntjes te plannen, waarbij we een moment overdag waarop jullie allebei kunnen voorstellen vóór een avond, tenzij jullie allebei man of allebei vrouw zijn. Zet geen privé-informatie in je introductie of in berichten die andere leden kunnen lezen.',
   'Only one man with {1} women': 'Maar één man met {1} vrouwen',
   'Only one woman with {1} men': 'Maar één vrouw met {1} mannen',
   '{1}. Try to swap someone so nobody is the only one; you can still create it.':
       '{1}. Probeer iemand te wisselen zodat niemand de enige is; je kunt hem ook zo aanmaken.',
-  'One-to-one coffees': 'Eén-op-één koffie',
-  'Between group meetups, we suggest a coffee with one person from your Circle. Say yes if it works; no is fine too.':
-      'Tussen de groepsmeetups stellen we een koffie voor met één persoon uit je Circle. Zeg ja als het past; nee is ook prima.',
   'Enjoy your free week': 'Geniet van je vrije week',
-  'No one-to-one coffee for you this time. See you with the whole group!':
-      'Deze keer geen één-op-één koffie voor jou. Tot ziens met de hele groep!',
   'They start after your second group meetup.':
       'Ze beginnen na je tweede groepsmeetup.',
   'You’re meeting {1}': 'Je spreekt af met {1}',
@@ -2202,9 +2094,7 @@ const nlStrings = <String, String>{
   'Can’t make it after all?': 'Kun je toch niet?',
   'We’ll let {1} know it’s off.': 'We laten {1} weten dat het niet doorgaat.',
   'Keep it': 'Laat staan',
-  'Cancel the coffee': 'Koffie afzeggen',
   'Can’t make it after all': 'Ik kan toch niet',
-  'Your coffees so far': 'Je koffies tot nu toe',
   'One-to-ones with your Circle': 'Eén-op-één met je Circle',
   '{1} of {2} met': '{1} van {2} ontmoet',
   '{1}: met': '{1}: ontmoet',
@@ -2217,21 +2107,20 @@ const nlStrings = <String, String>{
   'Asked': 'Gevraagd',
   'What it costs': 'Wat het kost',
   'Places for one-to-one coffees': 'Plekken voor één-op-één koffie',
-  'We rotate through these. Check they are open at those times.':
-      'We wisselen deze af. Controleer of ze op die tijden open zijn.',
-  'Evening (a drink, from 19:00)': 'Avond (een drankje, vanaf 19:00)',
+  'We rotate through these, and only suggest a place when it’s open.':
+      'We wisselen deze af en stellen een plek alleen voor als die open is.',
+  'No opening hours yet: {1}. Only suggested when no other place is open.':
+      'Nog geen openingstijden: {1}. Alleen voorgesteld als er geen andere plek open is.',
+  'Evening (a drink, from 20:00)': 'Avond (een drankje, vanaf 20:00)',
   'Daytime (coffee, 10:30 and 14:00)': 'Overdag (koffie, 10:30 en 14:00)',
   'One place per line: name, address': 'Eén plek per regel: naam, adres',
   'Coffee places saved.': 'Koffieplekken opgeslagen.',
   'Save coffee places': 'Koffieplekken opslaan',
   'didn’t meet': 'niet afgesproken',
-  'Good to know: tables aren’t reserved. If it’s full, pick somewhere nearby or take a walk together.':
-      'Goed om te weten: er is geen tafel gereserveerd. Is het vol? Kies samen een plek in de buurt of maak een wandeling.',
   'Sorry it didn’t happen': 'Jammer dat het niet doorging',
   'Sorry it wasn’t great': 'Jammer dat het niet zo leuk was',
   'What happened? (optional)': 'Wat is er gebeurd? (optioneel)',
   'Only the organiser reads this.': 'Alleen de organisator leest dit.',
-  'How was your coffee with {1}?': 'Hoe was je koffie met {1}?',
   'Optional, and private.': 'Optioneel en privé.',
   '👍 Good': '👍 Goed',
   '👎 Not great': '👎 Niet zo',
@@ -2247,10 +2136,6 @@ const nlStrings = <String, String>{
       'Ongeveer €5 per persoon (€20–25 per baan per uur, gedeeld), plus drankjes.',
   'About €5 per person, plus drinks.':
       'Ongeveer €5 per persoon, plus drankjes.',
-  'Around an hour. You pay for yourself.':
-      'Ongeveer een uur. Je betaalt voor jezelf.',
-  'The first dinner is all you can eat with lots of choice, including gluten-free options, so it suits most diets. The other weeks are cafés and activities where you order what suits you. Got an allergy or a question? Message us on WhatsApp.':
-      'Het eerste diner is onbeperkt eten met veel keuze, ook glutenvrij, dus het past bij de meeste diëten. De andere weken zijn cafés en activiteiten waar je bestelt wat bij je past. Een allergie of een vraag? Stuur ons een WhatsApp.',
   'About €40 per person: all you can eat, drinks included.':
       'Ongeveer €40 per persoon: onbeperkt eten, drankjes inbegrepen.',
   'You pay for yourself.': 'Je betaalt voor jezelf.',
@@ -2310,8 +2195,6 @@ const nlStrings = <String, String>{
   'One-to-one coffee · being planned': 'Eén-op-één koffie · wordt gepland',
   'One-to-one coffee': 'Eén-op-één koffie',
   'You let your Circle know': 'Je hebt het je Circle laten weten',
-  'Private. We only use it to help balance groups, so we try to avoid anyone being the only man or the only woman.':
-      'Privé. We gebruiken het alleen om groepen in balans te brengen, zodat we proberen te voorkomen dat iemand de enige man of de enige vrouw is.',
   'Your flexibility': 'Je flexibiliteit',
   'Just one time': 'Maar één moment',
   'A little flexible': 'Een beetje flexibel',
@@ -2322,23 +2205,13 @@ const nlStrings = <String, String>{
   'Read the Terms & Conditions': 'Lees de Algemene voorwaarden',
   'Read the Privacy Policy': 'Lees het Privacybeleid',
   'Which languages are you happy to talk in?': 'In welke talen praat je graag?',
-  'Pick every language you’re comfortable chatting in, not just your first one. Comfortable in both? Pick both: you’ll meet more people, locals and newcomers alike.':
-      'Kies elke taal waarin je makkelijk een gesprek voert, niet alleen je moedertaal. Voel je je in allebei thuis? Kies dan beide: zo ontmoet je meer mensen, Alkmaarders en nieuwkomers.',
   'If your Circle doesn’t feel right, we’ll help you find a way forward.':
       'Voelt je Circle niet goed? Dan zoeken we samen met je naar een oplossing.',
-  'No. You pay €19 once for all six weeks. There’s no further VriendTime fee; food, drinks and activities are paid separately at the venue.':
-      'Nee. Je betaalt één keer €19 voor alle zes weken. Er komen geen VriendTime-kosten meer bij; eten, drinken en activiteiten betaal je apart ter plekke.',
-  'Somewhere in Alkmaar we’ve picked for you. You see all six places, and what each one costs, as soon as you’re invited. Week one starts with a meal together (dinner, or lunch for daytime Circles), and leaving early is always fine.':
-      'Ergens in Alkmaar dat wij voor je hebben gekozen. Je ziet alle zes de plekken, en wat elke week kost, zodra je bent uitgenodigd. Week één begint met samen eten (diner, of lunch bij Circles overdag), en eerder weggaan is altijd prima.',
+  'Somewhere in Alkmaar we’ve picked for you. You see all six places, and what each one costs, as soon as you’re invited. Week one starts with a meal together (dinner, or brunch or lunch for daytime Circles), and leaving early is always fine.':
+      'Ergens in Alkmaar dat wij voor je hebben gekozen. Je ziet alle zes de plekken, en wat elke week kost, zodra je bent uitgenodigd. Week één begint met samen eten (diner, of brunch of lunch bij Circles overdag), en eerder weggaan is altijd prima.',
   'The first meal is at a restaurant with plenty of choice, and the other weeks are cafés and activities where you order what suits you. Please check ingredients and allergens with the venue yourself. If a place won’t work for you, message us on WhatsApp and we’ll help.':
       'Het eerste etentje is in een restaurant met veel keuze, en de andere weken zijn cafés en activiteiten waar je bestelt wat bij je past. Check ingrediënten en allergenen zelf bij de locatie. Werkt een plek niet voor jou? Stuur ons een WhatsApp, dan helpen we je.',
-  'What are the one-to-one coffees?': 'Wat zijn de één-op-één koffies?',
-  'Between the group meetups we suggest an optional coffee or drink with one person from your Circle, at a café and time that suit you both. Saying no is always fine, and you pay for your own order.':
-      'Tussen de groepsmeetups stellen we een vrijblijvende koffie of een drankje voor met één persoon uit je Circle, op een café en tijd die jullie allebei passen. Nee zeggen is altijd prima, en je betaalt je eigen bestelling.',
-  'Five or six people who share a language and a regular free time. We email you as soon as an invitation is ready.':
-      'Vijf of zes mensen met een gedeelde taal en een vast vrij moment. We mailen je zodra er een uitnodiging klaarstaat.',
-  'From a first meal to plans you make together, with optional one-to-one coffees in between.':
-      'Van een eerste etentje tot plannen die jullie samen maken, met vrijblijvende één-op-één koffies tussendoor.',
+  'What are the one-to-ones?': 'Wat zijn de één-op-ééntjes?',
   'A meal together': 'Samen eten',
   'A first meal together to meet everyone.':
       'Samen eten om iedereen te leren kennen.',
@@ -2348,38 +2221,26 @@ const nlStrings = <String, String>{
       'Samen eten, ongeveer twee uur. Wij reserveren de tafel; je betaalt het restaurant zelf. Eerder weggaan is altijd prima, maar de eerste meetup is de moeite waard om te blijven.',
   'We’ll email you as soon as your invitation is ready.':
       'We mailen je zodra je uitnodiging klaarstaat.',
-  'Your place is held for you until the pay-by date below. Once your €19 has arrived, your Circle and its chat open.':
-      'Je plek wordt voor je vastgehouden tot de betaaldatum hieronder. Zodra je €19 binnen is, gaan je Circle en de chat open.',
-  'Your place is confirmed only once your €19 arrives, nothing else. The pay-by date has passed, so the organiser may now offer your place to someone on the waiting list. Pay now; if your place has already gone to someone else, the organiser will let you know. If you have already paid, tap “I’ve sent the payment”.':
-      'Je plek is pas bevestigd als je €19 binnen is, verder niets. De betaaldatum is voorbij, dus de organisator mag je plek nu aan iemand op de wachtlijst aanbieden. Betaal nu; is je plek al naar iemand anders gegaan, dan laat de organisator het je weten. Heb je al betaald? Tik dan op “Ik heb betaald”.',
-  'The pay-by date has passed, so the organiser may now offer your place to someone on the waiting list. You can still accept and pay; if your place has already gone to someone else, the organiser will let you know.':
-      'De betaaldatum is voorbij, dus de organisator mag je plek nu aan iemand op de wachtlijst aanbieden. Je kunt nog steeds accepteren en betalen; is je plek al naar iemand anders gegaan, dan laat de organisator het je weten.',
+  'Your place is held for you until the pay-by date below. Once your €39 has arrived, your Circle and its chat open.':
+      'Je plek wordt voor je vastgehouden tot de betaaldatum hieronder. Zodra je €39 binnen is, gaan je Circle en de chat open.',
   'Accept invitation': 'Uitnodiging accepteren',
   'After you accept, the organiser sends you a payment link.':
       'Na het accepteren stuurt de organisator je een betaallink.',
   'Dates and times are fixed. We plan weeks 1 to 4; weeks 5 and 6 start with our plan, which your group can change together. Between the meetups we suggest optional one-to-one coffees; saying no is always fine. Netherlands time.':
       'Data en tijden staan vast. Wij plannen week 1 tot en met 4; week 5 en 6 beginnen met ons plan, dat je groep samen kan aanpassen. Tussen de meetups stellen we vrijblijvende één-op-één koffies voor; nee zeggen is altijd prima. Nederlandse tijd.',
   'Change the plan': 'Plan aanpassen',
-  'No one-to-one this week': 'Deze week geen één-op-één',
-  'One-to-one coffee (optional) · being planned':
-      'Eén-op-één koffie (vrijblijvend) · wordt gepland',
-  'One-to-one coffee (optional)': 'Eén-op-één koffie (vrijblijvend)',
-  'Everyone is new at the first meetup, so nobody knows anyone yet. Running late or can’t find the table? Let your Circle know in the chat.':
-      'Bij de eerste meetup is iedereen nieuw, dus niemand kent elkaar nog. Ben je later of kun je de tafel niet vinden? Laat het je Circle weten in de chat.',
-  'Talk it over in the chat first. Saving updates the plan for everyone.':
-      'Overleg eerst in de chat. Opslaan past het plan voor iedereen aan.',
+  'Everyone is new at the first meetup, so nobody knows anyone yet.':
+      'Bij de eerste meetup is iedereen nieuw, dus niemand kent elkaar nog.',
+  'Talk it over in the chat first. Saving updates the plan for everyone. Does the place take reservations? Then one of you books it.':
+      'Overleg eerst in de chat. Opslaan past het plan voor iedereen aan. Moet je bij de plek reserveren? Dan regelt een van jullie dat.',
   '90 days on: do you still meet anyone from your Circle?':
       '90 dagen later: zie je nog iemand uit je Circle?',
   'The place isn’t final yet. Calendar copies don’t update, so check the app before you leave.':
       'De plek staat nog niet vast. Agenda-items worden niet bijgewerkt, dus check de app voordat je vertrekt.',
   'Calendar copies don’t update, so check the app before you leave.':
       'Agenda-items worden niet bijgewerkt, dus check de app voordat je vertrekt.',
-  'Download calendar file (Apple/Outlook)':
-      'Agendabestand downloaden (Apple/Outlook)',
   'Your Circle sees your photo, first name, introduction and interests.':
       'Je Circle ziet je foto, voornaam, introductie en interesses.',
-  'Good to know: tables aren’t reserved. If it’s full, you can move to another public place nearby that you’re both comfortable with.':
-      'Goed om te weten: er is geen tafel gereserveerd. Is het vol? Dan kunnen jullie naar een andere openbare plek in de buurt waar jullie je allebei prettig bij voelen.',
   'Meet at the place shared in the app. If you move on together, only go to another public place you’re both comfortable with, and tell us if a plan no longer feels right.':
       'Spreek af op de plek uit de app. Gaan jullie samen ergens anders heen, kies dan alleen een andere openbare plek waar jullie je allebei prettig bij voelen, en laat het ons weten als een plan niet meer goed voelt.',
   'Takes a minute. After this, four short steps about you, your week and your kind of company, plus a photo so your group can recognise you. No payment.':
@@ -2389,8 +2250,563 @@ const nlStrings = <String, String>{
   'e.g. You pay for yourself.': 'bijv. Je betaalt voor jezelf.',
   'Between group meetups we may suggest an optional one-to-one coffee or drink with another member of your Circle, at a public place and at a time that fits both your availabilities. Saying no is always fine, you pay for your own order, and the same conduct rules apply.':
       'Tussen de groepsmeetups kunnen we een vrijblijvende één-op-één koffie of een drankje voorstellen met een ander lid van je Circle, op een openbare plek en op een tijd die bij jullie allebei past. Nee zeggen is altijd prima, je betaalt je eigen bestelling, en dezelfde gedragsregels gelden.',
-  'One-to-one coffees: whom we suggest you meet, the time and place, your yes or no answers, and the optional feedback you give afterwards.':
-      'Eén-op-één koffies: met wie we voorstellen dat je afspreekt, de tijd en plek, je ja- of nee-antwoorden, en de vrijblijvende feedback die je achteraf geeft.',
-  'For a one-to-one coffee, the other person sees your first name, photo and answer. Your feedback afterwards is only seen by the VriendTime team.':
-      'Bij een één-op-één koffie ziet de ander je voornaam, foto en antwoord. Je feedback achteraf ziet alleen het VriendTime-team.',
+  'One-to-ones: whom we suggest you meet, the time and place, your yes or no answers, and the optional feedback you give afterwards.':
+      'Eén-op-ééntjes: met wie we voorstellen dat je afspreekt, de tijd en plek, je ja- of nee-antwoorden, en de vrijblijvende feedback die je achteraf geeft.',
+  'For a one-to-one, the other person sees your first name, photo and answer. Your feedback afterwards is only seen by the VriendTime team.':
+      'Bij een één-op-ééntje ziet de ander je voornaam, foto en antwoord. Je feedback achteraf ziet alleen het VriendTime-team.',
+  'Your place is confirmed only once your €39 arrives. Your pay-by date has passed: the place is still yours for now, but the organiser can offer it to someone on the waiting list at any time. Pay now to keep it. If you have already paid, tap “I’ve sent the payment”.':
+      'Je plek is pas bevestigd als je €39 binnen is. Je betaaldatum is voorbij: de plek is voorlopig nog van jou, maar de organisator kan hem op elk moment aan iemand op de wachtlijst aanbieden. Betaal nu om hem te houden. Heb je al betaald? Tik dan op “Ik heb betaald”.',
+  'Your pay-by date has passed. The place is still yours for now, but the organiser can offer it to someone on the waiting list at any time. Accept and pay now to keep it.':
+      'Je betaaldatum is voorbij. De plek is voorlopig nog van jou, maar de organisator kan hem op elk moment aan iemand op de wachtlijst aanbieden. Accepteer en betaal nu om hem te houden.',
+  'This member says they’ve paid. Check Tikkie first, then confirm or release.':
+      'Dit lid zegt betaald te hebben. Controleer eerst Tikkie en bevestig de betaling of geef de plek vrij.',
+  'Add to Apple Calendar': 'Toevoegen aan Apple Agenda',
+  'Download calendar file': 'Agendabestand downloaden',
+  'Outlook': 'Outlook',
+  'One payment for all six weeks. Food and drinks are paid at the venue. If your Circle doesn’t feel right, we’ll help you find a way forward.':
+      'Eén betaling voor alle zes weken. Eten en drinken betaal je op locatie. Voelt je Circle niet goed? Dan zoeken we samen met je naar een oplossing.',
+  'Choose how you describe yourself. It stays private.':
+      'Kies hoe je jezelf omschrijft. Het blijft privé.',
+  'Choose at least one time, or tell us which times work for you.':
+      'Kies minstens één moment, of laat ons weten welke tijden voor jou werken.',
+  '😊 Great': '😊 Geweldig',
+  'Drinks': 'Borrelen',
+  'Lunch together': 'Samen lunchen',
+  'Brunch together': 'Samen brunchen',
+  'Bowling and a drink': 'Bowlen en een drankje',
+  'Drinks and a good conversation': 'Een drankje en een goed gesprek',
+  'The full six-week programme costs €39 once, with two activities included. Food and drinks are paid at the venue. After you accept, you can pay straight away with iDEAL. Your place is confirmed when payment is received. You can leave and ask for a refund up to 48 hours before your first meetup. Not the right group or time? You can switch to another group once, free of charge, until your second meetup.':
+      'Het volledige programma van zes weken kost eenmalig €39, met twee activiteiten inbegrepen. Eten en drinken betaal je op locatie. Na het accepteren kun je direct betalen met iDEAL. Je plek is bevestigd zodra de betaling binnen is. Tot 48 uur voor je eerste meetup kun je stoppen en om terugbetaling vragen. Niet de juiste groep of tijd? Je kunt één keer gratis overstappen naar een andere groep, tot je tweede meetup.',
+  'The full six-week programme costs €39 once, with two activities included. Food and drinks are paid at the venue. The organiser will send you a payment link. During this pilot the link comes from the organiser’s own bunq or Tikkie, so you’ll see their name when you pay. Your place is confirmed when payment is received. You can leave and ask for a refund up to 48 hours before your first meetup. Not the right group or time? You can switch to another group once, free of charge, until your second meetup.':
+      'Het volledige programma van zes weken kost eenmalig €39, met twee activiteiten inbegrepen. Eten en drinken betaal je op locatie. De organisator stuurt je een betaallink. Tijdens deze pilot komt de link van de eigen bunq of Tikkie van de organisator, dus je ziet hun naam als je betaalt. Je plek is bevestigd zodra de betaling binnen is. Tot 48 uur voor je eerste meetup kun je stoppen en om terugbetaling vragen. Niet de juiste groep of tijd? Je kunt één keer gratis overstappen naar een andere groep, tot je tweede meetup.',
+  'You applied today. No payment is due yet.':
+      'Je hebt je vandaag aangemeld. Je hoeft nog niets te betalen.',
+  'You’ve been on the list since yesterday. No payment is due yet.':
+      'Je staat sinds gisteren op de lijst. Je hoeft nog niets te betalen.',
+  'Waiting 1 day': 'Wacht al 1 dag',
+  'We couldn’t upload your photo. Please try again. Your current photo has not changed.':
+      'We konden je foto niet uploaden. Probeer het opnieuw. Je huidige foto is niet veranderd.',
+  'Add at least one place, each with a name.':
+      'Voeg minstens één plek toe, elk met een naam.',
+  'Answer yes or no.': 'Antwoord ja of nee.',
+  'Choose daytime or evening.': 'Kies overdag of avond.',
+  'Choose how late you’ll be.': 'Kies hoeveel later je bent.',
+  'Please keep it under 1000 characters.': 'Houd het onder de 1000 tekens.',
+  'This one-to-one has already started.': 'Deze één-op-één is al begonnen.',
+  'This one-to-one is no longer planned.':
+      'Deze één-op-één gaat niet meer door.',
+  'This one-to-one is not yours.': 'Deze één-op-één is niet van jou.',
+  'You can only say this on the day, close to the time.':
+      'Dit kun je alleen op de dag zelf doorgeven, kort voor de tijd.',
+  'You can tell us once the coffee has happened.':
+      'Dat kun je doorgeven zodra de koffie geweest is.',
+  'Your Circle already knows you’re running late.':
+      'Je Circle weet al dat je later bent.',
+  'Ask this applicant to finish their birthday, photo, times and WhatsApp number first.':
+      'Vraag deze aanmelder eerst geboortedatum, foto, tijden en WhatsApp-nummer in te vullen.',
+  '€39 for all six weeks, two activities included. The group and all six dates are below.':
+      '€39 voor alle zes weken, met twee activiteiten inbegrepen. De groep en alle zes de data staan hieronder.',
+  // The six weeks, version two (€39, two activities included).
+  'Afternoons & evenings': 'Middagen & avonden',
+  'Mornings': 'Ochtenden',
+  'Week 5 is your call': 'Week 5 is jullie keuze',
+  'We plan your graduation': 'Wij plannen jullie afstuderen',
+  'Included in the price': 'Inbegrepen in de prijs',
+  'Hello, new faces': 'Hoi, nieuwe gezichten',
+  'The rematch': 'De revanche',
+  'Your call': 'Jullie keuze',
+  'Graduation: a new beginning': 'Afstuderen: een nieuw begin',
+  'Say cheese': 'Zeg eens kaas',
+  'A relaxed first drink or coffee to meet everyone.':
+      'Een ontspannen eerste drankje of koffie om iedereen te leren kennen.',
+  'A playful challenge to break the ice.':
+      'Een speelse uitdaging om het ijs te breken.',
+  'A long meal together, now that you know each other.':
+      'Lang samen eten, nu jullie elkaar kennen.',
+  'A second challenge. Who wins this time?':
+      'Een tweede uitdaging. Wie wint er deze keer?',
+  'Your group picks the plan, the place and the time.':
+      'Jullie groep kiest het plan, de plek en de tijd.',
+  'Celebrate six weeks together. Then your group carries on, with no further VriendTime fee.':
+      'Vier zes weken samen. Daarna gaat jullie groep verder, zonder verdere VriendTime-kosten.',
+  'A relaxed first coffee to meet everyone.':
+      'Een ontspannen eerste koffie om iedereen te leren kennen.',
+  'A shared brunch, now that you know each other.':
+      'Samen brunchen, nu jullie elkaar kennen.',
+  'Something to discover together, indoors.': 'Samen iets ontdekken, binnen.',
+  'A celebration brunch. Then your group carries on, with no further VriendTime fee.':
+      'Een feestelijke brunch. Daarna gaat jullie groep verder, zonder verdere VriendTime-kosten.',
+  'Everyone is new here, so it’s an easy start: a drink or a coffee and a first chat. Leaving early is fine, but the first meetup is the one worth staying for.':
+      'Iedereen is hier nieuw, dus het is een makkelijke start: een drankje of een koffie en een eerste praatje. Eerder weggaan mag, maar voor de eerste meetup is blijven de moeite waard.',
+  'A playful challenge to break the ice. It’s included in your fee: just show up.':
+      'Een speelse uitdaging om het ijs te breken. Het zit bij je bijdrage inbegrepen: kom gewoon langs.',
+  'A long meal together. We book the table; you pay for your own food and drinks.':
+      'Lang samen eten. Wij reserveren de tafel; je betaalt je eigen eten en drinken.',
+  'A second challenge, also included in your fee. Who wins this time?':
+      'Een tweede uitdaging, ook inbegrepen in je bijdrage. Wie wint er deze keer?',
+  'Your group’s week: talk it over in the chat, choose what to do, where and the start time, then save it with “Plan it together”.':
+      'De week van jullie groep: overleg in de chat, kies wat jullie doen, waar en hoe laat, en sla het op met “Samen plannen”.',
+  'Your graduation: we book the table to celebrate six weeks together. You pay for yourself, and your group carries on afterwards with no further VriendTime fee.':
+      'Jullie afstuderen: wij reserveren een tafel om zes weken samen te vieren. Je betaalt voor jezelf, en daarna gaat jullie groep verder zonder verdere VriendTime-kosten.',
+  'Everyone is new here, so it’s an easy start: a coffee and a first chat. Leaving early is fine, but the first meetup is the one worth staying for.':
+      'Iedereen is hier nieuw, dus het is een makkelijke start: een koffie en een eerste praatje. Eerder weggaan mag, maar voor de eerste meetup is blijven de moeite waard.',
+  'A shared brunch together. We book the table; you pay for your own.':
+      'Samen brunchen. Wij reserveren de tafel; je betaalt je eigen deel.',
+  'Something to discover together, indoors. It’s included in your fee.':
+      'Samen iets ontdekken, binnen. Het zit bij je bijdrage inbegrepen.',
+  'Your graduation: we book the table for a celebration brunch. You pay for yourself, and your group carries on afterwards with no further VriendTime fee.':
+      'Jullie afstuderen: wij reserveren een tafel voor een feestelijke brunch. Je betaalt voor jezelf, en daarna gaat jullie groep verder zonder verdere VriendTime-kosten.',
+  'Plan it': 'Plan het',
+  'Your group plans this': 'Jullie groep plant dit',
+  'Included in your fee': 'Inbegrepen in je bijdrage',
+  'Your call: plan it together': 'Jullie keuze: plan het samen',
+  'Plan it together': 'Samen plannen',
+  'The day stays the same. Choose a start between {1} and {2}.':
+      'De dag blijft hetzelfde. Kies een begintijd tussen {1} en {2}.',
+  'Your group picks the place': 'Jullie groep kiest de plek',
+  'Week 5 is your call! Share ideas here, then tap “Plan it” on the week 5 card to set the place and the time.':
+      'Week 5 is jullie keuze! Deel hier ideeën en tik daarna bij week 5 op “Plan het” om de plek en de tijd te kiezen.',
+  'Members see the activity and the place from the invitation on. Week 5 is the group’s own: leave its place empty and they plan it. Included weeks are paid from the fee, so book and pay for them yourself.':
+      'Leden zien de activiteit en de plek vanaf de uitnodiging. Week 5 is van de groep: laat de plek leeg, dan plannen zij het. Inbegrepen weken worden van de bijdrage betaald, dus boek en betaal die zelf.',
+  'your group plans this': 'de groep plant dit',
+  'included in the fee': 'inbegrepen in de bijdrage',
+  'Place (empty: the group decides)': 'Plek (leeg: de groep beslist)',
+  'Starts': 'Begint',
+  'e.g. 20:00': 'bijv. 20:00',
+  'Included in the fee': 'Inbegrepen in de bijdrage',
+  'The group plans this': 'De groep plant dit',
+  'included': 'inbegrepen',
+  'Booking: waiting for the group’s plan':
+      'Reservering: wacht op het plan van de groep',
+  'Booking: add the place first': 'Reservering: voeg eerst de plek toe',
+  'Booked ✓': 'Gereserveerd ✓',
+  'Booking email sent on {1}. Waiting for their reply.':
+      'Reserveringsmail verstuurd op {1}. Wacht op hun antwoord.',
+  'Not booked yet': 'Nog niet gereserveerd',
+  'Book online': 'Online reserveren',
+  'Send booking email': 'Reserveringsmail sturen',
+  'Send again': 'Opnieuw sturen',
+  'Call': 'Bellen',
+  'Mark booked': 'Markeer als gereserveerd',
+  'Not booked after all': 'Toch niet gereserveerd',
+  'This place isn’t in the places list, so book it your own way.':
+      'Deze plek staat niet in de lijst met plekken, dus reserveer op je eigen manier.',
+  'Send the booking email again?': 'De reserveringsmail opnieuw sturen?',
+  'Send a booking email?': 'Een reserveringsmail sturen?',
+  'We email {1} asking to book week {2} on {3}, under your Circle’s name. Replies go to support@vriendtime.com.':
+      'We mailen {1} om week {2} op {3} te reserveren, op naam van je Circle. Antwoorden komen binnen op support@vriendtime.com.',
+  'Send email': 'Mail sturen',
+  'Booking email on its way. It goes out within 10 minutes.':
+      'Reserveringsmail onderweg. Hij gaat binnen 10 minuten de deur uit.',
+  'Two activities included': 'Twee activiteiten inbegrepen',
+  'One payment for all six weeks, with two activities included: we book them and pay for them. No subscription. You pay the venue for what you eat and drink.':
+      'Eén betaling voor alle zes weken, met twee activiteiten inbegrepen: wij boeken en betalen ze. Geen abonnement. Wat je eet en drinkt, betaal je op locatie.',
+  'What’s included?': 'Wat is er inbegrepen?',
+  'The meal in week three is at a restaurant with plenty of choice, and you pay for your own: an evening dinner is about €38 per person (€43 from Friday to Sunday), drinks included, and lunch or brunch costs less. The other weeks are cafés and activities where you order what suits you. Please check ingredients and allergens with the venue yourself. If a place won’t work for you, message us on WhatsApp and we’ll help.':
+      'Het etentje in week drie is in een restaurant met veel keuze, en je betaalt zelf: een diner ’s avonds kost ongeveer €38 per persoon (€43 van vrijdag tot en met zondag), drinken inbegrepen, en lunch of brunch is goedkoper. De andere weken zijn cafés en activiteiten waar je bestelt wat bij je past. Check ingrediënten en allergenen zelf bij de locatie. Werkt een plek niet voor jou? Stuur ons een WhatsApp, dan helpen we je.',
+  'Only week 5 is yours to plan. We book the other weeks.':
+      'Alleen week 5 plannen jullie zelf. De andere weken boeken wij.',
+  'Choose a start between 18:00 and 21:00.':
+      'Kies een begintijd tussen 18:00 en 21:00.',
+  'Choose a start between 12:00 and 16:00.':
+      'Kies een begintijd tussen 12:00 en 16:00.',
+  'Choose a start between 09:00 and 11:30.':
+      'Kies een begintijd tussen 09:00 en 11:30.',
+  'Add an activity and a place for every week except week 5.':
+      'Voeg voor elke week behalve week 5 een activiteit en een plek toe.',
+  'This place has no booking email. Book it online or by phone.':
+      'Deze plek heeft geen reserveringsmail. Reserveer online of telefonisch.',
+  'A booking email was already sent for this week.':
+      'Voor deze week is al een reserveringsmail verstuurd.',
+  'Unknown booking step.': 'Onbekende reserveringsstap.',
+  'You pay for your own drinks.': 'Je betaalt je eigen drankjes.',
+  'Included in your fee: we book and pay for the court. Drinks are on you.':
+      'Inbegrepen in je bijdrage: wij boeken en betalen de baan. Drankjes zijn voor jezelf.',
+  'About €40 per person: dinner and drinks, all you can eat.':
+      'Ongeveer €40 per persoon: eten en drinken, onbeperkt.',
+  'Included in your fee: we book and pay for the game. Drinks are on you.':
+      'Inbegrepen in je bijdrage: wij boeken en betalen het spel. Drankjes zijn voor jezelf.',
+  'Up to your group.': 'Aan jullie groep.',
+  'Drinks and sharing bites, about €15–20 per person. You pay for yourself.':
+      'Drankjes en hapjes om te delen, ongeveer €15–20 per persoon. Je betaalt voor jezelf.',
+  'You pay for your own coffee or drinks.':
+      'Je betaalt je eigen koffie of drankjes.',
+  'Included in your fee: entry to the board-game room. Drinks are on you.':
+      'Inbegrepen in je bijdrage: toegang tot de bordspellenkamer. Drankjes zijn voor jezelf.',
+  'About €35 per person: lunch and drinks, all you can eat.':
+      'Ongeveer €35 per persoon: lunch en drinken, onbeperkt.',
+  'You pay for your own coffee.': 'Je betaalt je eigen koffie.',
+  'Included in your fee: entry to the board-game room. Coffee is on you.':
+      'Inbegrepen in je bijdrage: toegang tot de bordspellenkamer. Koffie is voor jezelf.',
+  'A shared brunch, about €25 per person. You pay for yourself.':
+      'Een gedeelde brunch, ongeveer €25 per persoon. Je betaalt voor jezelf.',
+  'Included in your fee: your museum tickets.':
+      'Inbegrepen in je bijdrage: je museumkaartjes.',
+  'Brunch, about €15–20 per person. You pay for yourself.':
+      'Brunch, ongeveer €15–20 per persoon. Je betaalt voor jezelf.',
+  'Your pay-by date has passed. You can still say yes until {1}, but the organiser can offer your place to someone on the waiting list at any time. Accept and pay now to keep it.':
+      'Je betaaldatum is voorbij. Je kunt nog ja zeggen tot {1}, maar de organisator kan je plek op elk moment aan iemand op de wachtlijst aanbieden. Accepteer en betaal nu om hem te houden.',
+  'This invitation has closed': 'Deze uitnodiging is gesloten',
+  'This invitation has closed.': 'Deze uitnodiging is gesloten.',
+  'Saying yes closed on {1}, so that the places could be booked for the group. Still keen? Message us and we’ll see what we can do.':
+      'Ja zeggen kon tot {1}, zodat de plekken voor de groep gereserveerd konden worden. Wil je toch graag meedoen? Stuur ons een bericht, dan kijken we wat we kunnen doen.',
+  'Message us on WhatsApp': 'Stuur ons een WhatsApp',
+  'This invitation has closed. Message us if you would still like to join.':
+      'Deze uitnodiging is gesloten. Stuur ons een bericht als je toch graag wilt meedoen.',
+  'It’s too late to invite someone new: the first meetup is today or has passed.':
+      'Het is te laat om iemand nieuw uit te nodigen: de eerste meetup is vandaag of al geweest.',
+  'The booking email for this week is still on its way.':
+      'De reserveringsmail voor deze week is nog onderweg.',
+  'To book': 'Te reserveren',
+  'Weeks in the next two weeks': 'Weken in de komende twee weken',
+  'Weeks to book': 'Weken om te reserveren',
+  'The next two weeks. Book each place, then mark it booked.':
+      'De komende twee weken. Reserveer elke plek en markeer hem daarna als gereserveerd.',
+  'Was booked at {1} for {2}: cancel that booking.':
+      'Was gereserveerd bij {1} voor {2}: annuleer die reservering.',
+  'We asked {1} for {2}: let them know it changed.':
+      'We hebben {1} gevraagd voor {2}: laat ze weten dat het is veranderd.',
+  'the old place': 'de oude plek',
+  'The booking email could not be sent. Try again, or book another way.':
+      'De reserveringsmail kon niet worden verstuurd. Probeer het opnieuw of reserveer op een andere manier.',
+  'Booking email waiting to go out (within 10 minutes)':
+      'Reserveringsmail staat klaar (gaat binnen 10 minuten weg)',
+  'Members are promised two included activities, and this plan includes {1}.':
+      'Leden krijgen twee inbegrepen activiteiten beloofd, en dit plan heeft er {1}.',
+  'Week {1} starts at {2}, outside the part of the day this group is free.':
+      'Week {1} begint om {2}, buiten het dagdeel waarop deze groep kan.',
+  'About €38 per person, or €43 from Friday to Sunday: dinner and drinks, all you can eat.':
+      'Ongeveer €38 per persoon, of €43 van vrijdag tot en met zondag: eten en drinken, onbeperkt.',
+  'start time to choose': 'begintijd nog te kiezen',
+  'Your group hasn’t planned this yet. Calendar copies don’t update, so check the app before you go.':
+      'Jullie groep heeft dit nog niet gepland. Kopieën in je agenda worden niet bijgewerkt, dus kijk in de app voordat je gaat.',
+  'Your six weeks': 'Jullie zes weken',
+  'e.g. bowling or a pub quiz': 'bijv. bowlen of een pubquiz',
+  'The name of the place': 'De naam van de plek',
+  'Please pay by {1}, so the places can be booked for your group.':
+      'Betaal uiterlijk {1}, zodat de plekken voor je groep gereserveerd kunnen worden.',
+  'This Circle starts within 12 days: people get less than five days to say yes, and you less than a week to book.':
+      'Deze Circle begint binnen 12 dagen: mensen hebben minder dan vijf dagen om ja te zeggen, en jij minder dan een week om te reserveren.',
+  'Your invitation is waiting': 'Je uitnodiging wacht op je',
+  'Accept and pay for {1} by the end of tomorrow to keep your place.':
+      'Accepteer en betaal voor {1} vóór morgen aan het eind van de dag om je plek te houden.',
+  'Reply to your invitation to {1} by the end of tomorrow to keep your place. Your fee is already paid.':
+      'Reageer vóór morgen aan het eind van de dag op je uitnodiging voor {1} om je plek te houden. Je bijdrage is al betaald.',
+  'Last chance to say yes': 'Laatste kans om ja te zeggen',
+  'Saying yes to {1} closes at the end of tomorrow, so the places can be booked for the group.':
+      'Ja zeggen tegen {1} kan tot morgen aan het eind van de dag, zodat de plekken voor de groep gereserveerd kunnen worden.',
+  '{1} has not said yes to {2} by the pay-by date. Send a reminder, or release the place to invite someone else.':
+      '{1} heeft vóór de betaaldatum geen ja gezegd tegen {2}. Stuur een herinnering, of geef de plek vrij om iemand anders uit te nodigen.',
+  'One-to-one coffees': 'Één-op-één-koffies',
+  'One-to-ones': 'Één-op-ééntjes',
+  'No one-to-one for you this time. See you with the whole group!':
+      'Deze keer geen één-op-ééntje voor jou. Tot ziens met de hele groep!',
+  'A drink in the evening, just as friends: whatever you like to drink. Not for you? Tap “Can’t make it”, no reason needed.':
+      'Een drankje in de avond, gewoon als vrienden: wat je maar wilt drinken. Liever niet? Tik op “Ik kan niet”, uitleg is niet nodig.',
+  'A drink': 'Een drankje',
+  'A coffee': 'Koffie',
+  'A drink with {1}': 'Een drankje met {1}',
+  'Call it off': 'Afzeggen',
+  'How was meeting {1}?': 'Hoe was het met {1}?',
+  'Your one-to-ones so far': 'Je één-op-ééntjes tot nu toe',
+  'Next meetup': 'Volgende meetup',
+  'Another plan': 'Ander plan',
+  'Talk it over in the chat, then choose what to do, where, and a start between {1} and {2}.':
+      'Overleg in de chat en kies dan wat jullie doen, waar, en een begintijd tussen {1} en {2}.',
+  'Nothing is planned yet. Talk it over in the chat, then choose what to do, where, and a start between {1} and {2}.':
+      'Er is nog niets gepland. Overleg in de chat en kies dan wat jullie doen, waar, en een begintijd tussen {1} en {2}.',
+  'Week 5 is your group’s call': 'Week 5 is aan jullie groep',
+  'Open the chat': 'Open de chat',
+  'Details': 'Details',
+  'No one-to-one this time': 'Deze keer geen één-op-ééntje',
+  'Optional one-to-one · being planned':
+      'Vrijblijvend één-op-ééntje · wordt gepland',
+  'Optional one-to-one · {1} – {2}': 'Vrijblijvend één-op-ééntje · {1} – {2}',
+  'Optional one-to-one': 'Vrijblijvend één-op-ééntje',
+  'Apple Calendar': 'Apple Agenda',
+  'Your group and six Thursdays are ready. Have a look, and say yes if it works for you.':
+      'Je groep en zes donderdagen staan klaar. Kijk even, en zeg ja als het je uitkomt.',
+  '{1} {2} {3} at {4} · {5}. A drink in the evening, just as friends: whatever you like to drink. Can you make it? Answer in the app. Not for you? No reason needed.':
+      '{1} {2} {3} om {4} · {5}. Een drankje in de avond, gewoon als vrienden: wat je maar wilt drinken. Kun je? Antwoord in de app. Liever niet? Uitleg is niet nodig.',
+  'A drink with {1} tonight': 'Een drankje met {1} vanavond',
+  'Week 5 is planned': 'Week 5 is gepland',
+  'Week 5 changed': 'Week 5 is aangepast',
+  '{1} planned week 5: {2} at {3}, starting {4}.':
+      '{1} heeft week 5 gepland: {2} bij {3}, vanaf {4}.',
+  '{1} changed week 5: {2} at {3}, starting {4}.':
+      '{1} heeft week 5 aangepast: {2} bij {3}, vanaf {4}.',
+  'Calendar': 'Agenda',
+  'Help': 'Hulp',
+  'The dates are fixed. Netherlands time.':
+      'De data liggen vast. Nederlandse tijd.',
+  'How the six weeks work': 'Zo werken de zes weken',
+  'Fixed dates': 'Vaste data',
+  'One meetup a week on your Circle’s day, six weeks in a row. Times are Netherlands time.':
+      'Eén meetup per week op de dag van je Circle, zes weken lang. Tijden zijn Nederlandse tijd.',
+  'We plan and book': 'Wij plannen en reserveren',
+  'Every week except week 5: we choose the place and reserve it.':
+      'Elke week behalve week 5: wij kiezen de plek en reserveren die.',
+  'Paid from your fee. Food and drinks are always on you.':
+      'Betaald uit je bijdrage. Eten en drinken betaal je altijd zelf.',
+  'Week 5 is your group’s': 'Week 5 is van jullie groep',
+  'Together you choose what to do, where, and the start time.':
+      'Samen kiezen jullie wat jullie doen, waar, en de begintijd.',
+  'Optional one-to-ones': 'Vrijblijvende één-op-ééntjes',
+  'Between meetups we suggest meeting one person from your Circle: a coffee by day, a drink in the evening. Saying no is always fine.':
+      'Tussen de meetups stellen we voor om één persoon uit je Circle te ontmoeten: overdag voor koffie, ’s avonds voor een drankje. Nee zeggen is altijd prima.',
+  'Everyone is new at the first meetup. No need to sign up. Can’t make it? Tell your Circle in the chat.':
+      'Bij de eerste meetup is iedereen nieuw. Je hoeft je niet aan te melden. Kun je niet? Laat het je Circle weten in de chat.',
+  'No need to sign up. Can’t make it? Tell your Circle in the chat.':
+      'Je hoeft je niet aan te melden. Kun je niet? Laat het je Circle weten in de chat.',
+  'About an hour · you pay for yourself · tables aren’t reserved, so if it’s full, pick another public place nearby':
+      'Ongeveer een uur · je betaalt zelf · tafels zijn niet gereserveerd, dus is het vol, kies dan een andere openbare plek in de buurt',
+  'You’re on the list': 'Je staat op de lijst',
+  'Your application is waiting for you': 'Je aanmelding wacht op je',
+  'Your group': 'Je groep',
+  '{1} of {2} people found': '{1} van de {2} mensen gevonden',
+  'Applied': 'Aangemeld',
+  'Finding people': 'Mensen zoeken',
+  'Invitation': 'Uitnodiging',
+  'Yes, still free': 'Ja, nog steeds vrij',
+  'Meet your Circle': 'Maak kennis met je Circle',
+  '{1} people, including you': '{1} mensen, inclusief jij',
+  'Change times': 'Tijden wijzigen',
+  'No payment until you’ve seen your group':
+      'Pas betalen als je je groep hebt gezien',
+  'No subscription': 'Geen abonnement',
+  'In English or Dutch': 'In het Engels of Nederlands',
+  'Six meetups, the same people': 'Zes meetups, dezelfde mensen',
+  '€39 once, no subscription': '€39 eenmalig, geen abonnement',
+  'once, for all six weeks': 'eenmalig, voor alle zes weken',
+  'Read the terms': 'Lees de voorwaarden',
+  'Read the privacy policy': 'Lees de privacyverklaring',
+  'Change payment link': 'Betaallink wijzigen',
+  'Met {1} of {2} so far': '{1} van de {2} ontmoet tot nu toe',
+  '€39 once, for all six weeks': '€39 eenmalig, voor alle zes weken',
+  'Two activities included. Food and drinks you pay at the venue.':
+      'Twee activiteiten inbegrepen. Eten en drinken betaal je ter plekke.',
+  'After you accept, you can pay straight away with iDEAL.':
+      'Na het accepteren kun je meteen betalen met iDEAL.',
+  'The organiser will send you a payment link. During this pilot the link comes from the organiser’s own bunq or Tikkie, so you’ll see their name when you pay.':
+      'De organisator stuurt je een betaallink. Tijdens deze pilot komt die van de eigen bunq of Tikkie van de organisator, dus je ziet hun naam als je betaalt.',
+  'Your place is confirmed when payment is received.':
+      'Je plek is bevestigd zodra de betaling binnen is.',
+  'You can leave and ask for a refund up to 48 hours before your first meetup.':
+      'Tot 48 uur voor je eerste meetup kun je stoppen en je geld terugvragen.',
+  'Not the right group or time? You can switch to another group once, free of charge, until your second meetup.':
+      'Niet de juiste groep of tijd? Je kunt tot je tweede meetup één keer gratis naar een andere groep overstappen.',
+  'Optional details': 'Optionele details',
+  'How did it feel?': 'Hoe voelde het?',
+  'Six meetups together': 'Zes meetups samen',
+  'Six meetups together · {1} one-to-ones':
+      'Zes meetups samen · {1} één-op-ééntjes',
+  'A familiar face': 'Een bekend gezicht',
+  'Friends around a café table by a canal, one arriving with a wave':
+      'Vrienden aan een cafétafel bij een gracht, één komt zwaaiend binnen',
+  'Edit your answers': 'Je antwoorden aanpassen',
+  'About this week': 'Over deze week',
+  'For any other calendar: open the file and it asks to add the meetup.':
+      'Voor elke andere agenda: open het bestand en je agenda vraagt of je de meetup wilt toevoegen.',
+  'Add details: address, costs and more':
+      'Details toevoegen: adres, kosten en meer',
+  'Keep this Circle going.': 'Houd deze Circle gaande.',
+  'A drink with {1} this week? Optional: answer below.':
+      'Deze week iets drinken met {1}? Mag, hoeft niet: antwoord hieronder.',
+  'A coffee with {1} this week? Optional: answer below.':
+      'Deze week koffie met {1}? Mag, hoeft niet: antwoord hieronder.',
+  '1 thing needs you today': '1 ding wacht vandaag op je',
+  '{1} things need you today': '{1} dingen wachten vandaag op je',
+  'Nothing needs you right now': 'Er wacht nu niets op je',
+  'At a glance': 'In één oogopslag',
+  'Read only · you can remove messages':
+      'Alleen lezen · je kunt berichten verwijderen',
+  'Everyone in the Circle will see “Message removed by the organiser” in its place. This can’t be undone.':
+      'Iedereen in de Circle ziet op die plek “Bericht verwijderd door de organisator”. Dit kan niet ongedaan worden gemaakt.',
+  'Message removed.': 'Bericht verwijderd.',
+  'The message could not be removed. Please try again.':
+      'Het bericht kon niet worden verwijderd. Probeer het opnieuw.',
+  'Message removed by the organiser': 'Bericht verwijderd door de organisator',
+  '€39 for six weeks · You pay only once your group is ready':
+      '€39 voor zes weken · Je betaalt pas als je groep klaarstaat',
+  '5–6 people · 6 weekly meetups · Alkmaar':
+      '5–6 mensen · 6 wekelijkse meetups · Alkmaar',
+  'Five or six people. Six weekly meetups in Alkmaar.':
+      'Vijf of zes mensen. Zes wekelijkse meetups in Alkmaar.',
+  'The founding Circle programme costs €39 once for six weeks. It includes two group activities, in weeks two and four, which we book and pay for. Food, drinks, travel and other purchases are separate. There is no subscription or further programme fee after graduation. When we have found people for your time, we invite you to pay. Your group, the dates and the places are shown once your group is booked.':
+      'Het oprichtersprogramma van een Circle kost eenmalig €39 voor zes weken. Daarbij horen twee groepsactiviteiten, in week twee en vier, die wij reserveren en betalen. Eten, drinken, reizen en andere aankopen zijn apart. Er is geen abonnement en na de afsluiting geen verdere programmabijdrage. Als we mensen voor jouw tijd hebben gevonden, nodigen we je uit om te betalen. Je groep, de data en de plekken zie je zodra je groep is geboekt.',
+  'Accepting an invitation requires an explicit agreement to pay €39. You pay with the payment link shown in the app; during the pilot this is a Tikkie or bank payment link from the organiser. Accepting does not collect money. Your place is confirmed when the organiser confirms receipt. Please pay within 7 days of the invitation; after that your seat may be offered to someone else. You can still pay until the group starts: if a seat is free you join it, and if not, your €39 is kept as a credit for your next group.':
+      'Een uitnodiging accepteren vraagt een uitdrukkelijke afspraak om €39 te betalen. Je betaalt met de betaallink in de app; tijdens de pilot is dat een Tikkie of betaallink van de organisator. Accepteren schrijft nog geen geld af. Je plek is bevestigd zodra de organisator de betaling heeft ontvangen. Betaal binnen 7 dagen na de uitnodiging; daarna kan je plek aan iemand anders worden aangeboden. Je kunt nog betalen tot de groep begint: is er een plek vrij, dan doe je mee, en zo niet, dan bewaren we je €39 als tegoed voor je volgende groep.',
+  'Before your group is booked: until we confirm your group’s first date, you can cancel in the app and ask for your €39 back. We may ask why, so we can offer you another group instead. If you still want a refund, we check your request and refund the full €39 to the account you paid from. Finding the last people can take a while; we don’t promise a start date, and your place stays reserved in the meantime.':
+      'Voordat je groep is geboekt: tot we de eerste datum van je groep bevestigen, kun je in de app annuleren en je €39 terugvragen. We kunnen vragen waarom, zodat we je in plaats daarvan een andere groep kunnen aanbieden. Wil je toch je geld terug, dan bekijken we je verzoek en storten we de volledige €39 terug op de rekening waarmee je betaalde. Het vinden van de laatste mensen kan even duren; we beloven geen startdatum, en je plek blijft in de tussentijd voor je gereserveerd.',
+  'In the centre of Alkmaar, at places we’ve picked for you. You see what each week costs as soon as we’ve found your people, and the places once your group is booked; in week five your group picks its own. Week one is a relaxed first drink, or coffee for daytime Circles, and leaving early is always fine.':
+      'In het centrum van Alkmaar, op plekken die wij voor je hebben uitgekozen. Wat elke week kost zie je zodra we je mensen hebben gevonden, en de plekken zodra je groep is geboekt; in week vijf kiest je groep zelf. Week één is een ontspannen eerste drankje, of koffie voor Circles overdag, en eerder weggaan is altijd prima.',
+  'We find your people': 'Wij vinden je mensen',
+  'Pay and meet': 'Betaal en ontmoet',
+  'After your group is booked: the €39 is not refunded. If your Circle does not feel right, you can switch to another group once, free of charge, until your second meetup starts (also before your first meetup). You keep your place on the waiting list and your €39 covers the new Circle. If we cannot offer you a new group within a reasonable time, we refund your €39. After your second meetup has started, no switch or refund is possible, and joining a further Circle means paying again.':
+      'Nadat je groep is geboekt, wordt de €39 niet terugbetaald. Voelt je Circle niet goed, dan kun je één keer gratis naar een andere groep overstappen, tot je tweede meetup begint (ook al voor je eerste meetup). Je houdt je plek op de wachtlijst en je €39 geldt voor de nieuwe Circle. Kunnen we je binnen redelijke tijd geen nieuwe groep aanbieden, dan betalen we je €39 terug. Na de start van je tweede meetup is overstappen of terugbetalen niet meer mogelijk en betaal je opnieuw voor een volgende Circle.',
+  'Meetup details such as the venue, time or activity may change. For the weeks we plan, the venue is shown in the app once your group is booked. Venue details must not be used to disrupt the venue or compromise another member’s safety. If a meetup is cancelled or materially changed, we tell your Circle in the app.':
+      'Meetupdetails zoals de locatie, tijd of activiteit kunnen veranderen. Voor de weken die wij plannen, staat de locatie in de app zodra je groep is geboekt. Locatiegegevens mogen niet worden gebruikt om de locatie te verstoren of de veiligheid van een ander lid in gevaar te brengen. Wordt een meetup geannuleerd of wezenlijk gewijzigd, dan laten we dat je Circle weten in de app.',
+  'New Circle applications require a primary profile photo for recognition. A profile photo is not identity verification. That photo is available only to the people in your Circle, once it is booked, and authorised matching organisers. It is never shown publicly.':
+      'Voor een nieuwe Circle-aanmelding is een duidelijke profielfoto nodig, zodat anderen je herkennen. Een profielfoto is geen identiteitscontrole. Alleen de mensen in je Circle, zodra die is geboekt, en bevoegde organisatoren kunnen die foto zien. Hij wordt nooit openbaar getoond.',
+  'Information is shared with the other members of your Circle only where needed for the programme: your first name, profile photo, short introduction, interests, and the messages you send to your Circle. People invited to your Circle don’t see who is in it until they have paid and the group is booked. If you give a WhatsApp number, the organiser sees it so they can contact you. If you say yes to a WhatsApp group for your Circle, your number is also shared with the other members who said yes.':
+      'Met de andere leden van je Circle delen we alleen wat nodig is voor het programma: je voornaam, profielfoto, korte introductie, interesses en de berichten die je naar je Circle stuurt. Mensen die voor je Circle zijn uitgenodigd, zien pas wie erin zit als ze hebben betaald en de groep is geboekt. Als je een WhatsApp-nummer opgeeft, ziet de organisator dat, zodat die contact met je kan opnemen. Zeg je ja tegen een WhatsApp-groep voor je Circle, dan delen we je nummer ook met de andere leden die ja zeiden.',
+  'Tell us what isn’t working under Profile › Programme settings › Switch group or leave. You can switch to another group once, free of charge, until your second meetup; your €39 carries over. Until your group is booked you can also ask for your €39 back. Your reasons and private check-ins are never shared with other members.':
+      'Laat ons weten wat er niet werkt via Profiel › Programma-instellingen › Overstappen of stoppen. Je kunt één keer gratis overstappen naar een andere groep, tot je tweede meetup; je €39 gaat mee. Tot je groep is geboekt, kun je ook je €39 terugvragen. Je redenen en privé check-ins worden nooit met andere leden gedeeld.',
+  'Place confirmed': 'Plek bevestigd',
+  'You’re in': 'Je bent erbij',
+  'We found your people': 'We hebben je mensen gevonden',
+  'Your seat is waiting': 'Je plek wacht op je',
+  'We’ll tell you the dates and introduce your group as soon as it’s booked.':
+      'Zodra je groep is geboekt, laten we je de data weten en stellen we je groep aan je voor.',
+  'Pay your €39 within 7 days to confirm your place.':
+      'Betaal binnen 7 dagen je €39 om je plek te bevestigen.',
+  'We’ve found people for {1}. Pay your €39 within 7 days to confirm your place.':
+      'We hebben mensen gevonden voor {1}. Betaal binnen 7 dagen je €39 om je plek te bevestigen.',
+  'Your 7 days have passed': 'Je 7 dagen zijn voorbij',
+  'Your seat may have gone to someone else. You can still pay: if a seat is free, you’re in; if not, your €39 holds your place in the next group for your times.':
+      'Je plek is misschien naar iemand anders gegaan. Je kunt nog betalen: is er een plek vrij, dan doe je mee; zo niet, dan houdt je €39 je plek vast in de volgende groep voor jouw tijden.',
+  '€39 for all six weeks': '€39 voor alle zes weken',
+  'You can still pay until the group starts':
+      'Je kunt nog betalen tot de groep begint',
+  'The plan is the same for every group. Dates and places follow when your group is booked.':
+      'Het plan is voor elke groep hetzelfde. Data en plekken volgen zodra je groep is geboekt.',
+  '{1} of {2} places confirmed': '{1} van {2} plekken bevestigd',
+  'Yours is one of them. Names and faces appear once your group is booked.':
+      'Die van jou is er één van. Namen en gezichten verschijnen zodra je groep is geboekt.',
+  'Who’s in stays private until the group is booked, for everyone.':
+      'Wie erin zit blijft voor iedereen privé tot de groep is geboekt.',
+  'The organiser will send you the payment link. Your place is confirmed once your €39 has arrived.':
+      'De organisator stuurt je de betaallink. Je plek is bevestigd zodra je €39 binnen is.',
+  'Pay from an account in your own name, so the organiser can match it. Your place is confirmed once it has arrived.':
+      'Betaal vanaf een rekening op je eigen naam, zodat de organisator de betaling kan koppelen. Je plek is bevestigd zodra het geld binnen is.',
+  'This time doesn’t work for me': 'Deze tijd past me niet',
+  'Until your group is booked, you can still cancel for a full refund.':
+      'Tot je groep is geboekt, kun je nog annuleren en krijg je alles terug.',
+  'Please pay by {1} to keep your seat.':
+      'Betaal uiterlijk {1} om je plek te houden.',
+  'Opens when your group is booked': 'Gaat open zodra je groep is geboekt',
+  'Your place is confirmed. As soon as your group is booked, you’ll get the dates and can chat with everyone here.':
+      'Je plek is bevestigd. Zodra je groep is geboekt, krijg je de data en kun je hier met iedereen chatten.',
+  'Pay your €39 to confirm your place. As soon as your group is booked, you’ll get the dates and can chat with everyone here.':
+      'Betaal je €39 om je plek te bevestigen. Zodra je groep is geboekt, krijg je de data en kun je hier met iedereen chatten.',
+  'Paid, waiting to start': 'Betaald, wacht op de start',
+  'Groups ready to start': 'Groepen klaar om te starten',
+  'Enough people have paid. Choose the first date: they hear it straight away.':
+      'Genoeg mensen hebben betaald. Kies de eerste datum: ze horen het meteen.',
+  '{1} of 6 paid · {2}': '{1} van 6 betaald · {2}',
+  'Start this Circle': 'Start deze Circle',
+  'Finding people · {1} of 6 paid': 'Mensen zoeken · {1} van 6 betaald',
+  'Members see only how many seats are confirmed. Names, dates, places and the chat open when you start it.':
+      'Leden zien alleen hoeveel plekken bevestigd zijn. Namen, data, plekken en de chat gaan open als je de Circle start.',
+  'The six weeks get their dates when you start it.':
+      'De zes weken krijgen hun data als je de Circle start.',
+  'First meetup': 'Eerste meetup',
+  'Start {1} on {2}?': '{1} starten op {2}?',
+  'this Circle': 'deze Circle',
+  'Only {1} people have paid.': 'Pas {1} mensen hebben betaald.',
+  'The six weeks move to this date. Paid members hear it straight away, and see the group, places and chat. Invitations not paid yet stay open until the day before.':
+      'De zes weken verschuiven naar deze datum. Leden die betaald hebben horen het meteen en zien de groep, de plekken en de chat. Uitnodigingen die nog niet betaald zijn blijven open tot de dag ervoor.',
+  'Optional, but recommended: meet one person from your Circle between group meetups.':
+      'Optioneel, maar een aanrader: spreek tussen de groepsmeetups af met één persoon uit je Circle.',
+  'Plus a coffee or a drink with one person from your Circle between meetups: optional, but recommended.':
+      'En tussen de meetups een koffie of drankje met één persoon uit je Circle: optioneel, maar een aanrader.',
+  'Between the group meetups we suggest meeting one person from your Circle: a coffee by day, or a drink in the evening (whatever you like to drink), at a place and time that suit you both. Optional, but recommended: it’s the quickest way to feel at home in the group. Saying no is always fine, and you pay for your own order.':
+      'Tussen de groepsmeetups stellen we voor om af te spreken met één persoon uit je Circle: koffie overdag, of een drankje ’s avonds (wat je maar wilt drinken), op een plek en tijd die jullie allebei passen. Optioneel, maar een aanrader: zo voel je je het snelst thuis in de groep. Nee zeggen is altijd prima, en je betaalt je eigen bestelling.',
+  'Two activities included, a meal together, and a week your group plans itself. With one-to-ones in between: optional, but recommended.':
+      'Twee activiteiten inbegrepen, samen eten, en een week die je groep zelf plant. Met één-op-ééntjes ertussen: optioneel, maar een aanrader.',
+  'Other parents': 'Andere ouders',
+  'In a few words (optional)': 'In een paar woorden (optioneel)',
+  'More free time?': 'Meer vrije tijd?',
+  'Add it, and you’ll be matched sooner.':
+      'Voeg het toe, dan word je sneller ingedeeld.',
+  'Add times': 'Tijden toevoegen',
+  'Your Circle sees this card.': 'Je Circle ziet deze kaart.',
+  'Who will I meet?': 'Wie ga ik ontmoeten?',
+  'Five or six adults around Alkmaar, mostly 25–45. Everyone shares a language (English or Dutch) and a regular free time; then we look at interests and what you’re looking for. The same faces come back every week.':
+      'Vijf of zes volwassenen in en rond Alkmaar, meestal 25–45. Iedereen deelt een taal (Engels of Nederlands) en een vaste vrije tijd; daarna kijken we naar interesses en wat je zoekt. Elke week zie je dezelfde gezichten.',
+  'What does it cost?': 'Wat kost het?',
+  '€39 once, for all six weeks. Two activities are included: we book and pay for them. Food and drinks you pay at the venue. No subscription, and no further fee after six weeks.':
+      'Eenmalig €39 voor alle zes weken. Twee activiteiten zijn inbegrepen: die reserveren en betalen wij. Eten en drinken betaal je ter plekke. Geen abonnement, en na zes weken geen verdere kosten.',
+  'A WhatsApp group for your Circle?': 'Een WhatsApp-groep voor je Circle?',
+  'If you like, we’ll make one next to the app. Only people who say yes are added, so your number goes only to them.':
+      'Als je wilt, maken we er een naast de app. Alleen wie ja zegt wordt toegevoegd, dus je nummer gaat alleen naar hen.',
+  'No thanks': 'Nee, dank je',
+  'Yes, add me': 'Ja, voeg me toe',
+  'Your WhatsApp number': 'Je WhatsApp-nummer',
+  'Add me': 'Voeg me toe',
+  'WhatsApp group': 'WhatsApp-groep',
+  'Not joining: {1}': 'Doet niet mee: {1}',
+  'Numbers copied.': 'Nummers gekopieerd.',
+  'Copy numbers': 'Nummers kopiëren',
+  'Create an account': 'Account aanmaken',
+  'How Circles work': 'Zo werken Circles',
+  'Comfortable in both? Pick both: you’ll meet more people.':
+      'Voel je je in allebei thuis? Kies ze allebei: dan ontmoet je meer mensen.',
+  'Tap every time that works (Netherlands time).':
+      'Tik elke tijd aan die past (Nederlandse tijd).',
+  'Weekday daytimes take longer to fill.':
+      'Doordeweeks overdag duurt het langer om een groep te vullen.',
+  'Private: only used for matching.':
+      'Privé: alleen gebruikt voor het indelen.',
+  'Your Circle sees your first name, photo, interests and this line.':
+      'Je Circle ziet je voornaam, foto, interesses en deze zin.',
+  'One time a week can take a long while. Add another to be matched sooner.':
+      'Eén tijd per week kan lang duren. Voeg er nog een toe om sneller ingedeeld te worden.',
+  'One or two more times make it much easier.':
+      'Eén of twee tijden extra maken het een stuk makkelijker.',
+  'Good: more options, a sooner match.':
+      'Goed: meer opties, sneller een groep.',
+  'Plenty of options.': 'Genoeg opties.',
+  'Six meetups, the same five or six people':
+      'Zes meetups, dezelfde vijf of zes mensen',
+  'Two activities included, booked by us':
+      'Twee activiteiten inbegrepen, door ons geboekt',
+  'Pay only once we’ve found your people':
+      'Je betaalt pas als we je mensen hebben gevonden',
+  'No subscription; food and drinks at the venue':
+      'Geen abonnement; eten en drinken ter plekke',
+  'Not the right group? We’ll help': 'Niet de juiste groep? We helpen je',
+  'About three minutes. No payment yet.':
+      'Ongeveer drie minuten. Nog niets betalen.',
+  'People who share your language and a free time. We email you.':
+      'Mensen met jouw taal en een vrije tijd die past. We mailen je.',
+  'Pay €39 within 7 days. Then come the dates, places and the chat.':
+      'Betaal binnen 7 dagen €39. Daarna volgen de data, plekken en de chat.',
+  'More about this': 'Meer hierover',
+  'Optional. Only the organiser sees it, in case they need to reach you quickly. After week 2 you can choose to join a WhatsApp group with your Circle; then the others who join see it too. For example: 06 12345678.':
+      'Optioneel. Alleen de organisator ziet het, voor als die je snel moet bereiken. Na week 2 kun je kiezen of je in een WhatsApp-groep met je Circle wilt; dan zien de anderen in die groep het ook. Bijvoorbeeld: 06 12345678.',
+  'Why we ask': 'Waarom we dit vragen',
+  'Private: never shown to your Circle. We use it only to balance groups, so nobody is the only man or the only woman, and to plan one-to-ones.':
+      'Privé: nooit zichtbaar voor je Circle. We gebruiken het alleen om groepen in balans te houden, zodat niemand de enige man of de enige vrouw is, en om één-op-ééntjes te plannen.',
+  'Private: never shown to your Circle. People who are in a similar moment, like new to the area or back to more free time, often have the same kind of week. It helps us put you together.':
+      'Privé: nooit zichtbaar voor je Circle. Mensen in een vergelijkbare fase, zoals nieuw in de buurt of weer meer vrije tijd, hebben vaak hetzelfde soort week. Zo kunnen we jullie bij elkaar zetten.',
+  'Times for one-to-ones': 'Tijden voor één-op-ééntjes',
+  'Between the group meetups we suggest a coffee or a drink with one person from your Circle: optional, but recommended. We pick a time you’re both free. Rather meet in the daytime? Choose your own times and add a daytime.':
+      'Tussen de groepsmeetups stellen we een koffie of drankje voor met één persoon uit je Circle: optioneel, maar een aanrader. We kiezen een tijd waarop jullie allebei vrij zijn. Liever overdag? Kies je eigen tijden en voeg een tijd overdag toe.',
+  'Same times': 'Dezelfde tijden',
+  'Choose separately': 'Apart kiezen',
+  'None of these work? Tell the organiser':
+      'Past geen van deze? Laat het de organisator weten',
+  'For the organiser': 'Voor de organisator',
+  'When would work for you?': 'Wanneer zou het jou passen?',
+  'e.g. Monday evenings': 'bijv. maandagavond',
+  'The organiser reads this and gets in touch with you.':
+      'De organisator leest dit en neemt contact met je op.',
+  'We already have a group': 'We hebben al een groep',
+  'Already have a group: {1}': 'Hebben al een groep: {1}',
+  'All meetups are in the centre of Alkmaar.':
+      'Alle meetups zijn in het centrum van Alkmaar.',
+  ' to your times': ' naar je tijden',
+  ' to what you like': ' naar wat je leuk vindt',
+  ' to your profile': ' naar je profiel',
+  'None of these work?': 'Past geen van deze?',
+  'Tell the organiser when you’re free':
+      'Laat de organisator weten wanneer je kunt',
+  'Times for one-to-one coffees or drinks':
+      'Tijden voor één-op-één koffie of drankjes',
+  'In the centre of Alkmaar': 'In het centrum van Alkmaar',
+  'No payment now: €39 once, when we’ve found your group':
+      'Nu nog niets betalen: eenmalig €39, als we je groep hebben gevonden',
+  'You go back on the waiting list, keeping your place from the day you applied. More times means a sooner match.':
+      'Je gaat terug op de wachtlijst en houdt je plek vanaf de dag dat je je aanmeldde. Meer tijden betekent sneller een groep.',
 };

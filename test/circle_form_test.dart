@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vriendtime/src/circles/circle_application.dart';
 import 'package:vriendtime/src/circles/circle_home.dart';
+import 'package:vriendtime/src/circles/circle_profile.dart';
 import 'package:vriendtime/src/circles/circle_shell.dart';
 import 'package:vriendtime/src/circles/circle_repository.dart';
 import 'package:vriendtime/src/circles/circle_widgets.dart';
@@ -197,7 +198,7 @@ void main() {
   });
 
   group('choosing times', () {
-    testWidgets('a grid of six days, no Monday, with quick picks',
+    testWidgets('morning, afternoon and evening, the hours said once',
         (tester) async {
       Json? saved;
       await pumpForm(tester,
@@ -206,16 +207,27 @@ void main() {
           initial: {...applicant(), 'availability_slots': {}},
           onSave: (d) => saved = d);
       expect(find.text('Mon'), findsNothing);
-      expect(find.text('10:30'), findsNWidgets(3));
-      expect(find.text('14:00'), findsNWidgets(3));
-      expect(find.text('19:00'), findsNWidgets(5));
+      // The hours in the header, once each.
+      expect(find.text('10:30–12:00', skipOffstage: false), findsOneWidget);
+      expect(find.text('14:00–16:00', skipOffstage: false), findsOneWidget);
+      expect(find.text('19:00–22:00', skipOffstage: false), findsOneWidget);
+      // Tue–Fri mornings, Fri–Sun afternoons, Wed–Sun evenings: 12 to tap.
+      expect(
+          find.byWidgetPredicate(
+              (w) =>
+                  w.key is ValueKey &&
+                  '${(w.key as ValueKey).value}'.startsWith('slot-'),
+              skipOffstage: false),
+          findsNWidgets(12));
 
       final weekends = find.text('Weekends');
       await tester.ensureVisible(weekends);
       await tester.tap(weekends);
       await tester.pumpAndSettle();
-      expect(find.text('14:00 ✓'), findsNWidgets(3));
-      expect(find.text('19:00 ✓'), findsNWidgets(3));
+      expect(find.byIcon(Icons.check_rounded, skipOffstage: false),
+          findsNWidgets(6),
+          reason:
+              'Friday to Sunday afternoons and evenings, not Friday morning');
 
       final save = find.text('Save changes');
       await tester.ensureVisible(save);
@@ -223,17 +235,63 @@ void main() {
       await tester.pumpAndSettle();
       expect((saved!['availability_slots'] as Map)['sat'],
           containsAll(['afternoon', 'evening']));
+      expect((saved!['availability_slots'] as Map)['fri'],
+          isNot(contains('morning')));
+      expect(saved!.containsKey('coffee_slots'), isFalse,
+          reason: 'one-to-ones use the same times unless chosen apart');
     });
 
-    testWidgets('other times alone are enough', (tester) async {
+    testWidgets('one-to-ones can have their own times', (tester) async {
+      Json? saved;
+      await pumpForm(tester,
+          step: 1,
+          focused: true,
+          initial: {
+            ...applicant(),
+            'availability_slots': {
+              'thu': ['evening']
+            }
+          },
+          onSave: (d) => saved = d);
+      final apart = find.text('Choose separately');
+      await tester.ensureVisible(apart);
+      await tester.tap(apart);
+      await tester.pumpAndSettle();
+      // A second grid, starting from the group times.
+      final morning = find.byKey(const ValueKey('slot-tue-morning')).last;
+      await tester.ensureVisible(morning);
+      await tester.tap(morning);
+      await tester.pumpAndSettle();
+      final save = find.text('Save changes');
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      final coffee = saved!['coffee_slots'] as Map;
+      expect(coffee['thu'], contains('evening'));
+      expect(coffee.values.expand((v) => v as List).length, 2);
+      expect((saved!['availability_slots'] as Map).length, 1,
+          reason: 'the group times stay as they were');
+    });
+
+    testWidgets('other times go to the organiser, and are enough',
+        (tester) async {
       Json? saved;
       await pumpForm(tester,
           step: 1,
           focused: true,
           initial: {...applicant(), 'availability_slots': {}},
           onSave: (d) => saved = d);
+      final ask = find.text('None of these work?');
+      await tester.ensureVisible(ask);
+      await tester.tap(ask);
+      await tester.pumpAndSettle();
+      expect(find.text('The organiser reads this and gets in touch with you.'),
+          findsOneWidget);
       await tester.enterText(
           find.byType(TextField).last, 'Mondays after 22:00');
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(find.text('“Mondays after 22:00”'), findsOneWidget);
       final save = find.text('Save changes');
       await tester.ensureVisible(save);
       await tester.tap(save);
@@ -267,8 +325,13 @@ void main() {
   });
 
   group('confirming availability', () {
-    Future<void> pumpWaiting(WidgetTester tester, String? updatedAt) async {
-      tester.view.physicalSize = const Size(390, 1000);
+    Json waiting(String? updatedAt) => {
+          'stage': 'waiting',
+          'application': applicant()..['name'] = 'Asha',
+          if (updatedAt != null) 'application_updated_at': updatedAt,
+        };
+    Future<void> pump(WidgetTester tester, Widget child) async {
+      tester.view.physicalSize = const Size(390, 2400);
       tester.view.devicePixelRatio = 1;
       addTearDown(() {
         tester.view.resetPhysicalSize();
@@ -276,39 +339,53 @@ void main() {
       });
       await tester.pumpWidget(MaterialApp(
           theme: buildTheme(),
-          home: Scaffold(
-              body: SingleChildScrollView(
-                  child: CircleHome(
-                      state: {
-                'stage': 'waiting',
-                'application': applicant()..['name'] = 'Asha',
-                if (updatedAt != null) 'application_updated_at': updatedAt,
-              },
-                      demo: true,
-                      busy: false,
-                      act: (_, [__ = const {}]) async {},
-                      onEdit: (_) {},
-                      onMessages: () {})))));
+          home: Scaffold(body: SingleChildScrollView(child: child))));
       await tester.pumpAndSettle();
     }
 
-    testWidgets('stays off the home screen while times are fresh',
+    Widget profile(String? updatedAt) => CircleProfile(
+        state: waiting(updatedAt),
+        act: (_, [__ = const {}]) async {},
+        onEdit: (_) {},
+        onPhoto: null,
+        onAccount: null,
+        onReport: null,
+        onExport: null,
+        onBookings: null,
+        onSignOut: null);
+
+    testWidgets('Home invites more times, never the times themselves',
         (tester) async {
-      await pumpWaiting(tester,
-          DateTime.now().subtract(const Duration(days: 10)).toIso8601String());
-      expect(find.text('Still free at these times?'), findsNothing);
-      expect(find.text('Yes, these times still work'), findsNothing);
+      await pump(
+          tester,
+          CircleHome(
+              state: waiting(null),
+              demo: true,
+              busy: false,
+              act: (_, [__ = const {}]) async {},
+              onEdit: (_) {},
+              onMessages: () {}));
+      expect(find.text('More free time?'), findsOneWidget);
+      expect(find.text('Yes, still free'), findsNothing);
     });
 
-    testWidgets('comes back once the confirmation is stale', (tester) async {
-      await pumpWaiting(tester,
-          DateTime.now().subtract(const Duration(days: 30)).toIso8601String());
-      expect(find.text('Yes, these times still work'), findsOneWidget);
+    testWidgets('Profile asks again once the confirmation is stale',
+        (tester) async {
+      await pump(
+          tester,
+          profile(DateTime.now()
+              .subtract(const Duration(days: 30))
+              .toIso8601String()));
+      expect(find.text('Yes, still free'), findsOneWidget);
     });
 
-    testWidgets('is offered when nothing was ever confirmed', (tester) async {
-      await pumpWaiting(tester, null);
-      expect(find.text('Yes, these times still work'), findsOneWidget);
+    testWidgets('and not while the times are fresh', (tester) async {
+      await pump(
+          tester,
+          profile(DateTime.now()
+              .subtract(const Duration(days: 10))
+              .toIso8601String()));
+      expect(find.text('Yes, still free'), findsNothing);
     });
   });
 
@@ -363,6 +440,12 @@ void _shellRegression() {
     await tester.pumpWidget(MaterialApp(
         theme: buildTheme(),
         home: CircleShell(session: null, repository: repo)));
+    await tester.pumpAndSettle();
+
+    // The form is one task: no tabs until they step out of it.
+    expect(find.text('Profile'), findsNothing);
+    await tester.ensureVisible(find.text('Save for later'));
+    await tester.tap(find.text('Save for later'));
     await tester.pumpAndSettle();
 
     // Go to Profile and start a focused edit of availability.

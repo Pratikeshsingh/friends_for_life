@@ -1,6 +1,8 @@
 -- The photo and birthday repair only fills empty fields from data that
 -- still exists, and leaves everything else alone. Rolled back.
 begin;
+-- The old flow (meet the group, then pay); pay-first has its own test.
+select set_config('vriendtime.pay_first', 'off', false);
 create function pg_temp.assert_true(value boolean,message text) returns void language plpgsql as $$ begin if value is distinct from true then raise exception 'ASSERTION FAILED: %',message; end if; end; $$;
 insert into auth.users(id,email) values
  ('00000000-0000-0000-0000-000000000001','a@example.test'),

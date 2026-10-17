@@ -65,6 +65,13 @@ class _CircleApplicationState extends State<CircleApplication> {
   late Set<String> languages, interests, goals, lifeContext;
   late Map<String, Set<String>> slots;
   late final TextEditingController otherTimes;
+
+  /// One-to-ones on their own times (often more than the group's).
+  late Map<String, Set<String>> coffeeSlots;
+  bool coffeeSeparate = false;
+
+  /// "Something else": a few words of their own (optional).
+  late final TextEditingController goalsOther, contextOther;
   String? gender;
   DateTime? birthday;
 
@@ -108,7 +115,13 @@ class _CircleApplicationState extends State<CircleApplication> {
     lifeContext =
         strings(d['life_context']).where(circleContexts.contains).toSet();
     slots = circleOfferedSlots(circleSlots(d));
+    coffeeSlots = circleOfferedSlots(
+        circleSlots({'availability_slots': d['coffee_slots'] ?? const {}}));
+    coffeeSeparate = coffeeSlots.isNotEmpty;
     otherTimes = TextEditingController(text: d['other_times'] as String? ?? '');
+    goalsOther = TextEditingController(text: d['goals_other'] as String? ?? '');
+    contextOther =
+        TextEditingController(text: d['life_context_other'] as String? ?? '');
     gender =
         circleGenders.containsKey(d['gender']) ? d['gender'] as String : null;
     style = (((d['energy'] as num?)?.toDouble() ?? 2) / 2).round().clamp(0, 2);
@@ -150,6 +163,8 @@ class _CircleApplicationState extends State<CircleApplication> {
     intro.dispose();
     phone.dispose();
     otherTimes.dispose();
+    goalsOther.dispose();
+    contextOther.dispose();
     super.dispose();
   }
 
@@ -189,12 +204,22 @@ class _CircleApplicationState extends State<CircleApplication> {
           for (final e in currentSlots.entries) e.key: e.value.toList()
         },
         'availability': circleSlotLabels(currentSlots),
+        if (coffeeSeparate &&
+            coffeeSlots.values.any((parts) => parts.isNotEmpty))
+          'coffee_slots': {
+            for (final e in coffeeSlots.entries)
+              if (e.value.isNotEmpty) e.key: e.value.toList()
+          },
         'interests': interests.toList(),
         // The database still requires this field; it now mirrors interests.
         'activities': interests.toList(),
         'energy': style * 2,
         'goals': goals.toList(),
         'life_context': lifeContext.toList(),
+        if (goals.contains('Something else'))
+          'goals_other': goalsOther.text.trim(),
+        if (lifeContext.contains('Something else'))
+          'life_context_other': contextOther.text.trim(),
         'intro': intro.text.trim(),
         'commitment': commitment,
         'phone': normalisePhone(phone.text),
@@ -367,7 +392,7 @@ class _CircleApplicationState extends State<CircleApplication> {
         // On a phone three boxes in one row leave too little room: "30"
         // and the month were cut off. Day and month share a row there,
         // with the year underneath; wider screens keep one row.
-        final oneRow = box.maxWidth >= 380;
+        final oneRow = box.maxWidth >= 250;
         final monthBox = pick<int>(
             'Month',
             bMonth,
@@ -415,6 +440,7 @@ class _CircleApplicationState extends State<CircleApplication> {
     await showDialog<void>(
         context: context,
         builder: (c) => AlertDialog(
+              scrollable: true,
               title: const Text('How your Circle sees you'),
               content: Column(mainAxisSize: MainAxisSize.min, children: [
                 CircleMemberAvatar(capitaliseName(name.text),
@@ -521,51 +547,65 @@ class _CircleApplicationState extends State<CircleApplication> {
             const SizedBox(height: 20),
             _genderChoice(),
             const SizedBox(height: 20),
+            Row(children: [
+              Expanded(child: _label('WhatsApp number (optional)')),
+              const CircleInfoButton('Your WhatsApp number',
+                  'Optional. Only the organiser sees it, in case they need to reach you quickly. After week 2 you can choose to join a WhatsApp group with your Circle; then the others who join see it too. For example: 06 12345678.'),
+            ]),
+            const SizedBox(height: 6),
             TextField(
                 controller: phone,
                 enabled: !busy,
                 maxLength: 20,
                 keyboardType: TextInputType.phone,
                 autofillHints: const [AutofillHints.telephoneNumber],
+                // The why sits behind the ⓘ; the field itself stays plain.
                 decoration: InputDecoration(
-                    labelText: t('WhatsApp number (optional)'),
-                    hintText: t('e.g. 06 12345678'),
-                    helperText: t(
-                        'Only for the organiser, if they need to reach you quickly. Updates come by email and in the app.'),
-                    helperMaxLines: 3,
+                    hintText: '06 12345678',
+                    prefixIcon: const Padding(
+                        padding: EdgeInsets.only(left: 14, right: 8),
+                        child: CircleWhatsAppIcon()),
+                    prefixIconConstraints:
+                        const BoxConstraints(minWidth: 0, minHeight: 0),
                     counterText: '')),
             const SizedBox(height: 20),
-            const Row(children: [
-              Icon(Icons.place_outlined, size: 18, color: circleTeal),
-              SizedBox(width: 8),
-              Expanded(
-                  child: Text('Circles meet in Alkmaar.',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700, color: circleNavy))),
-            ]),
-            const SizedBox(height: 24),
             _choices('Which languages are you happy to talk in?',
                 circleLanguages, languages),
             const SizedBox(height: 10),
             const Text(
-                'Pick every language you’re comfortable chatting in, not just your first one. Comfortable in both? Pick both: you’ll meet more people, locals and newcomers alike.',
+                'Comfortable in both? Pick both: you’ll meet more people.',
                 style: TextStyle(fontSize: 12)),
           ],
           if (step == 1) ...[
             _label('When are you free?'),
             const SizedBox(height: 4),
-            const Text('Tap every time that works. Netherlands time.',
+            const Text('Tap every time that works (Netherlands time).',
                 style: TextStyle(fontSize: 13, color: Color(0xFF4F5D66))),
-            const SizedBox(height: 12),
-            _slotGrid(),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
+            const Row(children: [
+              Icon(Icons.place_outlined, size: 17, color: circleTeal),
+              SizedBox(width: 6),
+              Expanded(
+                  child: Text('All meetups are in the centre of Alkmaar.',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: circleNavy))),
+            ]),
+            const SizedBox(height: 14),
+            _slotGrid(slots),
+            const SizedBox(height: 6),
             Wrap(spacing: 4, children: [
               TextButton(
                   onPressed: busy
                       ? null
                       : () => setState(() {
-                            for (final day in circleSlotGrid.keys) {
-                              slots.putIfAbsent(day, () => {}).add('evening');
+                            for (final e in circleSlotGrid.entries) {
+                              if (e.value.contains('evening')) {
+                                slots
+                                    .putIfAbsent(e.key, () => {})
+                                    .add('evening');
+                              }
                             }
                           }),
                   child: const Text('All evenings')),
@@ -573,10 +613,12 @@ class _CircleApplicationState extends State<CircleApplication> {
                   onPressed: busy
                       ? null
                       : () => setState(() {
+                            // Friday to Sunday afternoons and evenings
+                            // (not Friday morning: that's a weekday).
                             for (final day in ['fri', 'sat', 'sun']) {
-                              slots
-                                  .putIfAbsent(day, () => {})
-                                  .addAll(circleSlotGrid[day]!);
+                              slots.putIfAbsent(day, () => {}).addAll(
+                                  circleSlotGrid[day]!
+                                      .where((p) => p != 'morning'));
                             }
                           }),
                   child: const Text('Weekends')),
@@ -584,39 +626,58 @@ class _CircleApplicationState extends State<CircleApplication> {
                   onPressed: busy ? null : () => setState(slots.clear),
                   child: const Text('Clear')),
             ]),
-            const SizedBox(height: 8),
-            const Text(
-                'Fewer people choose weekday daytimes, so finding a group for those can take longer.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF66727C))),
-            const SizedBox(height: 16),
             if (currentSlots.isNotEmpty) ...[
+              const SizedBox(height: 8),
               _MatchChance(
                   slots: currentSlots.values.fold(0, (n, v) => n + v.length)),
-              const SizedBox(height: 16),
             ],
-            TextField(
-                controller: otherTimes,
-                enabled: !busy,
-                maxLength: 300,
-                minLines: 1,
-                maxLines: 3,
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                    labelText: t('None of these work? Tell us your times'),
-                    hintText: t('e.g. Monday evenings after 22:00'),
-                    helperText: t(
-                        'Optional. If enough people need the same time, we add it.'),
-                    helperMaxLines: 2)),
             const SizedBox(height: 12),
-            const CirclePill('You approve the exact schedule before joining',
-                icon: Icons.check_circle_outline),
+            // Times we don't run yet go to the organiser, who gets in touch:
+            // a free-text time can't be matched automatically.
+            _otherTimesRow(),
+            const Divider(height: 36),
+            // One-to-ones: the same times, or their own (often more).
+            Row(children: [
+              Expanded(child: _label('Times for one-to-one coffees or drinks')),
+              const CircleInfoButton('One-to-ones',
+                  'Between the group meetups we suggest a coffee or a drink with one person from your Circle: optional, but recommended. We pick a time you’re both free. Rather meet in the daytime? Choose your own times and add a daytime.'),
+            ]),
+            const SizedBox(height: 8),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              ChoiceChip(
+                  label: const Text('Same times'),
+                  selected: !coffeeSeparate,
+                  onSelected: busy
+                      ? null
+                      : (_) => setState(() => coffeeSeparate = false)),
+              ChoiceChip(
+                  label: const Text('Choose separately'),
+                  selected: coffeeSeparate,
+                  onSelected: busy
+                      ? null
+                      : (_) => setState(() {
+                            coffeeSeparate = true;
+                            // Start from the group times, to add to.
+                            if (coffeeSlots.isEmpty) {
+                              for (final e in slots.entries) {
+                                coffeeSlots[e.key] = {...e.value};
+                              }
+                            }
+                          })),
+            ]),
+            if (coffeeSeparate) ...[
+              const SizedBox(height: 14),
+              _slotGrid(coffeeSlots),
+            ],
           ],
           if (step == 2) ...[
             // One question. "A plan you'd say yes to" used to follow, but
             // matching already treated both lists as one, so it only made
             // the form longer.
             _interestPicker(),
-            const SizedBox(height: 24),
+            // Each question its own block, so the step reads as three
+            // short questions rather than one long list.
+            const Divider(height: 48),
             _label('At a new table, I’m usually…'),
             const SizedBox(height: 12),
             for (var i = 0; i < 3; i++)
@@ -659,11 +720,9 @@ class _CircleApplicationState extends State<CircleApplication> {
                                   const Icon(Icons.check_circle,
                                       color: circleTeal, size: 20)
                               ]))))),
-            const SizedBox(height: 20),
+            const Divider(height: 40),
             _choices('I’d love to find…', circleGoals, goals),
-            const SizedBox(height: 10),
-            const Text('So your group wants the same kind of friendship.',
-                style: TextStyle(fontSize: 13, color: Color(0xFF4F5D66))),
+            if (goals.contains('Something else')) _otherNote(goalsOther),
             const SizedBox(height: 20),
             // This was hidden behind a collapsed "(optional)" disclosure,
             // which is why almost nobody filled it in — and it is one of the
@@ -688,12 +747,11 @@ class _CircleApplicationState extends State<CircleApplication> {
                               color: Color(0xFF66727C))),
                       const SizedBox(height: 6),
                       _choices(
-                          'What brings you here?', circleContexts, lifeContext),
-                      const SizedBox(height: 10),
-                      const Text(
-                          'Private. Never shown to your Circle. We use it to put you with people in a similar moment.',
-                          style: TextStyle(
-                              fontSize: 13, color: Color(0xFF4F5D66))),
+                          'What brings you here?', circleContexts, lifeContext,
+                          info: const CircleInfoButton('Why we ask',
+                              'Private: never shown to your Circle. People who are in a similar moment, like new to the area or back to more free time, often have the same kind of week. It helps us put you together.')),
+                      if (lifeContext.contains('Something else'))
+                        _otherNote(contextOther),
                     ])),
           ],
           if (step == 3) ...[
@@ -704,13 +762,36 @@ class _CircleApplicationState extends State<CircleApplication> {
                   label: photoUrl == null
                       ? null
                       : 'See how your photo looks to your Circle',
-                  child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: photoUrl == null ? null : _previewPhoto,
-                      child: CircleMemberAvatar(capitaliseName(name.text),
-                          radius: 48,
-                          photoUrl: photoUrl,
-                          photoPath: photoPath))),
+                  // The portrait leads, with its own camera badge.
+                  child: Stack(clipBehavior: Clip.none, children: [
+                    InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: photoUrl == null ? null : _previewPhoto,
+                        child: CircleMemberAvatar(capitaliseName(name.text),
+                            radius: 48,
+                            photoUrl: photoUrl,
+                            photoPath: photoPath)),
+                    if (widget.onPhoto != null)
+                      Positioned(
+                          right: -2,
+                          bottom: -2,
+                          child: Material(
+                              color: circleNavy,
+                              shape: const CircleBorder(
+                                  side: BorderSide(
+                                      color: Colors.white, width: 3)),
+                              child: IconButton(
+                                  tooltip: t(photoPath == null
+                                      ? 'Add a clear photo'
+                                      : 'Change photo'),
+                                  onPressed: busy ? null : choosePhoto,
+                                  iconSize: 18,
+                                  constraints: const BoxConstraints.tightFor(
+                                      width: 38, height: 38),
+                                  padding: EdgeInsets.zero,
+                                  icon: const Icon(Icons.photo_camera_rounded,
+                                      color: Colors.white)))),
+                  ])),
               const SizedBox(height: 10),
               Text(capitaliseName(name.text),
                   style: Theme.of(context).textTheme.headlineSmall),
@@ -741,7 +822,7 @@ class _CircleApplicationState extends State<CircleApplication> {
             ]),
             const SizedBox(height: 16),
             const Text(
-                'Your Circle sees your first name, photo, interests and this line. The photo helps people recognise you; it isn’t an ID check.',
+                'Your Circle sees your first name, photo, interests and this line.',
                 style: TextStyle(fontSize: 13, color: Color(0xFF4F5D66))),
             const SizedBox(height: 24),
             _CommitmentCard(
@@ -766,13 +847,23 @@ class _CircleApplicationState extends State<CircleApplication> {
               width: double.infinity,
               child: ElevatedButton(
                   onPressed: busy ? null : () => next(),
-                  child: Text(busy
-                      ? 'Saving your answers…'
+                  child: busy
+                      ? const Text('Saving your answers…')
                       : widget.focusedEdit
-                          ? 'Save changes'
+                          ? const Text('Save changes')
                           : step == 3
-                              ? 'Find my Circle'
-                              : 'Continue'))),
+                              ? const Text('Find my Circle')
+                              // "Continue" plus where it leads.
+                              : Wrap(
+                                  alignment: WrapAlignment.center,
+                                  children: [
+                                      const Text('Continue'),
+                                      Text([
+                                        ' to your times',
+                                        ' to what you like',
+                                        ' to your profile'
+                                      ][step]),
+                                    ]))),
           const SizedBox(height: 4),
           // A focused edit has one way out that isn't saving: discard. The
           // first run instead offers Back and a way to stop without losing
@@ -823,8 +914,10 @@ class _CircleApplicationState extends State<CircleApplication> {
     return periods.length == 1 ? periods.first : null;
   }
 
+  /// A question's heading: clearly larger than the options under it.
   Widget _label(String value) => Text(value,
-      style: const TextStyle(fontWeight: FontWeight.w800, color: circleNavy));
+      style: const TextStyle(
+          fontSize: 17, fontWeight: FontWeight.w800, color: circleNavy));
 
   /// Up to five interests from a grouped list. One group is open at a time,
   /// so the long list stays a short page; what is chosen sits on top.
@@ -864,9 +957,12 @@ class _CircleApplicationState extends State<CircleApplication> {
                 onExpansionChanged: (open) {
                   if (open) openInterestGroup = group.key;
                 },
+                // A category, quieter than the question above it.
                 title: Text(group.key,
                     style: const TextStyle(
-                        fontWeight: FontWeight.w700, color: circleNavy)),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2E4A63))),
                 subtitle: () {
                   final n = group.value.where(interests.contains).length;
                   return n == 0
@@ -892,11 +988,51 @@ class _CircleApplicationState extends State<CircleApplication> {
     ]);
   }
 
-  /// Six days, two slots each: one compact table, every cell a big button.
-  Widget _slotGrid() {
+  /// Morning, afternoon and evening across six days: the hours once, in
+  /// the header; every cell a big ＋ that turns into a ✓. A time we don't
+  /// run is a faint dot, so every row lines up (Friday has all three).
+  Widget _slotGrid(Map<String, Set<String>> target) {
+    const icons = {
+      'morning': Icons.wb_twilight_rounded,
+      'afternoon': Icons.wb_sunny_outlined,
+      'evening': Icons.nights_stay_outlined,
+    };
+    const names = {
+      'morning': 'Morning',
+      'afternoon': 'Afternoon',
+      'evening': 'Evening',
+    };
+    Widget header(String part) => Expanded(
+            child: Column(children: [
+          Icon(icons[part], size: 18, color: circleTeal),
+          const SizedBox(height: 2),
+          FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(t(names[part]!),
+                  style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: circleNavy))),
+          FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(circleSlotHours(part),
+                  style:
+                      const TextStyle(fontSize: 11, color: Color(0xFF66727C)))),
+        ]));
     Widget cell(String day, String part) {
-      final on = slots[day]?.contains(part) == true;
-      final label = circleSlotStart[part]!;
+      if (circleSlotGrid[day]?.contains(part) != true) {
+        return Expanded(
+            child: SizedBox(
+                height: 46,
+                child: Center(
+                    child: Container(
+                        width: 5,
+                        height: 5,
+                        decoration: const BoxDecoration(
+                            color: Color(0xFFDCD6CC),
+                            shape: BoxShape.circle)))));
+      }
+      final on = target[day]?.contains(part) == true;
       return Expanded(
           child: Padding(
               padding: const EdgeInsets.all(3),
@@ -904,72 +1040,154 @@ class _CircleApplicationState extends State<CircleApplication> {
                   selected: on,
                   button: true,
                   label:
-                      '${t(circleDays[circleDayKeys.indexOf(day)])} ${t(part)} $label',
-                  child: SizedBox(
-                      height: 44,
-                      child: TextButton(
-                          style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              backgroundColor:
-                                  on ? circleTeal : const Color(0xFFF7F5EF),
-                              foregroundColor: on ? Colors.white : circleNavy,
+                      '${t(circleDays[circleDayKeys.indexOf(day)])} ${t(part)} ${circleSlotHours(part)}',
+                  child: ExcludeSemantics(
+                      child: SizedBox(
+                          height: 46,
+                          key: ValueKey('slot-$day-$part'),
+                          child: Material(
+                              color: on ? circleTeal : Colors.white,
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12))),
-                          onPressed: busy
-                              ? null
-                              : () => setState(() {
-                                    final set =
-                                        slots.putIfAbsent(day, () => {});
-                                    if (!set.remove(part)) set.add(part);
-                                  }),
-                          child: Text(on ? '$label ✓' : label,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w700)))))));
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(
+                                      color: on
+                                          ? circleTeal
+                                          : const Color(0xFFD5DEDA))),
+                              child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: busy
+                                      ? null
+                                      : () => setState(() {
+                                            final set = target.putIfAbsent(
+                                                day, () => {});
+                                            if (!set.remove(part)) {
+                                              set.add(part);
+                                            }
+                                          }),
+                                  // Empty until chosen, then a tick.
+                                  child: on
+                                      ? const Icon(Icons.check_rounded,
+                                          size: 22, color: Colors.white)
+                                      : null)))))));
     }
 
     return Column(children: [
       Row(children: [
-        const SizedBox(width: 52),
-        Expanded(
-            child: Text(t('Daytime'),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.w700))),
-        Expanded(
-            child: Text(t('Evening'),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.w700))),
+        const SizedBox(width: 48),
+        for (final part in circlePeriods) header(part),
       ]),
-      for (final e in circleSlotGrid.entries)
+      const SizedBox(height: 6),
+      for (final day in circleSlotGrid.keys)
         Row(children: [
           SizedBox(
-              width: 52,
+              width: 48,
               child: Text(
-                  t(circleDays[circleDayKeys.indexOf(e.key)]).substring(0, 3),
+                  t(circleDays[circleDayKeys.indexOf(day)]).substring(0, 3),
                   style: const TextStyle(
                       fontWeight: FontWeight.w700, color: circleNavy))),
-          for (final column in ['day', 'evening'])
-            if (e.value
-                    .where((p) => (p == 'evening') == (column == 'evening'))
-                    .firstOrNull
-                case final String part)
-              cell(e.key, part)
-            else
-              const Expanded(child: SizedBox()),
+          for (final part in circlePeriods) cell(day, part),
         ]),
     ]);
   }
 
-  /// Private, for balanced groups only.
+  /// "None of these work?": a note to the organiser, who gets in touch.
+  Widget _otherTimesRow() {
+    final note = otherTimes.text.trim();
+    if (note.isEmpty) {
+      return Material(
+          color: const Color(0xFFF2EFE8),
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: busy ? null : _otherTimesDialog,
+              child: const Padding(
+                  padding: EdgeInsets.fromLTRB(14, 12, 10, 12),
+                  child: Row(children: [
+                    Icon(Icons.schedule_rounded,
+                        size: 20, color: Color(0xFF4F5D66)),
+                    SizedBox(width: 10),
+                    Expanded(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                          Text('None of these work?',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: circleNavy)),
+                          Text('Tell the organiser when you’re free',
+                              style: TextStyle(
+                                  fontSize: 12.5, color: Color(0xFF4F5D66))),
+                        ])),
+                    Icon(Icons.chevron_right_rounded, color: Color(0xFF66727C)),
+                  ]))));
+    }
+    return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+        decoration: BoxDecoration(
+            color: const Color(0xFFF2EFE8),
+            borderRadius: BorderRadius.circular(14)),
+        child: Row(children: [
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                const Text('For the organiser',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: circleTealText)),
+                const SizedBox(height: 2),
+                Text('“$note”'),
+              ])),
+          TextButton(
+              onPressed: busy ? null : _otherTimesDialog,
+              child: const Text('Change')),
+        ]));
+  }
+
+  Future<void> _otherTimesDialog() async {
+    final box = TextEditingController(text: otherTimes.text);
+    final result = await showDialog<String>(
+        context: context,
+        builder: (c) => AlertDialog(
+                scrollable: true,
+                title: const Text('When would work for you?'),
+                content: Column(mainAxisSize: MainAxisSize.min, children: [
+                  TextField(
+                      controller: box,
+                      autofocus: true,
+                      maxLength: 300,
+                      minLines: 2,
+                      maxLines: 4,
+                      decoration:
+                          InputDecoration(hintText: t('e.g. Monday evenings'))),
+                  const Text(
+                      'The organiser reads this and gets in touch with you.',
+                      style: TextStyle(fontSize: 13, color: Color(0xFF4F5D66))),
+                ]),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(c),
+                      child: const Text('Cancel')),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(c, box.text.trim()),
+                      child: const Text('Save')),
+                ]));
+    // After the dialog has finished closing, not while it animates out.
+    Future.delayed(const Duration(milliseconds: 500), box.dispose);
+    if (result != null && mounted) setState(() => otherTimes.text = result);
+  }
+
+  /// Private: for balanced groups, and for when one-to-one coffees happen.
   Widget _genderChoice() =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _label('How do you describe yourself?'),
-        const SizedBox(height: 4),
-        const Text(
-            'Private. We only use it to help balance groups, so we try to avoid anyone being the only man or the only woman.',
-            style: TextStyle(fontSize: 12, color: Color(0xFF66727C))),
-        const SizedBox(height: 10),
+        Row(children: [
+          Expanded(child: _label('How do you describe yourself?')),
+          const CircleInfoButton('Why we ask',
+              'Private: never shown to your Circle. We use it only to balance groups, so nobody is the only man or the only woman, and to plan one-to-ones.'),
+        ]),
+        const SizedBox(height: 6),
         Wrap(spacing: 8, runSpacing: 8, children: [
           for (final e in circleGenders.entries)
             ChoiceChip(
@@ -980,9 +1198,27 @@ class _CircleApplicationState extends State<CircleApplication> {
         ]),
       ]);
 
-  Widget _choices(String label, List<String> options, Set<String> selected) =>
+  /// A few words for "Something else", optional, kept short.
+  Widget _otherNote(TextEditingController controller) => Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: TextField(
+          controller: controller,
+          enabled: !busy,
+          maxLength: 80,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+              labelText: t('In a few words (optional)'), counterText: '')));
+
+  Widget _choices(String label, List<String> options, Set<String> selected,
+          {Widget? info}) =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (label.isNotEmpty) ...[_label(label), const SizedBox(height: 12)],
+        if (label.isNotEmpty) ...[
+          Row(children: [
+            Expanded(child: _label(label)),
+            if (info != null) info,
+          ]),
+          SizedBox(height: info == null ? 12 : 4),
+        ],
         Wrap(spacing: 8, runSpacing: 8, children: [
           for (final value in options)
             FilterChip(
@@ -1014,12 +1250,12 @@ class _CommitmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const peach = Color(0xFFF8DDCD);
+    const cream = Color(0xFFF8F5EE);
     return Semantics(
       checked: checked,
       label: t('I can make time for one meetup a week for six weeks'),
       child: Material(
-        color: checked ? const Color(0xFFE4F0EB) : peach,
+        color: checked ? const Color(0xFFE4F0EB) : cream,
         borderRadius: BorderRadius.circular(22),
         child: InkWell(
           borderRadius: BorderRadius.circular(22),
@@ -1070,8 +1306,8 @@ class _CommitmentCard extends StatelessWidget {
                         : 'One $period a week.\nThe same five or six people.',
                     style: Theme.of(context)
                         .textTheme
-                        .headlineSmall
-                        ?.copyWith(height: 1.25)),
+                        .titleLarge
+                        ?.copyWith(height: 1.3)),
                 const SizedBox(height: 14),
                 Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   // A plain icon rather than a Checkbox: the whole card is
@@ -1097,9 +1333,30 @@ class _CommitmentCard extends StatelessWidget {
                 const SizedBox(height: 14),
                 const Divider(height: 1, color: Color(0x22062B55)),
                 const SizedBox(height: 12),
-                const Text(
-                    'No payment now. €19 once, only if you accept a Circle. Food, drinks and tickets are paid at the venue.',
-                    style: TextStyle(fontSize: 12, height: 1.45)),
+                // What they're agreeing to, at a glance.
+                for (final (icon, line) in const [
+                  (Icons.place_outlined, 'In the centre of Alkmaar'),
+                  (Icons.redeem_outlined, 'Two activities included'),
+                  (
+                    Icons.euro_rounded,
+                    'No payment now: €39 once, when we’ve found your group'
+                  ),
+                ])
+                  Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(icon, size: 19, color: circleTeal),
+                            const SizedBox(width: 10),
+                            Expanded(
+                                child: Text(line,
+                                    style: const TextStyle(
+                                        fontSize: 14.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: circleNavy,
+                                        height: 1.35))),
+                          ])),
               ],
             ),
           ),
@@ -1128,24 +1385,16 @@ class _MatchChance extends StatelessWidget {
     final (label, hint, color) = switch (level) {
       0 => (
           'Just one time',
-          'With one time a week, finding five or six people who are all free then can take a long while. Add another day or time to be matched sooner.',
+          'One time a week can take a long while. Add another to be matched sooner.',
           circleCoral
         ),
       1 => (
           'A little flexible',
-          'Adding one or two more days or times makes it much easier to find your group.',
+          'One or two more times make it much easier.',
           const Color(0xFFE0A63A)
         ),
-      2 => (
-          'Flexible',
-          'Good choice. More options means we can match you sooner.',
-          circleTeal
-        ),
-      _ => (
-          'Very flexible',
-          'Plenty of options. We can match you as soon as a group fits.',
-          circleTeal
-        ),
+      2 => ('Flexible', 'Good: more options, a sooner match.', circleTeal),
+      _ => ('Very flexible', 'Plenty of options.', circleTeal),
     };
     return Semantics(
         label: '${t('Your flexibility')}: ${t(label)}',

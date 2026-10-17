@@ -149,9 +149,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                       () =>
                                           _obscurePassword = !_obscurePassword,
                                     ),
-                                    tooltip: _obscurePassword
+                                    tooltip: t(_obscurePassword
                                         ? 'Show password'
-                                        : 'Hide password',
+                                        : 'Hide password'),
                                     icon: Icon(
                                       _obscurePassword
                                           ? Icons.visibility_off_outlined
@@ -172,9 +172,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                       () => _obscureConfirmPassword =
                                           !_obscureConfirmPassword,
                                     ),
-                                    tooltip: _obscureConfirmPassword
+                                    tooltip: t(_obscureConfirmPassword
                                         ? 'Show password'
-                                        : 'Hide password',
+                                        : 'Hide password'),
                                     icon: Icon(
                                       _obscureConfirmPassword
                                           ? Icons.visibility_off_outlined

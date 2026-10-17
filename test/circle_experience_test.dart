@@ -28,7 +28,7 @@ void main() {
   test(
       'preview invitation, attendance, private check-in and graduation survive reload',
       () async {
-    await repository.act('preview', {'stage': 'invited'});
+    await repository.act('preview', {'stage': 'invited', 'pay_first': false});
     await repository.act('join');
     final first = rows((await repository.load())['meetups']).first;
     await repository.act('rsvp', {'id': first['id'], 'going': true});
@@ -125,7 +125,7 @@ void main() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
     });
-    await repository.act('preview', {'stage': 'invited'});
+    await repository.act('preview', {'stage': 'invited', 'pay_first': false});
     await tester.pumpWidget(MaterialApp(
         theme: buildTheme(),
         home: CircleShell(session: null, repository: repository)));

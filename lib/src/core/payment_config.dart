@@ -1,4 +1,4 @@
-/// Where a member pays the one-off €19 programme fee.
+/// Where a member pays the one-off €39 programme fee.
 ///
 /// The organiser sets a payment link per Circle (for example a Tikkie) in the
 /// organiser panel. The app opens it, the member pays with iDEAL, and the

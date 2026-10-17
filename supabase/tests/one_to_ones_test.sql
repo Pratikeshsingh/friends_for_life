@@ -1,5 +1,7 @@
 -- One-to-one coffees: rounds, answers, nudges, swaps, free weeks, the tracker.
 begin;
+-- The old flow (meet the group, then pay); pay-first has its own test.
+select set_config('vriendtime.pay_first', 'off', false);
 create function pg_temp.assert_true(value boolean,message text) returns void language plpgsql as $$ begin if value is distinct from true then raise exception 'ASSERTION FAILED: %',message; end if; end; $$;
 create function pg_temp.refused(sql text) returns boolean language plpgsql as $$ begin execute sql; return false; exception when others then return true; end; $$;
 insert into auth.users(id,email,raw_user_meta_data)
@@ -62,8 +64,11 @@ select public.circle_action('coffee_answer',jsonb_build_object('id',(select id f
 reset role;
 select pg_temp.assert_true((select count(*) from public.notifications where title like 'You’re meeting %')=2,'both hear it is on');
 
--- Half a day later: one nudge to each "no".
+-- Half a day later: one nudge to each "no". Nudges only go out more than
+-- 12 hours before the coffee; tomorrow's 10:30 is closer than that late in
+-- the evening, so the two coffees move two days on (same daytime hour).
 update public.circle_coffees set answered_at=now()-interval '13 hours';
+update public.circle_coffees set starts_at=starts_at+interval '2 days' where id in (select id from pairs where n in (2,3));
 select public.queue_circle_coffees();
 select public.queue_circle_coffees();
 select pg_temp.assert_true((select count(*) from public.notifications where title like '% would love to meet')=2,'one nudge per no');

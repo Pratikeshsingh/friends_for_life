@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
-import '../core/i18n.dart' show isDutch;
+import '../core/i18n.dart' show isDutch, t;
 import '../core/profile_photo_service.dart';
 import 'circle_preferences.dart' show circleDays;
 
@@ -19,51 +19,212 @@ String circleRequestId() {
 }
 
 /// The six weeks, told the same way everywhere: landing page, invitation,
-/// the weekly plan and the organiser panel. The database creates meetups
-/// with these same titles (see supabase/migrations/20261002_flexible_week_themes.sql).
+/// the weekly plan and the organiser panel. Afternoon and evening Circles
+/// share one plan; morning Circles meet in cafés and get their own. Weeks 2
+/// and 4 are included in the fee; week 5 is the group's own.
 const circleWeekTitles = [
-  'A meal together',
-  'Go beyond “what do you do?”',
+  'Hello, new faces',
   'Find out who’s secretly competitive',
-  'Something new together',
-  'A plan of your own',
-  'One last get-together',
+  'Go beyond “what do you do?”',
+  'The rematch',
+  'Your call',
+  'Graduation: a new beginning',
+];
+
+/// The same six weeks for morning Circles.
+const circleMorningWeekTitles = [
+  'Hello, new faces',
+  'Find out who’s secretly competitive',
+  'Go beyond “what do you do?”',
+  'Say cheese',
+  'Your call',
+  'Graduation: a new beginning',
 ];
 
 /// Kept for older call sites: the meetup titles are the week titles.
 const circleActivities = circleWeekTitles;
 
+/// The weeks whose activity is paid for by the fee (1–6).
+const circleIncludedWeeks = {2, 4};
+
 /// One short line per week, for the six-week timeline.
 const circleWeekShort = [
-  'A first meal together to meet everyone.',
-  'A relaxed catch-up over coffee, a drink, or a walk. Less introducing yourself, more getting to know each other.',
-  'Games, a quiz, or a playful challenge. An easy way to loosen up together.',
-  'Bowling, board games or something new. We plan this one too.',
-  'We suggest a plan; change it together if you like.',
-  'A last get-together, then your group carries on. No further VriendTime fee.',
+  'A relaxed first drink or coffee to meet everyone.',
+  'A playful challenge to break the ice.',
+  'A long meal together, now that you know each other.',
+  'A second challenge. Who wins this time?',
+  'Your group picks the plan, the place and the time.',
+  'Celebrate six weeks together. Then your group carries on, with no further VriendTime fee.',
+];
+
+/// The timeline's lines for morning Circles.
+const circleMorningWeekShort = [
+  'A relaxed first coffee to meet everyone.',
+  'A playful challenge to break the ice.',
+  'A shared brunch, now that you know each other.',
+  'Something to discover together, indoors.',
+  'Your group picks the plan, the place and the time.',
+  'A celebration brunch. Then your group carries on, with no further VriendTime fee.',
 ];
 
 /// The fuller description, on each week's card.
 const circleWeekNotes = [
-  'A first meal together, about two hours. We book the table; you pay the restaurant yourself. Leaving early is always fine, but the first meetup is the one worth staying for.',
-  'A relaxed catch-up over coffee, a drink, or a walk. Less introducing yourself, more getting to know each other.',
-  'Games, a quiz, or a playful challenge. An easy way to loosen up together.',
-  'Something new together. We plan this one too.',
-  'We suggest a plan for this week. Your group can change it together.',
-  'We suggest a plan for your last week. Change it together, and keep the good thing going.',
+  'Everyone is new here, so it’s an easy start: a drink or a coffee and a first chat. Leaving early is fine, but the first meetup is the one worth staying for.',
+  'A playful challenge to break the ice. It’s included in your fee: just show up.',
+  'A long meal together. We book the table; you pay for your own food and drinks.',
+  'A second challenge, also included in your fee. Who wins this time?',
+  'Your group’s week: talk it over in the chat, choose what to do, where and the start time, then save it with “Plan it together”.',
+  'Your graduation: we book the table to celebrate six weeks together. You pay for yourself, and your group carries on afterwards with no further VriendTime fee.',
 ];
 
-/// Older snapshots may still carry the original programme defaults.
-/// Custom activity titles chosen by organisers are preserved.
-String circleMeetupTitle(Json meetup) {
-  final title = meetup['title'] as String;
-  if (meetup['week'] == 2 && title == 'Bowling together') {
-    return circleWeekTitles[1];
-  }
-  if (meetup['week'] == 3 && title == 'A walk & a warm drink') {
-    return circleWeekTitles[2];
-  }
-  return title;
+/// The fuller description for morning Circles.
+const circleMorningWeekNotes = [
+  'Everyone is new here, so it’s an easy start: a coffee and a first chat. Leaving early is fine, but the first meetup is the one worth staying for.',
+  'A playful challenge to break the ice. It’s included in your fee: just show up.',
+  'A shared brunch together. We book the table; you pay for your own.',
+  'Something to discover together, indoors. It’s included in your fee.',
+  'Your group’s week: talk it over in the chat, choose what to do, where and the start time, then save it with “Plan it together”.',
+  'Your graduation: we book the table for a celebration brunch. You pay for yourself, and your group carries on afterwards with no further VriendTime fee.',
+];
+
+typedef _DemoWeek = ({
+  String time,
+  String? venue,
+  String? address,
+  String cost
+});
+
+/// The plans as the database has them (20261035), for the demo.
+const List<_DemoWeek> _demoEvening = [
+  (
+    time: '20:00',
+    venue: '1480 Foodbar',
+    address: 'Mient 16',
+    cost: 'You pay for your own drinks.'
+  ),
+  (
+    time: '20:00',
+    venue: 'The Boules Club',
+    address: 'Noorderkade 108',
+    cost:
+        'Included in your fee: we book and pay for the court. Drinks are on you.'
+  ),
+  (
+    time: '19:00',
+    venue: 'Rozey Alkmaar',
+    address: 'Gedempte Nieuwesloot 4B',
+    cost:
+        'About €38 per person, or €43 from Friday to Sunday: dinner and drinks, all you can eat.'
+  ),
+  (
+    time: '20:00',
+    venue: 'The Hangout',
+    address: 'Kwakelkade 10',
+    cost:
+        'Included in your fee: we book and pay for the game. Drinks are on you.'
+  ),
+  (time: '20:00', venue: null, address: null, cost: 'Up to your group.'),
+  (
+    time: '20:00',
+    venue: 'Hofman',
+    address: 'Kerkplein 7',
+    cost:
+        'Drinks and sharing bites, about €15–20 per person. You pay for yourself.'
+  ),
+];
+const List<_DemoWeek> _demoAfternoon = [
+  (
+    time: '14:00',
+    venue: 'Grand Café Klunder',
+    address: 'Canadaplein 2',
+    cost: 'You pay for your own coffee or drinks.'
+  ),
+  (
+    time: '14:00',
+    venue: 'De Spellentoren',
+    address: 'Schoutenstraat 28',
+    cost:
+        'Included in your fee: entry to the board-game room. Drinks are on you.'
+  ),
+  (
+    time: '14:00',
+    venue: 'Rozey Alkmaar',
+    address: 'Gedempte Nieuwesloot 4B',
+    cost: 'About €35 per person: lunch and drinks, all you can eat.'
+  ),
+  (
+    time: '14:00',
+    venue: 'The Hangout',
+    address: 'Kwakelkade 10',
+    cost:
+        'Included in your fee: we book and pay for the game. Drinks are on you.'
+  ),
+  (time: '14:00', venue: null, address: null, cost: 'Up to your group.'),
+  (
+    time: '14:00',
+    venue: 'Hofman',
+    address: 'Kerkplein 7',
+    cost:
+        'Drinks and sharing bites, about €15–20 per person. You pay for yourself.'
+  ),
+];
+const List<_DemoWeek> _demoMorning = [
+  (
+    time: '10:30',
+    venue: 'Grand Café Klunder',
+    address: 'Canadaplein 2',
+    cost: 'You pay for your own coffee.'
+  ),
+  (
+    time: '10:30',
+    venue: 'De Spellentoren',
+    address: 'Schoutenstraat 28',
+    cost:
+        'Included in your fee: entry to the board-game room. Coffee is on you.'
+  ),
+  (
+    time: '10:30',
+    venue: 'Soepp',
+    address: 'Hekelstraat 31',
+    cost: 'A shared brunch, about €25 per person. You pay for yourself.'
+  ),
+  (
+    time: '10:30',
+    venue: 'Hollands Kaasmuseum',
+    address: 'Waagplein 2',
+    cost: 'Included in your fee: your museum tickets.'
+  ),
+  (time: '10:30', venue: null, address: null, cost: 'Up to your group.'),
+  (
+    time: '10:30',
+    venue: 'Hofman',
+    address: 'Kerkplein 7',
+    cost: 'Brunch, about €15–20 per person. You pay for yourself.'
+  ),
+];
+
+/// A meetup's title as saved; organisers' own titles are kept.
+String circleMeetupTitle(Json meetup) => '${meetup['title'] ?? ''}';
+
+/// The hour a meetup starts, Netherlands time.
+int circleMeetupHour(Json meetup) {
+  final time = '${meetup['time'] ?? ''}';
+  final hour = int.tryParse(time.split(':').first);
+  if (hour != null && time.contains(':')) return hour;
+  final start = DateTime.tryParse('${meetup['starts_at'] ?? ''}');
+  return start == null ? 19 : circleAmsterdam(start).hour;
+}
+
+/// The description of a programme week, only while the week still has our
+/// plan's title: older Circles and weeks planned differently keep their own
+/// story. Morning Circles (starting before noon) get the morning lines.
+String? circleWeekNote(Json meetup) {
+  final week = meetup['week'];
+  if (week is! int || week < 1 || week > 6) return null;
+  final morning = circleMeetupHour(meetup) < 12;
+  final titles = morning ? circleMorningWeekTitles : circleWeekTitles;
+  if (circleMeetupTitle(meetup) != titles[week - 1]) return null;
+  return (morning ? circleMorningWeekNotes : circleWeekNotes)[week - 1];
 }
 
 List<Json> rows(dynamic value) => (value as List? ?? [])
@@ -116,9 +277,67 @@ DateTime? circleMeetupStart(Json meetup) {
   return wall.subtract(Duration(hours: summer ? 2 : 1));
 }
 
+/// Amsterdam clock time for an instant: summer time runs from 01:00 UTC on
+/// the last Sunday of March to 01:00 UTC on the last Sunday of October.
+DateTime circleAmsterdam(DateTime instant) {
+  final utc = instant.toUtc();
+  DateTime lastSunday(int month) {
+    final last = DateTime.utc(utc.year, month + 1, 0);
+    return last.subtract(Duration(days: last.weekday % 7));
+  }
+
+  final summer = !utc.isBefore(lastSunday(3).add(const Duration(hours: 1))) &&
+      utc.isBefore(lastSunday(10).add(const Duration(hours: 1)));
+  return utc.add(Duration(hours: summer ? 2 : 1));
+}
+
+/// Where a part of the day ends: morning meetups at 12:00, afternoon ones
+/// at 16:00, evening ones at 22:00 (as the server plans them).
+String circleWindowEnd(int startHour) =>
+    startHour < 12 ? '12:00' : (startHour < 17 ? '16:00' : '22:00');
+
+/// "19:00–22:00": when a meetup starts and ends, in Netherlands time.
+String circleMeetupHours(Json meetup) {
+  final start = '${meetup['time'] ?? '19:30'}';
+  final ends = DateTime.tryParse('${meetup['ends_at'] ?? ''}');
+  if (ends == null) {
+    return '$start–${circleWindowEnd(int.tryParse(start.split(':').first) ?? 19)}';
+  }
+  final end = circleAmsterdam(ends);
+  return '$start–${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
+}
+
+/// Week 5's possible starts (the server checks the same): evenings
+/// 18:00–21:00, afternoons 12:00–16:00, mornings 09:00–11:30.
+(String, String) circleWeek5Window(Json meetup) {
+  final hour = circleMeetupHour(meetup);
+  return hour >= 17
+      ? ('18:00', '21:00')
+      : hour >= 12
+          ? ('12:00', '16:00')
+          : ('09:00', '11:30');
+}
+
+/// Week 5 before the group has planned it: the day is set, the rest isn't.
+bool circleWeekOpen(Json meetup) =>
+    meetup['week'] == 5 &&
+    '${meetup['venue'] ?? ''}'.trim().isEmpty &&
+    !circleMeetupPast(meetup);
+
+/// "Thu 5 Nov · 20:00–22:00"; for week 5 still to plan, "Thu 5 Nov · start
+/// time to choose", since the group picks it.
+String circleMeetupWhen(Json meetup) =>
+    '${circleDate(meetup['date'] as String?)} · ${circleWeekOpen(meetup) ? t('start time to choose') : circleMeetupHours(meetup)}';
+
 DateTime? circleMeetupEnd(Json meetup) =>
     DateTime.tryParse('${meetup['ends_at']}')?.toUtc() ??
     circleMeetupStart(meetup)?.add(const Duration(hours: 2));
+
+/// "€39" from a payment's amount in cents (older Circles cost €19).
+String circleEuros(Object? cents) {
+  final value = cents is num ? cents : num.tryParse('${cents ?? ''}');
+  return '€${((value ?? 3900) / 100).toStringAsFixed(0)}';
+}
 
 /// Plain words for Circle and payment states, so nobody reads
 /// "awaiting_payment" on screen.
@@ -152,6 +371,10 @@ int circleMeetupCompare(Json a, Json b) =>
 String circleVenueLabel(Json meetup, {DateTime? now}) {
   final venue = (meetup['venue'] as String?)?.trim();
   if (meetup['venue_hidden'] == true) return 'Shared soon · Alkmaar';
+  // Week 5 is the group's own until they plan it.
+  if ((venue == null || venue.isEmpty) && meetup['week'] == 5) {
+    return 'Your group picks the place';
+  }
   if (venue == null || venue.isEmpty) return 'Location to be confirmed';
   return venue;
 }
@@ -200,7 +423,7 @@ class CircleWaitEstimate {
       final start = earliestStart();
       return start == null
           ? 'Usually a few days from here'
-          : 'Earliest start: ${circleDate(start.toIso8601String())} at ${_hm(start)}. We’ll confirm it in your invitation.';
+          : 'Earliest start: ${circleDate(start.toIso8601String())}. We’ll confirm it in your invitation.';
     }
     // No time range until the pilot shows how long it really takes.
     return 'We’ll email you as soon as your invitation is ready.';
@@ -222,7 +445,8 @@ class CircleWaitEstimate {
   }
 
   /// The first possible meetup for the slot: the matching weekday at least
-  /// a week out, at the start time the organiser panel uses.
+  /// twelve days out (five days to say yes, then a week to book), at the
+  /// start time the organiser panel uses.
   DateTime? earliestStart({DateTime? now}) {
     final parts = (slot ?? '').split(' ');
     if (parts.length != 2) return null;
@@ -234,15 +458,12 @@ class CircleWaitEstimate {
     };
     final time = starts[parts[1]];
     if (weekday == 0 || time == null) return null;
-    var date = (now ?? DateTime.now()).add(const Duration(days: 7));
+    var date = (now ?? DateTime.now()).add(const Duration(days: 12));
     while (date.weekday != weekday) {
       date = date.add(const Duration(days: 1));
     }
     return DateTime(date.year, date.month, date.day, time.$1, time.$2);
   }
-
-  static String _hm(DateTime d) =>
-      '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 }
 
 /// Reads the estimate out of a snapshot, tolerating a server that has not
@@ -275,6 +496,10 @@ abstract class CircleRepository {
 
   /// The last 200 messages of a Circle's chat, for moderation.
   Future<List<Json>> adminMessages(String circleId) async => const [];
+
+  /// The 200 messages before [before], oldest first.
+  Future<List<Json>> adminMessagesBefore(String circleId, Json before) async =>
+      const [];
 }
 
 class SupabaseCircleRepository implements CircleRepository {
@@ -469,6 +694,14 @@ class SupabaseCircleRepository implements CircleRepository {
       .rpc('circle_admin_messages', params: {'target_circle': circleId}));
 
   @override
+  Future<List<Json>> adminMessagesBefore(String circleId, Json before) async =>
+      rows(await client.rpc('circle_admin_messages_before', params: {
+        'target_circle': circleId,
+        'before_time': before['created_at'],
+        'before_id': before['id'],
+      }).timeout(const Duration(seconds: 15)));
+
+  @override
   Future<Json> adminLoad() async {
     final data = Map<String, dynamic>.from(
         await client.rpc('circle_admin_snapshot') as Map);
@@ -552,6 +785,30 @@ class DemoCircleRepository implements CircleRepository {
       ...Map<String, dynamic>.from(state['email_settings'] as Map? ?? {}),
     };
     state['exclusions'] ??= const <String>[];
+    // Pay first, as on the server: until the group is booked, seats instead
+    // of people, and the weeks without dates or places. Shown only; the
+    // stored preview keeps everything for the next stage.
+    if (state['pay_first'] is Map &&
+        (state['pay_first'] as Map)['started'] != true) {
+      return {
+        ...state,
+        'members': const <Json>[],
+        'messages': const <Json>[],
+        'circle': Map<String, dynamic>.from(state['circle'] as Map? ?? {})
+          ..remove('start_date'),
+        'meetups': [
+          for (final m in rows(state['meetups']))
+            if (m['week'] is int)
+              {
+                'id': m['id'],
+                'week': m['week'],
+                'title': m['title'],
+                'included': m['included'],
+                'cost_notes': m['cost_notes'],
+              }
+        ],
+      };
+    }
     // One free move, between the first and the second meetup, as on the
     // server.
     if (state['stage'] == 'active') {
@@ -573,7 +830,7 @@ class DemoCircleRepository implements CircleRepository {
       'id': 'demo-circle',
       'name': 'The Thursday Circle',
       'city': 'Alkmaar',
-      'schedule': 'Thursday evenings · 19:30',
+      'schedule': 'Thursday evenings · English',
       'start_date': '2026-10-08',
       'status': 'active'
     };
@@ -622,7 +879,7 @@ class DemoCircleRepository implements CircleRepository {
       'current': {
         'id': 'demo-coffee',
         'round': 1,
-        'starts_at': DateTime(coffee.year, coffee.month, coffee.day, 19)
+        'starts_at': DateTime(coffee.year, coffee.month, coffee.day, 14)
             .toUtc()
             .toIso8601String(),
         'place': 'De Koffiemolen',
@@ -636,23 +893,36 @@ class DemoCircleRepository implements CircleRepository {
       'met': ['sam'],
       'free_week': false
     };
+    // Week 1 was six days ago; the rest are still to come, whatever today is.
+    final firstWeek = DateTime.now().subtract(const Duration(days: 6));
     state['meetups'] = List.generate(
         6,
         (i) => {
               'id': 'week-${i + 1}',
               'week': i + 1,
               'title': circleActivities[i],
-              'date': DateTime(2026, 10, 8 + i * 7).toIso8601String(),
-              'time': '19:30',
-              'venue': i == 0
-                  ? 'A restaurant in central Alkmaar'
-                  : i < 3
-                      ? 'Location to be confirmed'
-                      : 'Alkmaar · choose together',
+              'date': DateTime(
+                      firstWeek.year, firstWeek.month, firstWeek.day + i * 7)
+                  .toIso8601String(),
+              'time': _demoEvening[i].time,
+              'venue': _demoEvening[i].venue,
+              'venue_address': _demoEvening[i].address,
+              'cost_notes': _demoEvening[i].cost,
+              'included': circleIncludedWeeks.contains(i + 1),
+              if (i == 1) ...{
+                'booking_status': 'requested',
+                'booking_requested_at': firstWeek.toUtc().toIso8601String(),
+                'booking_email': {
+                  'created_at': firstWeek.toUtc().toIso8601String(),
+                  'sent_at': firstWeek.toUtc().toIso8601String(),
+                  'failed': false
+                }
+              },
+              if (i == 2) 'booking_status': 'booked',
               'completed': false,
               'rsvp': false,
               'confirmed': i == 0 ? 4 : 3,
-              'organiser': i < 3 ? 'VriendTime' : 'Your Circle',
+              'organiser': i == 4 ? 'Your Circle' : 'VriendTime',
               'attendees': rows(state['members'])
                   .map((p) => {
                         'profile_id': p['id'],
@@ -661,17 +931,40 @@ class DemoCircleRepository implements CircleRepository {
                       })
                   .toList()
             });
+    // A small conversation over two days, so the preview shows how the
+    // chat reads: days, others in white, you in navy.
+    String ago(int hours) => DateTime.now()
+        .subtract(Duration(hours: hours))
+        .toUtc()
+        .toIso8601String();
     state['messages'] = [
       {
         'name': 'Noor',
         'body': 'Hi everyone! Really looking forward to meeting you all. ☕',
-        'own': false
+        'own': false,
+        'created_at': ago(30)
       },
       {
         'name': 'Sam',
         'body':
             'Same here! Nice to have something in the calendar with the same people.',
-        'own': false
+        'own': false,
+        'created_at': ago(29)
+      },
+      {
+        'name': 'You',
+        'body': 'Me too! See you all on Friday.',
+        'own': true,
+        'created_at': ago(2)
+      },
+      {
+        'id': 'demo-week5',
+        'created_at': ago(1),
+        'name': 'VriendTime',
+        'body':
+            'Week 5 is your call! Share ideas here, then tap “Plan it” on the week 5 card to set the place and the time.',
+        'own': false,
+        'system': true
       },
     ];
     state['check_ins'] = <Json>[];
@@ -686,7 +979,7 @@ class DemoCircleRepository implements CircleRepository {
         'read_at': null,
         'title': 'Your Circle is ready',
         'body':
-            'Your group and six Thursdays are ready. The first dinner is on 8 October.'
+            'Your group and six Thursdays are ready. Have a look, and say yes if it works for you.'
       }
     ];
     return state;
@@ -714,24 +1007,101 @@ class DemoCircleRepository implements CircleRepository {
         break;
       case 'preview':
         final stage = data['stage'];
-        if (['invited', 'active', 'completed'].contains(stage)) {
+        if (['invited', 'confirmed', 'active', 'completed'].contains(stage)) {
           state = _seed(state);
         }
         state['stage'] = stage;
+        // Pay first: an invitation or a paid place before the group is
+        // booked shows seats, not people.
+        // {'pay_first': false} shows the older flow (meet, then pay), which
+        // Circles made before 16 October still use.
+        if ((stage == 'invited' || stage == 'confirmed') &&
+            data['pay_first'] != false) {
+          state['pay_first'] = {
+            'started': false,
+            'seats': 6,
+            'found': 6,
+            'confirmed': stage == 'confirmed' ? 4 : 3,
+            'expired': false,
+          };
+        } else {
+          state.remove('pay_first');
+        }
+        // After week 2 the WhatsApp question; the preview shows it in the
+        // six-week stage.
+        if (stage == 'active') {
+          state['whatsapp'] = {'answer': null, 'has_phone': false};
+        } else {
+          state.remove('whatsapp');
+        }
         state.remove('refund');
         state.remove('outcome');
         state.remove('move_credit');
         state.remove('move_used');
-        state['payment'] =
-            ['active', 'completed'].contains(stage) ? 'demo_paid' : 'unpaid';
-        if (stage == 'completed') {
-          for (final m in rows(state['meetups'])) {
-            m['completed'] = true;
+        state['payment'] = ['confirmed', 'active', 'completed'].contains(stage)
+            ? 'demo_paid'
+            : 'unpaid';
+        if (stage == 'invited' || stage == 'confirmed') {
+          // An invitation is for six weeks still to come: the first
+          // Thursday at least twelve days out, answers due in five.
+          var firstWeek = DateTime.now().add(const Duration(days: 12));
+          while (firstWeek.weekday != DateTime.thursday) {
+            firstWeek = firstWeek.add(const Duration(days: 1));
           }
+          String day(DateTime d) =>
+              DateTime(d.year, d.month, d.day).toIso8601String();
           state['meetups'] = rows(state['meetups'])
-              .map((m) => {...m, 'completed': true})
+              .map((m) => {
+                    ...m,
+                    'completed': false,
+                    if (m['week'] is int)
+                      'date': day(firstWeek
+                          .add(Duration(days: ((m['week'] as int) - 1) * 7))),
+                  })
+              .toList();
+          state['circle'] = {
+            ...state['circle'] as Map,
+            'start_date': day(firstWeek)
+          };
+          state['pay_by'] =
+              day(DateTime.now().add(const Duration(days: 7))).substring(0, 10);
+          state['accept_until'] =
+              day(firstWeek.subtract(const Duration(days: 7))).substring(0, 10);
+        } else {
+          state.remove('pay_by');
+          state.remove('accept_until');
+        }
+        if (stage == 'completed') {
+          // After the last week no one-to-ones are suggested any more.
+          if (state['coffees'] is Map) {
+            state['coffees'] = {
+              ...Map<String, dynamic>.from(state['coffees'] as Map),
+              'current': null,
+            };
+          }
+          // All six weeks are behind them.
+          final firstWeek = DateTime.now().subtract(const Duration(days: 44));
+          state['meetups'] = rows(state['meetups'])
+              .map((m) => {
+                    ...m,
+                    'completed': true,
+                    if (m['week'] is int)
+                      'date': DateTime(firstWeek.year, firstWeek.month,
+                              firstWeek.day + ((m['week'] as int) - 1) * 7)
+                          .toIso8601String(),
+                  })
               .toList();
         }
+        break;
+      case 'whatsapp':
+        if (state['whatsapp'] is! Map) {
+          throw StateError('This question comes after your second meetup.');
+        }
+        state['whatsapp'] = {
+          'answer': data['answer'],
+          'has_phone': data['phone'] != null ||
+              (state['whatsapp'] as Map)['has_phone'] == true,
+        };
         break;
       case 'refresh_commitment':
         state['application_updated_at'] = DateTime.now().toIso8601String();
@@ -782,7 +1152,18 @@ class DemoCircleRepository implements CircleRepository {
         if (state['stage'] != 'invited') {
           throw StateError('Open your invitation first.');
         }
-        state['stage'] = 'active';
+        final payFirst = state['pay_first'] is Map
+            ? Map<String, dynamic>.from(state['pay_first'] as Map)
+            : null;
+        if (payFirst != null && payFirst['started'] != true) {
+          // Paid, and waiting for the group to be booked.
+          payFirst['confirmed'] =
+              (((payFirst['confirmed'] as num?)?.toInt() ?? 0) + 1).clamp(0, 6);
+          state['pay_first'] = payFirst;
+          state['stage'] = 'confirmed';
+        } else {
+          state['stage'] = 'active';
+        }
         state['payment'] = 'demo_paid';
         if (state['move_credit'] == true) {
           state['move_credit'] = false;
@@ -826,7 +1207,12 @@ class DemoCircleRepository implements CircleRepository {
         }
         state['messages'] = [
           ...rows(state['messages']),
-          {'name': 'You', 'body': body, 'own': true}
+          {
+            'name': 'You',
+            'body': body,
+            'own': true,
+            'created_at': DateTime.now().toUtc().toIso8601String()
+          }
         ];
         break;
       case 'complete_meetup':
@@ -892,7 +1278,9 @@ class DemoCircleRepository implements CircleRepository {
                       'plan_version': (m['plan_version'] as int? ?? 0) + 1,
                       if (action == 'schedule' && m['week'] != null) ...{
                         'date': m['date'],
-                        'time': m['time'],
+                        'time': m['week'] == 5
+                            ? data['time'] ?? m['time']
+                            : m['time'],
                       },
                     }
                   : m)
@@ -1013,6 +1401,33 @@ class DemoCircleRepository implements CircleRepository {
         }
         state['coffees'] = coffees;
         break;
+      case 'admin_booking':
+        state['meetups'] = [
+          for (final m in rows(state['meetups']))
+            if (m['id'] == data['id'])
+              {
+                ...m,
+                'booking_status': switch (data['step']) {
+                  'email' => 'requested',
+                  'booked' => 'booked',
+                  _ => null
+                },
+                // The preview has no email worker: it goes out at once.
+                if (data['step'] == 'email') ...{
+                  'booking_requested_at':
+                      DateTime.now().toUtc().toIso8601String(),
+                  'booking_email': {
+                    'created_at': DateTime.now().toUtc().toIso8601String(),
+                    'sent_at': DateTime.now().toUtc().toIso8601String(),
+                    'failed': false
+                  },
+                },
+                if (data['step'] != 'email') 'booking_previous': null,
+              }
+            else
+              m
+        ];
+        break;
       case 'admin_template':
       case 'admin_coffee_places':
       case 'coffee_feedback':
@@ -1026,6 +1441,10 @@ class DemoCircleRepository implements CircleRepository {
   @override
   Future<List<Json>> adminMessages(String circleId) async =>
       rows(_state['messages']);
+
+  @override
+  Future<List<Json>> adminMessagesBefore(String circleId, Json before) async =>
+      const [];
 
   @override
   Future<Json> adminLoad() async {
@@ -1044,48 +1463,90 @@ class DemoCircleRepository implements CircleRepository {
             ],
       'programme': [
         for (final (kind, plan) in [
-          (
-            'evening',
-            [
-              ('Dinner together', 'Rozey Alkmaar'),
-              ('Drinks and a good conversation', 'Het Alkmaars Koffiehuis'),
-              (
-                'Find out who’s secretly competitive',
-                'The Boules Club Alkmaar'
-              ),
-              ('Bowling and a drink', 'Victorie Plaza'),
-              ('Drinks', 'Mr. Gold'),
-              ('Drinks', 'Mr. Gold'),
-            ]
-          ),
-          (
-            'daytime',
-            [
-              ('Lunch together', 'SOEPP'),
-              ('Coffee and a walk', 'Kaldi'),
-              (
-                'Find out who’s secretly competitive',
-                'The Boules Club Alkmaar'
-              ),
-              ('Board games', 'De Spellentoren'),
-              ('Coffee', 'De Koffiemolen'),
-              ('Coffee', 'De Koffiemolen'),
-            ]
-          ),
+          ('evening', _demoEvening),
+          ('afternoon', _demoAfternoon),
+          ('morning', _demoMorning),
         ])
           for (var i = 0; i < plan.length; i++)
             {
+              'city': 'Alkmaar',
               'kind': kind,
               'week': i + 1,
-              'title': plan[i].$1,
-              'venue': plan[i].$2
+              'title': (kind == 'morning'
+                  ? circleMorningWeekTitles
+                  : circleWeekTitles)[i],
+              'venue': plan[i].venue,
+              'address': plan[i].address,
+              'cost': plan[i].cost,
+              'start_time': '${plan[i].time}:00',
+              'included': circleIncludedWeeks.contains(i + 1),
             }
+      ],
+      'venues': [
+        for (final (name, booking, url, email, phone) in [
+          (
+            '1480 Foodbar',
+            'online',
+            'https://www.1480foodbar.nl/',
+            'bar@1480foodbar.nl',
+            '072 241 0099'
+          ),
+          (
+            'The Boules Club',
+            'email',
+            'https://theboulesclub.com/alkmaar/',
+            'reserveringen.alkmaar@theboulesclub.com',
+            '072 202 9779'
+          ),
+          (
+            'Rozey Alkmaar',
+            'online',
+            'https://rozey.nl/rozey-alkmaar',
+            'alkmaar@rozey.nl',
+            '072 220 3961'
+          ),
+          (
+            'The Hangout',
+            'online',
+            'https://booking.thehangout.nl/',
+            'events@thehangout.nl',
+            '072 202 9799'
+          ),
+          (
+            'Hofman',
+            'online',
+            'https://www.hofman-alkmaar.nl/reserveren',
+            'info@hofman-alkmaar.nl',
+            '072 582 3612'
+          ),
+          (
+            'De Spellentoren',
+            'email',
+            null,
+            'info@despellentoren.nl',
+            '072 220 3100'
+          ),
+        ])
+          {
+            'city': 'Alkmaar',
+            'name': name,
+            'booking': booking,
+            'booking_url': url,
+            'booking_email': email,
+            'booking_phone': phone
+          }
       ],
       'coffee_places': [
         {
           'kind': 'daytime',
           'name': 'De Koffiemolen',
-          'address': 'Ritsevoort 26'
+          'address': 'Ritsevoort 26',
+          'opening_hours': {
+            for (final d in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])
+              d: [
+                {'open': '09:00', 'close': '17:00'}
+              ]
+          }
         },
         {'kind': 'daytime', 'name': 'Kaldi'},
         {'kind': 'evening', 'name': 'Mr. Gold'},

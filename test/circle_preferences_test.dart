@@ -183,18 +183,28 @@ void main() {
                 body: SingleChildScrollView(child: CircleJourney())))));
     await tester.pumpAndSettle();
     for (final title in [
-      'A meal together',
-      'Go beyond “what do you do?”',
+      'Hello, new faces',
       'Find out who’s secretly competitive',
-      'Something new together',
-      'A plan of your own',
-      'One last get-together',
+      'Go beyond “what do you do?”',
+      'The rematch',
+      'Your call',
+      'Graduation: a new beginning',
     ]) {
       expect(find.text(title), findsOneWidget);
     }
     expect(find.text('WE PLAN WEEKS 1 TO 4'), findsOneWidget);
-    expect(
-        find.text('WEEKS 5 AND 6: OUR PLAN, YOURS TO CHANGE'), findsOneWidget);
+    expect(find.text('WEEK 5 IS YOUR CALL'), findsOneWidget);
+    expect(find.text('WE PLAN YOUR GRADUATION'), findsOneWidget);
+    // Weeks 2 and 4 are paid for by the fee.
+    expect(find.text('Included in the price'), findsNWidgets(2));
     expect(tester.binding.hasScheduledFrame, isFalse);
+
+    // Mornings: cafés, and the cheese museum instead of a rematch.
+    await tester.tap(find.text('Mornings'));
+    await tester.pumpAndSettle();
+    expect(find.text('Say cheese'), findsOneWidget);
+    expect(find.text('The rematch'), findsNothing);
+    expect(find.text('A shared brunch, now that you know each other.'),
+        findsOneWidget);
   });
 }

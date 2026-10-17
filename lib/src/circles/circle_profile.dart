@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide Text;
 import '../core/destructive.dart';
 import '../core/i18n.dart';
+import '../core/image_assets.dart';
 import '../core/app_diagnostics.dart';
 import 'circle_invite_friend.dart';
 import 'circle_leave.dart';
@@ -11,9 +12,6 @@ import 'circle_widgets.dart';
 
 const _muted = Color(0xFF4F5D66);
 const _line = Color(0xFFDDE7E3);
-const _violet = Color(0xFF6B5BD2);
-const _gold = Color(0xFFD08A12);
-const _green = Color(0xFF1F9D55);
 
 class CircleProfile extends StatelessWidget {
   const CircleProfile(
@@ -71,7 +69,10 @@ class CircleProfile extends StatelessWidget {
     final applying = stage == 'apply' || stage == 'waiting';
     final inCircle = state['circle'] != null;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const CircleHeading('A familiar face.', eyebrow: 'Your profile'),
+      // On a phone the bar above already says "Profile".
+      if (MediaQuery.sizeOf(context).width >= 900)
+        const CircleHomeHeader(
+            title: 'A familiar face', eyebrow: 'Your profile'),
       _publicCard(context, app, name),
       const SizedBox(height: 22),
       _sectionLabel(applying ? 'Your application' : 'Your weekly rhythm'),
@@ -103,16 +104,38 @@ class CircleProfile extends StatelessWidget {
               ],
               const SizedBox(height: 12),
               Row(children: [
-                Icon(
-                    app['commitment'] == true
-                        ? Icons.check_circle
-                        : Icons.radio_button_unchecked,
-                    color: circleTeal,
-                    size: 20),
+                const Icon(Icons.repeat_rounded, color: circleTeal, size: 20),
                 const SizedBox(width: 10),
                 const Expanded(child: Text('One meetup a week · six weeks'))
               ]),
               const SizedBox(height: 6),
+              // Every four weeks while waiting (the reminder links here):
+              // still right? One tap, nothing to change.
+              if (stage == 'waiting' &&
+                  act != null &&
+                  !circleTimesConfirmedRecently(state)) ...[
+                const SizedBox(height: 10),
+                Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                    decoration: BoxDecoration(
+                        color: const Color(0xFFEAF7F5),
+                        borderRadius: BorderRadius.circular(14)),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Still free at these times?',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  color: circleNavy)),
+                          const SizedBox(height: 8),
+                          FilledButton(
+                              onPressed: busy
+                                  ? null
+                                  : () => act!('refresh_commitment'),
+                              child: const Text('Yes, still free')),
+                        ])),
+              ],
             ])),
         if (onEdit != null) ...[
           const Divider(height: 1, color: _line),
@@ -161,7 +184,7 @@ class CircleProfile extends StatelessWidget {
           const Divider(height: 1, color: _line),
           _tile(Icons.tune_outlined, 'Edit my interests and goals',
               () => onEdit!(2),
-              color: circleCoral),
+              color: circleTeal),
           const Divider(height: 1, color: _line),
           _tile(Icons.badge_outlined, 'Edit birthday, languages and gender',
               () => onEdit!(0),
@@ -182,7 +205,7 @@ class CircleProfile extends StatelessWidget {
         LayoutBuilder(
             builder: (context, box) => box.maxWidth < 340
                 ? ListTile(
-                    leading: _badge(Icons.translate_rounded, _violet),
+                    leading: _badge(Icons.translate_rounded, circleTeal),
                     title: const Text('Language'),
                     subtitle: const Padding(
                         padding: EdgeInsets.only(top: 8),
@@ -190,7 +213,7 @@ class CircleProfile extends StatelessWidget {
                             alignment: Alignment.centerLeft,
                             child: LanguageToggle())))
                 : ListTile(
-                    leading: _badge(Icons.translate_rounded, _violet),
+                    leading: _badge(Icons.translate_rounded, circleTeal),
                     title: const Text('Language'),
                     trailing: const LanguageToggle())),
         // The app tells people when their Circle is ready, where to go, and
@@ -207,7 +230,7 @@ class CircleProfile extends StatelessWidget {
                 data: Theme.of(context)
                     .copyWith(dividerColor: Colors.transparent),
                 child: ExpansionTile(
-                    leading: _badge(Icons.mail_outline_rounded, _gold),
+                    leading: _badge(Icons.mail_outline_rounded, circleTeal),
                     title: const Text('Email notifications',
                         style: TextStyle(fontWeight: FontWeight.w600)),
                     subtitle: Text(() {
@@ -247,15 +270,15 @@ class CircleProfile extends StatelessWidget {
                 color: circleTeal),
           if (_canChooseMatches) ...[
             const Divider(height: 1, color: _line),
-            _tile(Icons.people_alt_outlined, 'Future Circles',
+            _tile(Icons.people_alt_outlined, 'Future matching',
                 () => _futureCircles(context),
                 subtitle: 'Who you’d rather not be matched with again',
-                color: _violet),
+                color: circleTeal),
           ],
           if (onReport != null) ...[
             const Divider(height: 1, color: _line),
-            _tile(Icons.flag_outlined, 'Report a concern privately', onReport,
-                color: circleCoral),
+            _tile(Icons.shield_outlined, 'Report a concern privately', onReport,
+                color: circleTeal),
           ],
           if (onAdmin != null) ...[
             if (inCircle) const Divider(height: 1, color: _line),
@@ -266,7 +289,9 @@ class CircleProfile extends StatelessWidget {
         ]),
       ],
       if (act != null &&
-          ((inCircle && ['active', 'forming', 'invited'].contains(stage)) ||
+          ((inCircle &&
+                  ['active', 'forming', 'invited', 'confirmed']
+                      .contains(stage)) ||
               ((state['payment_agreement'] as Map?)?['can_cancel'] == true &&
                   state['refund'] == null))) ...[
         const SizedBox(height: 22),
@@ -291,22 +316,20 @@ class CircleProfile extends StatelessWidget {
         const SizedBox(height: 22),
         _card([
           ExpansionTile(
-              leading: _badge(Icons.receipt_long_outlined, _gold),
+              leading: _badge(Icons.receipt_long_outlined, circleTeal),
               title: const Text('Payments & refunds',
                   style: TextStyle(fontWeight: FontWeight.w600)),
               children: [
                 for (final payment in rows(state['payment_history']))
                   ListTile(
-                      title: Text('€19 · ${t(circlePaymentLabel(payment))}'),
+                      title: Text(
+                          '${circleEuros(payment['amount_cents'])} · ${t(circlePaymentLabel(payment))}'),
                       subtitle: payment['circle_name'] == null
                           ? null
                           : Text('${payment['circle_name']}')),
               ])
         ]),
       ],
-      const SizedBox(height: 12),
-      Text('App version ${AppDiagnostics.build}',
-          style: const TextStyle(fontSize: 11)),
       const SizedBox(height: 22),
       _sectionLabel('Help & account'),
       _card([
@@ -315,8 +338,8 @@ class CircleProfile extends StatelessWidget {
             subtitle: 'Share VriendTime with someone who’d enjoy it'),
         if (onHelp != null) ...[
           const Divider(height: 1, color: _line),
-          _tile(Icons.chat_outlined, 'Help & contact', onHelp,
-              subtitle: 'Chat with our team on WhatsApp', color: _green),
+          _tile(circleWhatsAppIcon, 'Help & contact', onHelp,
+              subtitle: 'Chat with our team on WhatsApp', color: circleTeal),
         ],
         if (onAccount != null) ...[
           const Divider(height: 1, color: _line),
@@ -326,21 +349,21 @@ class CircleProfile extends StatelessWidget {
         if (onExport != null) ...[
           const Divider(height: 1, color: _line),
           _tile(Icons.download_outlined, 'Download my data', onExport,
-              color: _violet),
+              color: circleTeal),
         ],
       ]),
       if (onSignOut != null) ...[
         const SizedBox(height: 20),
         SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
-                style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(50),
-                    foregroundColor: const Color(0xFFC2452A),
-                    backgroundColor: const Color(0xFFFFE6DF),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w700),
+            // Routine and undoable, so quiet: red is for what can't be undone.
+            child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    foregroundColor: circleNavy,
+                    side: const BorderSide(color: Color(0x33062B55)),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16))),
+                        borderRadius: BorderRadius.circular(14))),
                 onPressed: onSignOut,
                 icon: const Icon(Icons.logout_rounded, size: 20),
                 label: const Text('Sign out'))),
@@ -360,19 +383,24 @@ class CircleProfile extends StatelessWidget {
         const Center(
             child: Text('VriendTime · Friendship Circles · Alkmaar',
                 style: TextStyle(fontSize: 12, color: _muted))),
-        const SizedBox(height: 8),
       ],
+      const SizedBox(height: 4),
+      Center(
+          child: Text('App version ${AppDiagnostics.build}',
+              style: const TextStyle(fontSize: 11, color: _muted))),
+      const SizedBox(height: 8),
     ]);
   }
 
   /// What the Circle sees: photo, name, intro and interests, with the two
-  /// ways to change it right underneath.
+  /// ways to change it right underneath. A coloured card with the photo in
+  /// the middle, under a strip of the café picture.
   Widget _publicCard(BuildContext context, Json app, String name) => ClipRRect(
       borderRadius: BorderRadius.circular(28),
       child: Container(
           color: const Color(0xFFE0EEE8),
           child: Column(children: [
-            // The photo overlaps the header. It sits inside the Stack's own
+            // The photo overlaps the strip. It sits inside the Stack's own
             // height (not hanging below it) so a tap on it registers.
             SizedBox(
                 height: 128,
@@ -381,9 +409,9 @@ class CircleProfile extends StatelessWidget {
                       height: 84,
                       width: double.infinity,
                       child: Image.asset(
-                          'assets/generated/profile-header-illustration.webp',
+                          GeneratedImageAssets.landingImmersiveMobile,
                           fit: BoxFit.cover,
-                          alignment: Alignment.topCenter,
+                          alignment: const Alignment(.35, -.15),
                           excludeFromSemantics: true)),
                   Positioned(
                       top: 44,
@@ -405,7 +433,7 @@ class CircleProfile extends StatelessWidget {
                                       radius: 38))))),
                 ])),
             Padding(
-                padding: const EdgeInsets.fromLTRB(20, 2, 20, 12),
+                padding: const EdgeInsets.fromLTRB(20, 2, 20, 14),
                 child: Column(children: [
                   Text(name,
                       textAlign: TextAlign.center,
@@ -430,7 +458,7 @@ class CircleProfile extends StatelessWidget {
                             CirclePill(value)
                         ]),
                   ],
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Wrap(
                       spacing: 8,
                       runSpacing: 4,
@@ -450,9 +478,9 @@ class CircleProfile extends StatelessWidget {
                               icon: const Icon(Icons.edit_outlined, size: 18),
                               label: const Text('Edit my introduction')),
                       ]),
-                  const Text(
-                      'Your Circle sees your photo, first name, introduction and interests.',
-                      style: TextStyle(fontSize: 13, color: circleTealText)),
+                  const Text('Your Circle sees this card.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12.5, color: circleTealText)),
                 ])),
           ])));
 
@@ -487,7 +515,7 @@ class CircleProfile extends StatelessWidget {
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Future Circles',
+                          Text('Future matching',
                               style: Theme.of(c).textTheme.headlineSmall),
                           const SizedBox(height: 8),
                           const Text(
@@ -545,17 +573,17 @@ class CircleProfile extends StatelessWidget {
 
   /// A tinted rounded square behind each icon, so every row has a colour and
   /// related rows share one.
-  static Widget _badge(IconData icon, Color color) => Container(
+  static Widget _badge(Object icon, Color color) => Container(
       width: 36,
       height: 36,
       decoration: BoxDecoration(
           color: color.withValues(alpha: .13),
           borderRadius: BorderRadius.circular(11)),
-      child: Icon(icon, size: 20, color: color));
+      child: Center(child: circleIcon(icon, size: 20, color: color)));
 
   /// Seven days by three parts of the day. It stays the same size whether
   /// someone picked one evening or every slot of the week.
-  Widget _tile(IconData icon, String title, VoidCallback? onTap,
+  Widget _tile(Object icon, String title, VoidCallback? onTap,
           {String? subtitle,
           bool destructive = false,
           Color color = circleTeal}) =>
@@ -592,3 +620,12 @@ class CircleProfile extends StatelessWidget {
 /// Owns its text controller so the controller outlives the dialog's closing
 /// animation: disposing it the moment the dialog is popped tears it away from
 /// a TextField that is still on screen.
+
+/// Whether the member confirmed their times in the last three weeks.
+/// Confirming again inside that window changes nothing on the server, so
+/// offering the button again would be a control that does nothing.
+bool circleTimesConfirmedRecently(Json state, {DateTime? now}) {
+  final at = DateTime.tryParse('${state['application_updated_at']}');
+  if (at == null) return false;
+  return (now ?? DateTime.now()).difference(at) < const Duration(days: 21);
+}

@@ -1,11 +1,20 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart' hide Text;
 import '../core/i18n.dart';
-import 'circle_repository.dart' show circleWeekTitles, circleWeekShort;
+import '../core/i18n.dart' as i18n show t;
+import 'circle_repository.dart'
+    show
+        circleIncludedWeeks,
+        circleMorningWeekShort,
+        circleMorningWeekTitles,
+        circleWeekShort,
+        circleWeekTitles;
 import 'circle_widgets.dart';
 
 /// The six weeks as one vertical line, so the whole plan reads at a glance:
-/// a first dinner growing into plans the group makes itself.
+/// a first hello, two included activities, a meal, a week the group plans
+/// itself and a graduation. Mornings have their own café version; a switch
+/// shows either.
 ///
 /// The full version (landing page) draws its line and reveals each week the
 /// first time it scrolls into view. The compact version (inside the app) is
@@ -13,8 +22,15 @@ import 'circle_widgets.dart';
 /// motion always gets the finished picture.
 class CircleJourney extends StatefulWidget {
   const CircleJourney(
-      {super.key, this.compact = false, this.completed = 0, this.current});
+      {super.key,
+      this.compact = false,
+      this.completed = 0,
+      this.current,
+      this.morning = false});
   final bool compact;
+
+  /// Starts on the morning version (cafés instead of games and a dinner).
+  final bool morning;
 
   /// Weeks already behind the group, shown with a tick.
   final int completed;
@@ -35,6 +51,13 @@ class _CircleJourneyState extends State<CircleJourney>
       vsync: this, duration: const Duration(milliseconds: 1800));
   ScrollPosition? _scroll;
   bool _started = false;
+  late bool _morning = widget.morning;
+
+  @override
+  void didUpdateWidget(CircleJourney old) {
+    super.didUpdateWidget(old);
+    if (old.morning != widget.morning) _morning = widget.morning;
+  }
 
   @override
   void didChangeDependencies() {
@@ -79,10 +102,16 @@ class _CircleJourneyState extends State<CircleJourney>
         .transform(((_reveal.value - start) / .28).clamp(0.0, 1.0));
   }
 
+  /// Two columns: the words on the left, the weeks on the right.
+  bool _wide = false;
+
   @override
   Widget build(BuildContext context) {
     final compact = widget.compact;
     final theme = Theme.of(context);
+    // The card's width: the page's reading column, less its padding.
+    _wide = !compact &&
+        (MediaQuery.sizeOf(context).width.clamp(0, 1100) - 80 - 60) >= 720;
     final header =
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('Same people.',
@@ -95,24 +124,65 @@ class _CircleJourneyState extends State<CircleJourney>
               color: _coral, height: 1.05, fontSize: compact ? 30 : null)),
       const SizedBox(height: 12),
       const Text(
-          'From a first meal to plans you make together, with optional one-to-one coffees in between.',
+          'Two activities included, a meal together, and a week your group plans itself. With one-to-ones in between: optional, but recommended.',
           style: TextStyle(color: _soft, height: 1.45)),
+      if (widget.current == null) ...[
+        const SizedBox(height: 16),
+        // One switch on one line: the chosen half filled.
+        FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .1),
+                    borderRadius: BorderRadius.circular(24)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  _variant('Afternoons & evenings', false),
+                  _variant('Mornings', true),
+                ]))),
+      ],
+      if (_wide) ...[
+        const SizedBox(height: 30),
+        // The offer in three lines, where the wide layout has room.
+        for (final (icon, line) in const [
+          (Icons.groups_rounded, 'Six meetups, the same people'),
+          (Icons.redeem_rounded, 'Two activities included'),
+          (Icons.euro_rounded, '€39 once, no subscription'),
+        ])
+          Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(children: [
+                Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .1),
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Icon(icon, size: 19, color: _handover)),
+                const SizedBox(width: 12),
+                Expanded(
+                    child: Text(line,
+                        style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.w700))),
+              ])),
+      ],
     ]);
     final timeline = AnimatedBuilder(
         animation: _reveal,
         builder: (context, _) {
-          // Slots: handover, weeks 1–4, handover, weeks 5–6.
-          const slots = 8;
+          // Slots: handover, weeks 1–4, handover, week 5, handover, week 6.
+          const slots = 9;
+          const handovers = {
+            0: 'We plan weeks 1 to 4',
+            4: 'Week 5 is your call',
+            5: 'We plan your graduation',
+          };
           final rows = <Widget>[];
           var slot = 0;
           for (var i = 0; i < 6; i++) {
-            if (i == 0 || i == 4) {
-              rows.add(_handoverRow(
-                  i == 0
-                      ? 'We plan weeks 1 to 4'
-                      : 'Weeks 5 and 6: our plan, yours to change',
-                  _at(slot++, slots),
-                  first: i == 0));
+            if (handovers[i] case final label?) {
+              rows.add(_handoverRow(label, _at(slot++, slots), first: i == 0));
             }
             rows.add(_weekRow(i, _at(slot++, slots), last: i == 5));
           }
@@ -125,12 +195,16 @@ class _CircleJourneyState extends State<CircleJourney>
         decoration: BoxDecoration(
             color: circleNavy, borderRadius: BorderRadius.circular(30)),
         child: LayoutBuilder(builder: (context, box) {
-          if (!compact && box.maxWidth >= 720) {
-            return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(flex: 2, child: header),
-              const SizedBox(width: 40),
-              Expanded(flex: 3, child: timeline),
-            ]);
+          if (_wide) {
+            // The words sit level with the middle of the weeks, so no empty
+            // navy is left under them.
+            return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(flex: 2, child: header),
+                  const SizedBox(width: 40),
+                  Expanded(flex: 3, child: timeline),
+                ]);
           }
           return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,11 +275,13 @@ class _CircleJourneyState extends State<CircleJourney>
                     next ? Border.all(color: Colors.white, width: 3) : null),
             child: done
                 ? const Icon(Icons.check_rounded, color: Colors.white, size: 22)
-                : Text('${i + 1}',
-                    style: const TextStyle(
-                        color: circleNavy,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800))));
+                : Icon(
+                    circleMeetupLook({
+                      'week': i + 1,
+                      'time': _morning ? '10:30' : '20:00'
+                    }).icon,
+                    color: circleNavy,
+                    size: 21)));
     return _railRow(
         _rail(t: t, node: circle, upper: i != 0, lower: !last),
         Opacity(
@@ -213,13 +289,23 @@ class _CircleJourneyState extends State<CircleJourney>
             child: Transform.translate(
                 offset: Offset(0, 14 * (1 - t)),
                 child: Padding(
-                    padding: EdgeInsets.only(top: 8, bottom: last ? 0 : 22),
+                    padding: EdgeInsets.only(top: 6, bottom: last ? 0 : 14),
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Text(i18n.t('Week ${i + 1}').toUpperCase(),
+                              style: const TextStyle(
+                                  color: _handover,
+                                  fontSize: 10.5,
+                                  letterSpacing: 1.3,
+                                  fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 2),
                           Row(children: [
                             Flexible(
-                                child: Text(circleWeekTitles[i],
+                                child: Text(
+                                    (_morning
+                                        ? circleMorningWeekTitles
+                                        : circleWeekTitles)[i],
                                     style: TextStyle(
                                         color: Colors.white,
                                         fontSize: widget.compact ? 16 : 18,
@@ -229,11 +315,41 @@ class _CircleJourneyState extends State<CircleJourney>
                               const _NextTag(),
                             ],
                           ]),
+                          if (circleIncludedWeeks.contains(i + 1)) ...[
+                            const SizedBox(height: 6),
+                            const _IncludedTag(),
+                          ],
                           const SizedBox(height: 4),
-                          Text(circleWeekShort[i],
+                          Text(
+                              (_morning
+                                  ? circleMorningWeekShort
+                                  : circleWeekShort)[i],
                               style:
                                   const TextStyle(color: _soft, height: 1.4)),
                         ])))));
+  }
+
+  /// The two versions of the plan: a pill each, the chosen one filled.
+  Widget _variant(String label, bool morning) {
+    final on = _morning == morning;
+    return Semantics(
+        button: true,
+        selected: on,
+        child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () => setState(() => _morning = morning),
+            child: Container(
+                constraints: const BoxConstraints(minHeight: 36),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                    color: on ? Colors.white : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20)),
+                child: Text(label,
+                    style: TextStyle(
+                        color: on ? circleNavy : Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700)))));
   }
 
   /// The rail takes the full height of the text beside it, so the line runs
@@ -246,6 +362,19 @@ class _CircleJourneyState extends State<CircleJourney>
                 constraints: const BoxConstraints(minHeight: 48),
                 child: content)),
       ]);
+}
+
+/// Weeks 2 and 4: paid for by the fee.
+class _IncludedTag extends StatelessWidget {
+  const _IncludedTag();
+  @override
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+          color: _handover, borderRadius: BorderRadius.circular(20)),
+      child: const Text('Included in the price',
+          style: TextStyle(
+              color: circleNavy, fontSize: 11, fontWeight: FontWeight.w800)));
 }
 
 class _NextTag extends StatelessWidget {
@@ -261,14 +390,18 @@ class _NextTag extends StatelessWidget {
 }
 
 class CircleStoryCard extends StatelessWidget {
-  const CircleStoryCard({super.key, required this.index});
+  const CircleStoryCard({super.key, required this.index, this.compact = false});
   final int index;
+
+  /// On a phone: the picture beside the words, so three cards don't take
+  /// three screens.
+  final bool compact;
   @override
   Widget build(BuildContext context) {
     const backgrounds = [
       Color(0xFFDFEEE7),
       Color(0xFFF8DDCD),
-      Color(0xFFE6E2F2)
+      Color(0xFFFBEED3)
     ];
     const titles = [
       'People who fit.',
@@ -277,24 +410,50 @@ class CircleStoryCard extends StatelessWidget {
     ];
     const captions = [
       'A shared language. A time that works.',
-      'We plan the start. You show up.',
+      'We plan and book. You show up.',
       'Keep the chat. Make your own plans.'
     ];
+    final words = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(titles[index],
+              style: compact
+                  ? Theme.of(context).textTheme.titleLarge
+                  : Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 6),
+          Text(captions[index],
+              style: const TextStyle(color: Color(0xFF4F5D66), height: 1.4)),
+        ]);
     return Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(compact ? 16 : 24),
         decoration: BoxDecoration(
-            color: backgrounds[index], borderRadius: BorderRadius.circular(28)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          SizedBox(
-              height: 136,
-              width: double.infinity,
-              child: CustomPaint(painter: _StoryPainter(index))),
-          const SizedBox(height: 18),
-          Text(titles[index], style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          Text(captions[index]),
-        ]));
+            color: backgrounds[index],
+            borderRadius: BorderRadius.circular(compact ? 22 : 28)),
+        child: compact
+            ? Row(children: [
+                // The drawing has a fixed size; scaled down to fit here.
+                SizedBox(
+                    width: 96,
+                    height: 80,
+                    child: FittedBox(
+                        child: SizedBox(
+                            width: 176,
+                            height: 140,
+                            child:
+                                CustomPaint(painter: _StoryPainter(index))))),
+                const SizedBox(width: 14),
+                Expanded(child: words),
+              ])
+            : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                SizedBox(
+                    height: 136,
+                    width: double.infinity,
+                    child: CustomPaint(painter: _StoryPainter(index))),
+                const SizedBox(height: 18),
+                words,
+              ]));
   }
 }
 

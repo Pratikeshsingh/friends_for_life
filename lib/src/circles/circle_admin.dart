@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart' hide Text;
+import 'package:flutter/services.dart';
 import '../core/i18n.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/destructive.dart';
+import 'circle_admin_chat.dart';
 import 'circle_home.dart';
 import 'circle_matching.dart';
 import 'circle_preferences.dart';
@@ -178,9 +180,13 @@ class _CircleAdminState extends State<CircleAdmin>
         venue: TextEditingController(),
         address: TextEditingController(),
         cost: TextEditingController(),
-        booking: TextEditingController()
+        booking: TextEditingController(),
+        time: TextEditingController()
       )
   ];
+
+  /// Weeks paid from the fee (we book and pay for these).
+  final weekIncluded = List<bool>.filled(6, false);
   String? weeksKind;
   bool weeksEdited = false;
 
@@ -213,6 +219,7 @@ class _CircleAdminState extends State<CircleAdmin>
       w.address.dispose();
       w.cost.dispose();
       w.booking.dispose();
+      w.time.dispose();
     }
     for (final c in coffeePlaces.values) {
       c.dispose();
@@ -302,8 +309,49 @@ class _CircleAdminState extends State<CircleAdmin>
         for (final a in applicants)
           if (selected.contains('${a['profile_id']}')) a
       ];
+
+  /// Pay first: a Circle still finding its people (no real dates yet).
+  static bool _unstarted(Json c) =>
+      c['pay_first'] == true &&
+      c['started_at'] == null &&
+      c['status'] == 'offered';
+  static int _paidCount(Json c) =>
+      rows(c['members']).where((m) => m['status'] == 'joined').length;
+
+  /// Found and paid enough: the organiser picks the first date.
+  List<Json> get readyToStart => [
+        for (final c in circles)
+          if (_unstarted(c) && _paidCount(c) >= 5) c
+      ];
+
   int get todoCount =>
-      awaitingPayment.length + reports.length + openRefunds.length;
+      readyToStart.length +
+      awaitingPayment.length +
+      reports.length +
+      openRefunds.length +
+      toBook.length;
+
+  /// Weeks we book in the next two weeks that aren't booked yet, or that
+  /// changed after booking. Week 5 is the group's own.
+  List<(Json, Json)> get toBook {
+    final now = DateTime.now();
+    final soon = now.add(const Duration(days: 14));
+    final list = [
+      for (final c in circles)
+        if (['offered', 'active'].contains(c['status']) && !_unstarted(c))
+          for (final m in rows(c['meetups']))
+            if (m['week'] is int &&
+                m['completed'] != true &&
+                m['booking_status'] != 'booked' &&
+                (m['week'] != 5 || rows(m['booking_previous']).isNotEmpty) &&
+                (circleMeetupStart(m)?.isAfter(now) ?? false) &&
+                circleMeetupStart(m)!.isBefore(soon))
+              (c, m)
+    ];
+    list.sort(
+        (a, b) => circleMeetupStart(a.$2)!.compareTo(circleMeetupStart(b.$2)!));
+    return list;
+  }
 
   Json? applicant(String id) {
     for (final a in applicants) {
@@ -332,14 +380,29 @@ class _CircleAdminState extends State<CircleAdmin>
     'evening': TimeOfDay(hour: 19, minute: 0),
   };
 
-  /// Evening plans from 17:00, daytime plans before.
-  String get timeKind => time.hour >= 17 ? 'evening' : 'daytime';
+  /// Coffee places of [kind] here whose opening hours we don't know yet.
+  List<String> _withoutHours(String kind) => [
+        for (final pl in rows(data?['coffee_places']))
+          if (pl['kind'] == kind &&
+              (pl['city'] ?? circleCity) == circleCity &&
+              !(pl['opening_hours'] is Map &&
+                  (pl['opening_hours'] as Map).values.any((v) => v is List)))
+            '${pl['name']}'
+      ];
 
-  List<Json> _programme(String kind) => rows(data?['programme'])
-      .where(
-          (p) => p['kind'] == kind && (p['city'] ?? circleCity) == circleCity)
-      .toList()
-    ..sort((a, b) => '${a['week']}'.compareTo('${b['week']}'));
+  /// Morning plans before 12:00, afternoon plans before 17:00, then evening.
+  String get timeKind =>
+      time.hour < 12 ? 'morning' : (time.hour < 17 ? 'afternoon' : 'evening');
+
+  List<Json> _programme(String kind) {
+    List<Json> of(String k) => rows(data?['programme'])
+        .where((p) => p['kind'] == k && (p['city'] ?? circleCity) == circleCity)
+        .toList()
+      ..sort((a, b) => '${a['week']}'.compareTo('${b['week']}'));
+    final plan = of(kind);
+    // A town set up before mornings and afternoons had their own plans.
+    return plan.isEmpty && kind != 'evening' ? of('daytime') : plan;
+  }
 
   void _fillWeeks(String kind) {
     final plan = _programme(kind);
@@ -350,6 +413,10 @@ class _CircleAdminState extends State<CircleAdmin>
       weeks[i].address.text = '${p['address'] ?? ''}';
       weeks[i].cost.text = '${p['cost'] ?? ''}';
       weeks[i].booking.text = '${p['booking_name'] ?? ''}';
+      // "20:00:00" from the database, "20:00" here.
+      final start = '${p['start_time'] ?? ''}';
+      weeks[i].time.text = start.length >= 5 ? start.substring(0, 5) : '';
+      weekIncluded[i] = p['included'] == true;
     }
     weeksKind = kind;
     weeksEdited = false;
@@ -361,16 +428,64 @@ class _CircleAdminState extends State<CircleAdmin>
   }
 
   /// Members are told what each week costs, so the cost is required too.
-  bool get weeksComplete => weeks.every((w) =>
-      w.title.text.trim().isNotEmpty &&
-      w.venue.text.trim().isNotEmpty &&
-      w.cost.text.trim().isNotEmpty);
+  /// Week 5 may have no place: the group plans it. A start, when given, is
+  /// a 24-hour time.
+  bool get weeksComplete => [
+        for (var i = 0; i < 6; i++)
+          weeks[i].title.text.trim().isNotEmpty &&
+              (i == 4 || weeks[i].venue.text.trim().isNotEmpty) &&
+              weeks[i].cost.text.trim().isNotEmpty &&
+              (weeks[i].time.text.trim().isEmpty ||
+                  RegExp(r'^([01][0-9]|2[0-3]):[0-5][0-9]$')
+                      .hasMatch(weeks[i].time.text.trim()))
+      ].every((ok) => ok);
 
-  /// First matching weekday at least a week out, so nobody is invited to
-  /// something happening in two days.
+  /// Gentle checks, never blocking: members are promised two included
+  /// activities, and each start in the part of the day the group is free.
+  List<String> get weekHints {
+    final included = weekIncluded.where((v) => v).length;
+    final now = DateTime.now();
+    final daysAway = start == null
+        ? null
+        : DateTime(start!.year, start!.month, start!.day)
+            .difference(DateTime(now.year, now.month, now.day))
+            .inDays;
+    return [
+      if (daysAway != null && daysAway < 12)
+        'This Circle starts within 12 days: people get less than five days to say yes, and you less than a week to book.',
+      if (included != 2)
+        'Members are promised two included activities, and this plan includes $included.',
+      for (var i = 0; i < 6; i++)
+        if (RegExp(r'^([01][0-9]|2[0-3]):[0-5][0-9]$')
+                .firstMatch(weeks[i].time.text.trim())
+            case final m?)
+          if (switch (int.parse(m.group(1)!)) {
+                < 12 => 'morning',
+                < 17 => 'afternoon',
+                _ => 'evening'
+              } !=
+              timeKind)
+            'Week ${i + 1} starts at ${weeks[i].time.text.trim()}, outside the part of the day this group is free.',
+    ];
+  }
+
+  /// One week of the plan as the server wants it.
+  Json _weekPayload(int i) => {
+        'title': weeks[i].title.text.trim(),
+        'venue': weeks[i].venue.text.trim(),
+        'address': weeks[i].address.text.trim(),
+        'cost': weeks[i].cost.text.trim(),
+        'booking': weeks[i].booking.text.trim(),
+        if (weeks[i].time.text.trim().isNotEmpty)
+          'time': weeks[i].time.text.trim(),
+        'included': weekIncluded[i],
+      };
+
+  /// First matching weekday at least twelve days out: five days to say yes
+  /// and pay, then a week to book for the final group.
   DateTime _nextWeekday(String day) {
     final target = circleDays.indexOf(day) + 1;
-    var date = DateTime.now().add(const Duration(days: 7));
+    var date = DateTime.now().add(const Duration(days: 12));
     while (target > 0 && date.weekday != target) {
       date = date.add(const Duration(days: 1));
     }
@@ -484,7 +599,7 @@ class _CircleAdminState extends State<CircleAdmin>
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
                 onPressed: () => openWhatsApp(phone, whatsAppMessage),
-                icon: const Icon(Icons.chat_outlined),
+                icon: const CircleWhatsAppIcon(),
                 label: Text(whatsAppLabel))),
     ];
   }
@@ -495,6 +610,7 @@ class _CircleAdminState extends State<CircleAdmin>
     final confirmed = await showDialog<bool>(
         context: context,
         builder: (c) => AlertDialog(
+              scrollable: true,
               title: Text(title),
               content: Text(explanation),
               actions: [
@@ -520,6 +636,7 @@ class _CircleAdminState extends State<CircleAdmin>
         context: context,
         builder: (c) => StatefulBuilder(
             builder: (c, update) => AlertDialog(
+                    scrollable: true,
                     title: const Text('Who came?'),
                     content: SizedBox(
                         width: 420,
@@ -624,12 +741,27 @@ class _CircleAdminState extends State<CircleAdmin>
                     : Padding(
                         padding: const EdgeInsets.all(24),
                         child: Text(error!, textAlign: TextAlign.center)))
-            : TabBarView(controller: tabs, children: [
-                _page(_todoTab(context)),
-                _page(_applicantsTab(context)),
-                _page(_formTab(context), controller: formScroll),
-                _page(_circlesTab(context)),
-                _page(_finishedTab(context)),
+            : Column(children: [
+                // Saving: a thin bar, so a tap never looks like it did nothing.
+                SizedBox(
+                    height: 3,
+                    child: busy
+                        ? Semantics(
+                            liveRegion: true,
+                            label: t('Saving…'),
+                            child: const LinearProgressIndicator(
+                                minHeight: 3,
+                                color: circleTeal,
+                                backgroundColor: Colors.transparent))
+                        : null),
+                Expanded(
+                    child: TabBarView(controller: tabs, children: [
+                  _page(_todoTab(context)),
+                  _page(_applicantsTab(context)),
+                  _page(_formTab(context), controller: formScroll),
+                  _page(_circlesTab(context)),
+                  _page(_finishedTab(context)),
+                ])),
               ]));
   }
 
@@ -717,43 +849,25 @@ class _CircleAdminState extends State<CircleAdmin>
         .length;
     final completed = circles.where((c) => c['status'] == 'completed').length;
     return [
-      CircleHeading('Make the introductions.',
-          eyebrow: widget.repository.isDemo
+      // What needs doing first; the numbers at a glance come after.
+      Text(
+          widget.repository.isDemo
               ? 'Preview organiser · example applicants'
               : 'Alkmaar founding pilot',
-          subtitle: todoCount > 0
-              ? 'Start with what needs you, then form the next Circle.'
-              : needsDetails.isNotEmpty
-                  ? '${needsDetails.length} ${needsDetails.length == 1 ? 'applicant needs' : 'applicants need'} to finish their profile before they can be matched.'
-                  : 'Nothing needs you right now. Form a Circle when a group fits.'),
-      LayoutBuilder(builder: (context, box) {
-        // Two tiles per row on a phone, fixed-width tiles otherwise.
-        _tileWidth = box.maxWidth < 560 ? (box.maxWidth - 12) / 2 : 172;
-        return Wrap(spacing: 12, runSpacing: 12, children: [
-          // Straight to the recommended groups, where they can be formed.
-          _statTile('Ready to match', ready, 'Waiting with complete details',
-              () => tabs.animateTo(2)),
-          _statTile(
-              'Missing details',
-              needsDetails.length,
-              'Need a birthday, photo or times',
-              () => _showApplicants(ready: false),
-              attention: true),
-          _statTile('Awaiting payment', awaitingPayment.length,
-              'Accepted, not yet paid', null,
-              attention: true),
-          _statTile(
-              'Open reports', reports.length, 'Concerns from members', null,
-              attention: true),
-          _statTile('Refunds to send', openRefunds.length,
-              'Requested by members', null,
-              attention: true),
-          _statTile('Circles running', running, 'Invited or in progress',
-              () => tabs.animateTo(3)),
-          _statTile('Completed', completed, 'Circles that finished',
-              () => tabs.animateTo(4)),
-        ]);
-      }),
+          style: const TextStyle(
+              fontSize: 12,
+              letterSpacing: 1.2,
+              fontWeight: FontWeight.w800,
+              color: circleTealText)),
+      const SizedBox(height: 4),
+      Text(
+          todoCount > 0
+              ? t(todoCount == 1
+                      ? '1 thing needs you today'
+                      : '{1} things need you today')
+                  .replaceAll('{1}', '$todoCount')
+              : 'Nothing needs you right now',
+          style: Theme.of(context).textTheme.headlineSmall),
       const SizedBox(height: 12),
       if (todoCount == 0)
         const Padding(
@@ -763,13 +877,38 @@ class _CircleAdminState extends State<CircleAdmin>
               SizedBox(width: 10),
               Expanded(
                   child: Text(
-                      'All clear. No payments, reports or refunds waiting.')),
+                      'All clear. No payments, bookings, reports or refunds waiting.')),
             ])),
+      if (readyToStart.isNotEmpty) ...[
+        _sectionTitle(context, 'Groups ready to start',
+            hint:
+                'Enough people have paid. Choose the first date: they hear it straight away.'),
+        for (final c in readyToStart)
+          _card([
+            Text(c['name'] as String? ?? 'Circle',
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+            Text(
+                t('{1} of 6 paid · {2}')
+                    .replaceAll('{1}', '${_paidCount(c)}')
+                    .replaceAll('{2}', t('${c['schedule'] ?? ''}')),
+                style: const TextStyle(color: _muted)),
+            const SizedBox(height: 6),
+            FilledButton.icon(
+                onPressed: busy ? null : () => _startCircle(context, c),
+                icon: const Icon(Icons.event_available_outlined, size: 18),
+                label: const Text('Start this Circle')),
+          ]),
+      ],
       if (awaitingPayment.isNotEmpty) ...[
         _sectionTitle(context, 'Payments to confirm',
             hint:
                 'Members pay with the Circle’s payment link. Confirm once the money is in.'),
         for (final p in awaitingPayment) _paymentCard(context, p),
+      ],
+      if (toBook.isNotEmpty) ...[
+        _sectionTitle(context, 'Weeks to book',
+            hint: 'The next two weeks. Book each place, then mark it booked.'),
+        for (final (c, m) in toBook) _toBookCard(context, c, m),
       ],
       if (reports.isNotEmpty) ...[
         _sectionTitle(context, 'Member concerns'),
@@ -790,6 +929,39 @@ class _CircleAdminState extends State<CircleAdmin>
               onPressed: () => _showApplicants(ready: false),
               child: Text('See all ${needsDetails.length}')),
       ],
+      const SizedBox(height: 16),
+      _sectionTitle(context, 'At a glance'),
+      LayoutBuilder(builder: (context, box) {
+        // Two tiles per row on a phone, fixed-width tiles otherwise.
+        _tileWidth = box.maxWidth < 560 ? (box.maxWidth - 12) / 2 : 172;
+        return Wrap(spacing: 12, runSpacing: 12, children: [
+          // Straight to the recommended groups, where they can be formed.
+          _statTile('Ready to match', ready, 'Waiting with complete details',
+              () => tabs.animateTo(2)),
+          _statTile(
+              'Missing details',
+              needsDetails.length,
+              'Need a birthday, photo or times',
+              () => _showApplicants(ready: false),
+              attention: true),
+          _statTile('Awaiting payment', awaitingPayment.length,
+              'Accepted, not yet paid', null,
+              attention: true),
+          _statTile(
+              'To book', toBook.length, 'Weeks in the next two weeks', null,
+              attention: true),
+          _statTile(
+              'Open reports', reports.length, 'Concerns from members', null,
+              attention: true),
+          _statTile('Refunds to send', openRefunds.length,
+              'Requested by members', null,
+              attention: true),
+          _statTile('Circles running', running, 'Invited or in progress',
+              () => tabs.animateTo(3)),
+          _statTile('Completed', completed, 'Circles that finished',
+              () => tabs.animateTo(4)),
+        ]);
+      }),
     ];
   }
 
@@ -816,26 +988,29 @@ class _CircleAdminState extends State<CircleAdmin>
     return '${circleDate(at.toIso8601String())} $hh:$mm';
   }
 
-  /// The Circle's payment link (for example a Tikkie for €19). Members of
+  /// The Circle's payment link (for example a Tikkie for €39). Members of
   /// this Circle get it behind their Pay button.
   Widget _paymentLinkRow(Json c) {
     final link = (c['payment_link'] as String?)?.trim();
+    final none = link == null || link.isEmpty;
+    // The link on one line, its action below: nothing gets cut off on a
+    // phone.
     return Padding(
         padding: const EdgeInsets.only(top: 6, bottom: 2),
-        child: Row(children: [
-          const Icon(Icons.link_rounded, size: 18, color: _muted),
-          const SizedBox(width: 8),
-          Expanded(
-              child: link == null || link.isEmpty
-                  ? Text(t('No payment link yet'),
-                      style: const TextStyle(color: circleCoralText))
-                  : SelectableText(link,
-                      maxLines: 1, style: const TextStyle(fontSize: 13))),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(Icons.link_rounded, size: 18, color: _muted),
+            const SizedBox(width: 8),
+            Expanded(
+                child: none
+                    ? Text(t('No payment link yet'),
+                        style: const TextStyle(color: circleCoralText))
+                    : SelectableText(link,
+                        maxLines: 1, style: const TextStyle(fontSize: 13))),
+          ]),
           TextButton(
               onPressed: busy ? null : () => _editPaymentLink(c),
-              child: Text(link == null || link.isEmpty
-                  ? 'Add payment link'
-                  : 'Change')),
+              child: Text(none ? 'Add payment link' : 'Change payment link')),
         ]));
   }
 
@@ -844,13 +1019,14 @@ class _CircleAdminState extends State<CircleAdmin>
     final save = await showDialog<bool>(
         context: context,
         builder: (dc) => AlertDialog(
+                scrollable: true,
                 title: const Text('Payment link'),
                 content: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                          'Make one Tikkie for €19 for this Circle, allowing as many payers as there are members, and paste its link here. Members of this Circle get it behind their Pay button.'),
+                          'Make one Tikkie for €39 for this Circle, allowing as many payers as there are members, and paste its link here. Members of this Circle get it behind their Pay button.'),
                       const SizedBox(height: 12),
                       TextFormField(
                           initialValue: value,
@@ -879,7 +1055,7 @@ class _CircleAdminState extends State<CircleAdmin>
       Text('${p['name'] ?? 'Member'} · ${p['circle_name'] ?? 'Circle'}',
           style: Theme.of(context).textTheme.titleMedium),
       Text(
-          '€19 · ${t(circleStatusLabel(p['status']))} · ${t('agreed')} ${circleDate(p['agreed_at']?.toString())}',
+          '${circleEuros(p['amount_cents'])} · ${t(circleStatusLabel(p['status']))} · ${t('agreed')} ${circleDate(p['agreed_at']?.toString())}',
           style: const TextStyle(color: _muted)),
       if (p['status'] == 'awaiting_payment') ...[
         if (p['pay_by'] != null)
@@ -902,7 +1078,7 @@ class _CircleAdminState extends State<CircleAdmin>
       SelectableText(p['email']?.toString() ?? 'Account removed'),
       ...contactLines(contact?['phone'] as String?,
           whatsAppMessage: p['status'] == 'awaiting_payment'
-              ? 'Hi ${p['name'] ?? 'there'}! This is the VriendTime organiser, about your place in "${p['circle_name'] ?? ''}" and the one-off €19 fee. '
+              ? 'Hi ${p['name'] ?? 'there'}! This is the VriendTime organiser, about your place in "${p['circle_name'] ?? ''}" and the one-off ${circleEuros(p['amount_cents'])} fee. '
               : null),
       if (p['status'] == 'awaiting_payment')
         Align(
@@ -911,7 +1087,7 @@ class _CircleAdminState extends State<CircleAdmin>
                 onPressed: busy
                     ? null
                     : () => confirmAction(
-                        'Confirm €19 received?',
+                        'Confirm ${circleEuros(p['amount_cents'])} received?',
                         'Only confirm after you have checked the money arrived. This unlocks the member’s Circle and group chat.',
                         'admin_confirm_payment',
                         {'id': p['id'], 'received': true}),
@@ -1077,58 +1253,10 @@ class _CircleAdminState extends State<CircleAdmin>
   }
 
   /// Read-only: organisers moderate, they don't take part.
-  Future<void> _readChat(Json c) async {
-    final messages = widget.repository.adminMessages('${c['id']}');
-    await showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-                title: Text('${t('Chat')} · ${c['name']}'),
-                content: SizedBox(
-                    width: 480,
-                    child: FutureBuilder<List<Json>>(
-                        future: messages,
-                        builder: (context, snap) {
-                          if (snap.hasError) {
-                            return const Text(
-                                'The chat could not be loaded. Please try again.');
-                          }
-                          if (!snap.hasData) {
-                            return const SizedBox(
-                                height: 170,
-                                child: Center(
-                                    child: CircleLoading(
-                                        compact: true,
-                                        label: 'Opening the chat…',
-                                        phrases: ['Opening the chat…'])));
-                          }
-                          final list = snap.data!;
-                          if (list.isEmpty) {
-                            return const Text('No messages yet.');
-                          }
-                          return ListView(shrinkWrap: true, children: [
-                            for (final m in list)
-                              Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
-                                  child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                            '${m['name'] ?? m['sender'] ?? 'Member'} · ${_stamp(m['created_at'])}',
-                                            style: const TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w700,
-                                                color: _muted)),
-                                        Text('${m['body'] ?? ''}'),
-                                      ])),
-                          ]);
-                        })),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Close')),
-                ]));
-  }
+  Future<void> _readChat(Json c) => openOrganiserChat(context,
+      repository: widget.repository,
+      circle: c,
+      act: (command, payload) => action(command, payload, true));
 
   /// Waiting applicants, best fits first: free on the Circle's day and time,
   /// sharing a language with everyone, and not excluded by anyone in it. The
@@ -1216,7 +1344,7 @@ class _CircleAdminState extends State<CircleAdmin>
         t('Invite {1} to {2}?')
             .replaceAll('{1}', '${chosen['name'] ?? 'this person'}')
             .replaceAll('{2}', '${c['name']}'),
-        'They get the invitation and the six dates, with 5 days to accept and pay.',
+        'They get the invitation and the six dates, with 5 days to accept and pay, but no later than a week before the first meetup. Invited later? Then they have until the end of the next day.',
         'admin_invite',
         {'circle_id': c['id'], 'profile_id': chosen['profile_id']});
   }
@@ -1272,7 +1400,7 @@ class _CircleAdminState extends State<CircleAdmin>
             '${r['name'] ?? 'Member'} · ${r['circle_name'] ?? t(circleStatusLabel(r['status']))}',
             style: const TextStyle(fontWeight: FontWeight.w700)),
         Text(
-            '€${(((r['amount_cents'] as num?) ?? 1900) / 100).toStringAsFixed(0)}'
+            '${circleEuros(r['amount_cents'])}'
             '${r['paid_at'] != null ? ' · ${t('paid')} ${circleDate(r['paid_at']?.toString())}' : ''}'
             ' · ${t('asked')} ${circleDate(r['requested_at']?.toString())}',
             style: const TextStyle(color: _muted)),
@@ -1282,9 +1410,9 @@ class _CircleAdminState extends State<CircleAdmin>
         if (r['email'] != null) SelectableText('${r['email']}'),
         if (r['status'] == 'requested') ...[
           const SizedBox(height: 6),
-          const Text(
-              'To refund: find their €19 in your bank app (the Tikkie payment shows their name, and usually their account number) and transfer it back. No account number? Ask them for it.',
-              style: TextStyle(fontSize: 13, color: _muted)),
+          Text(
+              'To refund: find their ${circleEuros(r['amount_cents'])} in your bank app (the Tikkie payment shows their name, and usually their account number) and transfer it back. No account number? Ask them for it.',
+              style: const TextStyle(fontSize: 13, color: _muted)),
           if (r['email'] != null)
             Align(
                 alignment: Alignment.centerLeft,
@@ -1295,7 +1423,7 @@ class _CircleAdminState extends State<CircleAdmin>
                         path: '${r['email']}',
                         query:
                             'subject=${Uri.encodeComponent(t('Your VriendTime refund'))}'
-                            '&body=${Uri.encodeComponent(t('Hi! To return your €19, could you reply with the IBAN and account holder name you’d like it sent to? Thanks, VriendTime'))}')),
+                            '&body=${Uri.encodeComponent(t('Hi! To return your ${circleEuros(r['amount_cents'])}, could you reply with the IBAN and account holder name you’d like it sent to? Thanks, VriendTime'))}')),
                     label: const Text('Ask for bank details'))),
         ],
         if (r['status'] == 'requested')
@@ -1307,7 +1435,7 @@ class _CircleAdminState extends State<CircleAdmin>
                       : () => widget.repository.isDemo
                           ? action('resolve_refund', {'id': r['id']})
                           : confirmAction(
-                              'Confirm €19 returned?',
+                              'Confirm ${circleEuros(r['amount_cents'])} returned?',
                               'Only confirm after you have returned the money to the member.',
                               'admin_confirm_refund',
                               {'id': r['id'], 'returned': true}),
@@ -1655,7 +1783,7 @@ class _CircleAdminState extends State<CircleAdmin>
                               Navigator.pop(context);
                               await confirmAction(
                                   'Refund instead of moving?',
-                                  'They leave the waiting list and appear under Refunds to send. Confirm there once you have returned the €19.',
+                                  'They leave the waiting list and appear under Refunds to send. Confirm there once you have returned the €39.',
                                   'admin_refund_move',
                                   {'id': a['move_id']},
                                   destructive: true);
@@ -1695,8 +1823,23 @@ class _CircleAdminState extends State<CircleAdmin>
       ]),
       chips('Speaks', strings(a['languages'])),
       chips('Interests', strings(a['interests'])),
-      chips('Looking for', strings(a['goals'])),
-      chips('Context', strings(a['life_context'])),
+      // "Something else" shows their own words instead.
+      chips('Looking for', [
+        for (final g in strings(a['goals']))
+          if (g == 'Something else' &&
+              '${a['goals_other'] ?? ''}'.trim().isNotEmpty)
+            '“${'${a['goals_other']}'.trim()}”'
+          else
+            g
+      ]),
+      chips('Context', [
+        for (final g in strings(a['life_context']))
+          if (g == 'Something else' &&
+              '${a['life_context_other'] ?? ''}'.trim().isNotEmpty)
+            '“${'${a['life_context_other']}'.trim()}”'
+          else
+            g
+      ]),
       chips('Social style', [style]),
       chips('Gender (private)',
           [if (circleGenders[a['gender']] case final g?) g]),
@@ -1859,12 +2002,12 @@ class _CircleAdminState extends State<CircleAdmin>
       ]),
       const SizedBox(height: 10),
       LayoutBuilder(builder: (context, box) {
-        // Seven columns must fit a 320px phone, so cells shrink to fit.
-        const labelWidth = 70.0;
-        final size = ((box.maxWidth - labelWidth) / 7 - 6).clamp(30.0, 46.0);
+        // Seven columns must fit a 320px phone, so cells and labels shrink.
+        final labelWidth = box.maxWidth < 300 ? 52.0 : 70.0;
+        final size = ((box.maxWidth - labelWidth) / 7 - 6).clamp(20.0, 46.0);
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            const SizedBox(width: labelWidth),
+            SizedBox(width: labelWidth),
             for (final d in circleDays)
               SizedBox(
                   width: size + 6,
@@ -1880,6 +2023,8 @@ class _CircleAdminState extends State<CircleAdmin>
               SizedBox(
                   width: labelWidth,
                   child: Text(p[0].toUpperCase() + p.substring(1),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 12, color: _muted))),
               for (final d in circleDays) cell(d, p, size),
             ]),
@@ -2140,10 +2285,22 @@ class _CircleAdminState extends State<CircleAdmin>
                     }
                   },
             label: Text(
-                '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')} · ${t('Netherlands time')}')),
+                '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}–${circleWindowEnd(time.hour)} · ${t('Netherlands time')}')),
       ]),
       const SizedBox(height: 16),
       ..._weeksEditor(context),
+      for (final hint in weekHints)
+        Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Icon(Icons.info_outline_rounded,
+                  size: 16, color: circleCoralText),
+              const SizedBox(width: 6),
+              Expanded(
+                  child: Text(hint,
+                      style: const TextStyle(
+                          fontSize: 12, color: circleCoralText))),
+            ])),
       const SizedBox(height: 10),
       Text(
           weeksComplete
@@ -2169,16 +2326,7 @@ class _CircleAdminState extends State<CircleAdmin>
                     'start_date': start!.toIso8601String().split('T').first,
                     'time':
                         '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
-                    'weeks': [
-                      for (final w in weeks)
-                        {
-                          'title': w.title.text.trim(),
-                          'venue': w.venue.text.trim(),
-                          'address': w.address.text.trim(),
-                          'cost': w.cost.text.trim(),
-                          'booking': w.booking.text.trim()
-                        }
-                    ]
+                    'weeks': [for (var i = 0; i < 6; i++) _weekPayload(i)]
                   }),
           child: Text(busy
               ? 'Setting up your Circle…'
@@ -2187,10 +2335,10 @@ class _CircleAdminState extends State<CircleAdmin>
     ]);
   }
 
-  /// Six weeks, each an activity and a place. Weeks 1–4 are fixed; 5 and 6
-  /// are a starting plan the group may change together.
+  /// Six weeks, each an activity, a place and a start. Week 5 is the group's
+  /// own; weeks marked included are paid from the fee.
   List<Widget> _weeksEditor(BuildContext context) {
-    final kindLabel = timeKind == 'evening' ? 'evening' : 'daytime';
+    final kindLabel = timeKind;
     void edited(String _) => setState(() => weeksEdited = true);
     InputDecoration field(String label) =>
         InputDecoration(labelText: t(label), counterText: '');
@@ -2198,7 +2346,7 @@ class _CircleAdminState extends State<CircleAdmin>
       Text('The six-week plan', style: Theme.of(context).textTheme.titleMedium),
       const SizedBox(height: 4),
       const Text(
-          'Members see the activity and the place from the invitation on. Weeks 5 and 6 are a starting plan the group can change together.',
+          'Members see the activity and the place from the invitation on. Week 5 is the group’s own: leave its place empty and they plan it. Included weeks are paid from the fee, so book and pay for them yourself.',
           style: TextStyle(fontSize: 12, color: _muted)),
       const SizedBox(height: 4),
       Wrap(spacing: 4, children: [
@@ -2216,14 +2364,7 @@ class _CircleAdminState extends State<CircleAdmin>
                       'kind': timeKind,
                       'weeks': [
                         for (var i = 0; i < 6; i++)
-                          {
-                            'week': i + 1,
-                            'title': weeks[i].title.text.trim(),
-                            'venue': weeks[i].venue.text.trim(),
-                            'address': weeks[i].address.text.trim(),
-                            'cost': weeks[i].cost.text.trim(),
-                            'booking': weeks[i].booking.text.trim()
-                          }
+                          {'week': i + 1, ..._weekPayload(i)}
                       ]
                     });
                     if (mounted && error == null) {
@@ -2246,7 +2387,8 @@ class _CircleAdminState extends State<CircleAdmin>
                       circleDate(DateTime(
                               start!.year, start!.month, start!.day + 7 * i)
                           .toIso8601String()),
-                    if (i >= 4) t('the group can change this'),
+                    if (i == 4) t('your group plans this'),
+                    if (weekIncluded[i]) t('included in the fee'),
                   ].join(' · '),
                   style: const TextStyle(
                       fontSize: 12,
@@ -2265,7 +2407,35 @@ class _CircleAdminState extends State<CircleAdmin>
                   maxLength: 180,
                   enabled: !busy,
                   onChanged: edited,
-                  decoration: field('Place')),
+                  decoration: field(
+                      i == 4 ? 'Place (empty: the group decides)' : 'Place')),
+              const SizedBox(height: 6),
+              Row(children: [
+                SizedBox(
+                    width: 110,
+                    child: TextField(
+                        controller: weeks[i].time,
+                        maxLength: 5,
+                        enabled: !busy,
+                        keyboardType: TextInputType.datetime,
+                        onChanged: edited,
+                        decoration: field('Starts')
+                            .copyWith(hintText: t('e.g. 20:00')))),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        controlAffinity: ListTileControlAffinity.leading,
+                        value: weekIncluded[i],
+                        onChanged: busy
+                            ? null
+                            : (v) => setState(() {
+                                  weekIncluded[i] = v ?? false;
+                                  weeksEdited = true;
+                                }),
+                        title: Text(t('Included in the fee')))),
+              ]),
               const SizedBox(height: 6),
               TextField(
                   controller: weeks[i].address,
@@ -2296,7 +2466,7 @@ class _CircleAdminState extends State<CircleAdmin>
           title: Text(t('Places for one-to-one coffees'),
               style: const TextStyle(fontWeight: FontWeight.w700)),
           subtitle: Text(
-              t('We rotate through these. Check they are open at those times.'),
+              t('We rotate through these, and only suggest a place when it’s open.'),
               style: const TextStyle(fontSize: 12, color: _muted)),
           children: [
             for (final e in coffeePlaces.entries) ...[
@@ -2306,11 +2476,18 @@ class _CircleAdminState extends State<CircleAdmin>
                   minLines: 2,
                   maxLines: 6,
                   decoration: field(e.key == 'evening'
-                          ? 'Evening (a drink, from 19:00)'
+                          ? 'Evening (a drink, from 20:00)'
                           : 'Daytime (coffee, 10:30 and 14:00)')
                       .copyWith(
                           helperText: t('One place per line: name, address'))),
               const SizedBox(height: 8),
+              if (_withoutHours(e.key).isNotEmpty) ...[
+                Text(
+                    t('No opening hours yet: {1}. Only suggested when no other place is open.')
+                        .replaceAll('{1}', _withoutHours(e.key).join(', ')),
+                    style: const TextStyle(fontSize: 12, color: _muted)),
+                const SizedBox(height: 10),
+              ],
             ],
             Align(
                 alignment: Alignment.centerLeft,
@@ -2392,7 +2569,7 @@ class _CircleAdminState extends State<CircleAdmin>
           Text('${p['name'] ?? 'Member'} · ${p['circle_name'] ?? 'Circle'}',
               style: const TextStyle(fontWeight: FontWeight.w700)),
           Text(
-              '€19 · ${t(circleStatusLabel(p['status']))} · ${t('agreed')} ${circleDate(p['agreed_at']?.toString())}',
+              '${circleEuros(p['amount_cents'])} · ${t(circleStatusLabel(p['status']))} · ${t('agreed')} ${circleDate(p['agreed_at']?.toString())}',
               style: const TextStyle(color: _muted)),
         ]),
       _sectionTitle(context, 'Refunds'),
@@ -2404,7 +2581,29 @@ class _CircleAdminState extends State<CircleAdmin>
   Widget _circleCard(BuildContext context, Json c) => _card([
         Text(c['name'] as String? ?? 'Circle',
             style: Theme.of(context).textTheme.titleMedium),
-        if (c['paid_members'] != null && (c['paid_members'] as num) < 5)
+        // Pay first: still finding people. Its dates are placeholders.
+        if (_unstarted(c)) ...[
+          Text(
+              t('Finding people · {1} of 6 paid')
+                  .replaceAll('{1}', '${_paidCount(c)}'),
+              style: const TextStyle(
+                  fontWeight: FontWeight.w700, color: circleTealText)),
+          const Text(
+              'Members see only how many seats are confirmed. Names, dates, places and the chat open when you start it.',
+              style: TextStyle(color: _muted, fontSize: 13)),
+          const SizedBox(height: 6),
+          Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                  onPressed: busy || _paidCount(c) == 0
+                      ? null
+                      : () => _startCircle(context, c),
+                  icon: const Icon(Icons.event_available_outlined, size: 18),
+                  label: const Text('Start this Circle'))),
+        ],
+        if (!_unstarted(c) &&
+            c['paid_members'] != null &&
+            (c['paid_members'] as num) < 5)
           Text(
               '${c['paid_members']}/5 paid places. Confirm enough people are joining before the first meetup.',
               style: const TextStyle(color: Colors.deepOrange)),
@@ -2412,6 +2611,7 @@ class _CircleAdminState extends State<CircleAdmin>
             style: const TextStyle(color: _muted)),
         if (['offered', 'active'].contains(c['status'])) _paymentLinkRow(c),
         if (['offered', 'active'].contains(c['status'])) ..._memberRows(c),
+        if (rows(c['whatsapp']).isNotEmpty) ..._whatsAppRows(c),
         if (['offered', 'active'].contains(c['status']))
           Align(
               alignment: Alignment.centerLeft,
@@ -2421,53 +2621,330 @@ class _CircleAdminState extends State<CircleAdmin>
                       ? null
                       : () => confirmAction(
                           'Cancel this Circle?',
-                          'Members will be notified, upcoming meetups cancelled, and refund requests created for received payments. Return the money separately and then confirm each refund on the To do tab.',
+                          'Members will be notified, upcoming meetups cancelled, and refund requests created for received payments. Return the money separately and then confirm each refund on the To do tab. Cancel any bookings you made with the places too.',
                           'admin_cancel_circle',
                           {'id': c['id']},
                           destructive: true),
                   child: const Text('Cancel Circle'))),
-        for (final m in rows(c['meetups']))
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            ListTile(
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-                title: Text(m['title'] as String? ?? 'Meetup'),
-                subtitle: Text(
-                    '${circleDate(m['date'] as String?)} · ${m['completed'] == true ? t('Completed') : t('Planned')}'
-                    '${m['completed'] != true && m['going'] != null ? ' · ${t('{1} going').replaceAll('{1}', '${m['going']}')}' : ''}'
-                    '${m['completed'] != true && (m['venue'] ?? '').toString().trim().isEmpty ? ' · ${t('No place yet')}' : ''}'
-                    '${(m['place_feelings'] as Map?)?.isNotEmpty == true ? ' · ${t('place')}: ${(m['place_feelings'] as Map).entries.map((e) => '${e.key.toString().split(' ').first} ${e.value}').join(' ')}' : ''}')),
-            Wrap(spacing: 8, children: [
-              if (m['completed'] != true)
-                TextButton.icon(
-                    icon: const Icon(Icons.edit_calendar_outlined, size: 18),
-                    label: const Text('Edit plan'),
-                    onPressed: busy
-                        ? null
-                        : () => scheduleCircleMeetup(
-                            context,
-                            (a, [d = const {}]) =>
-                                action('admin_schedule', d, true),
-                            organiser: true,
-                            meetup: m)),
-              if (m['completed'] != true && circleMeetupPast(m))
-                TextButton.icon(
-                    icon: const Icon(Icons.task_alt, size: 18),
-                    label: const Text('Mark completed'),
-                    onPressed: busy
-                        ? null
-                        : () => action('complete_meetup', {'id': m['id']})),
-              if (circleMeetupPast(m))
-                TextButton.icon(
-                    icon: const Icon(Icons.people_outline, size: 18),
-                    label: const Text('Attendance'),
-                    onPressed: () => attendance(m))
-              else
-                const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Text('Attendance after the meetup',
-                        style: TextStyle(fontSize: 12, color: _muted))),
+        // Each week its own block: a divider, the week's picture and
+        // name, then its booking and actions. Not before the start: the
+        // dates are only placeholders then.
+        if (_unstarted(c))
+          const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text('The six weeks get their dates when you start it.',
+                  style: TextStyle(color: _muted, fontSize: 13)))
+        else
+          for (final m in rows(c['meetups']))
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Divider(height: 24),
+              ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  leading:
+                      m['week'] is int ? CircleMeetupTile(m, size: 40) : null,
+                  title: Text(
+                      m['week'] is int
+                          ? '${t('Week ${m['week']}')} · ${m['title'] ?? ''}'
+                          : '${m['title'] ?? 'Meetup'}',
+                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: Text(
+                      '${circleDate(m['date'] as String?)} · ${m['completed'] == true ? t('Completed') : t('Planned')}'
+                      '${m['completed'] != true && m['going'] != null ? ' · ${t('{1} going').replaceAll('{1}', '${m['going']}')}' : ''}'
+                      '${m['completed'] != true && (m['venue'] ?? '').toString().trim().isEmpty ? ' · ${t(m['week'] == 5 ? 'The group plans this' : 'No place yet')}' : ''}'
+                      '${m['included'] == true ? ' · ${t('included')}' : ''}'
+                      '${(m['place_feelings'] as Map?)?.isNotEmpty == true ? ' · ${t('place')}: ${(m['place_feelings'] as Map).entries.map((e) => '${e.key.toString().split(' ').first} ${e.value}').join(' ')}' : ''}')),
+              Wrap(spacing: 8, children: [
+                if (m['completed'] != true)
+                  TextButton.icon(
+                      icon: const Icon(Icons.edit_calendar_outlined, size: 18),
+                      label: const Text('Edit plan'),
+                      onPressed: busy
+                          ? null
+                          : () => scheduleCircleMeetup(
+                              context,
+                              (a, [d = const {}]) =>
+                                  action('admin_schedule', d, true),
+                              organiser: true,
+                              meetup: m)),
+                if (m['completed'] != true && circleMeetupPast(m))
+                  TextButton.icon(
+                      icon: const Icon(Icons.task_alt, size: 18),
+                      label: const Text('Mark completed'),
+                      onPressed: busy
+                          ? null
+                          : () => action('complete_meetup', {'id': m['id']})),
+                if (circleMeetupPast(m))
+                  TextButton.icon(
+                      icon: const Icon(Icons.people_outline, size: 18),
+                      label: const Text('Attendance'),
+                      onPressed: () => attendance(m))
+                else
+                  const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Text('Attendance after the meetup',
+                          style: TextStyle(fontSize: 12, color: _muted))),
+              ]),
+              ..._booking(m),
             ]),
-          ]),
       ]);
+
+  /// How this meetup's place is booked, from the places list.
+  Json? _venueFor(Json m) {
+    final name = '${m['venue'] ?? ''}'.trim().toLowerCase();
+    if (name.isEmpty) return null;
+    for (final v in rows(data?['venues'])) {
+      if ('${v['name']}'.trim().toLowerCase() == name) return v;
+    }
+    return null;
+  }
+
+  Future<void> _openLink(String url) async {
+    try {
+      if (await launchUrl(Uri.parse(url),
+          mode: LaunchMode.externalApplication)) {
+        return;
+      }
+    } catch (_) {}
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(t('Could not open this link. Please try again.'))));
+    }
+  }
+
+  /// "Thu 22 Oct 20:00", Netherlands time, for a meetup.
+  static String _nlWhen(Object? iso) {
+    final at = DateTime.tryParse('${iso ?? ''}');
+    if (at == null) return '';
+    final nl = circleAmsterdam(at);
+    return '${circleDate(nl.toIso8601String())} ${nl.hour.toString().padLeft(2, '0')}:${nl.minute.toString().padLeft(2, '0')}';
+  }
+
+  /// A week to book, on the To do tab.
+  /// Who'd like a WhatsApp group, with their numbers, to make it by hand.
+  List<Widget> _whatsAppRows(Json c) {
+    final answers = rows(c['whatsapp']);
+    final yes = answers.where((w) => w['answer'] == 'yes').toList();
+    final no = answers.where((w) => w['answer'] == 'no').toList();
+    final have = answers.where((w) => w['answer'] == 'have').toList();
+    return [
+      const SizedBox(height: 8),
+      Row(children: [
+        const CircleWhatsAppIcon(size: 18),
+        const SizedBox(width: 6),
+        Text(t('WhatsApp group'),
+            style: const TextStyle(fontWeight: FontWeight.w700)),
+      ]),
+      for (final w in yes)
+        SelectableText('${w['name'] ?? 'Member'} · ${w['phone'] ?? ''}'),
+      if (have.isNotEmpty)
+        Text(
+            t('Already have a group: {1}').replaceAll(
+                '{1}', have.map((w) => '${w['name'] ?? 'Member'}').join(', ')),
+            style: const TextStyle(color: _muted)),
+      if (no.isNotEmpty)
+        Text(
+            t('Not joining: {1}').replaceAll(
+                '{1}', no.map((w) => '${w['name'] ?? 'Member'}').join(', ')),
+            style: const TextStyle(color: _muted)),
+      if (yes.length >= 2)
+        Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+                icon: const Icon(Icons.copy_rounded, size: 18),
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(
+                      text: yes.map((w) => '${w['phone'] ?? ''}').join('\n')));
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(t('Numbers copied.'))));
+                  }
+                },
+                label: const Text('Copy numbers'))),
+    ];
+  }
+
+  /// The first date: the group's own weekday, at least 3 days away;
+  /// suggested a few days further, so everyone can plan.
+  Future<void> _startCircle(BuildContext context, Json c) async {
+    final placeholder = DateTime.tryParse('${c['start_date'] ?? ''}');
+    final weekday = placeholder?.weekday ?? DateTime.thursday;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final first = today.add(const Duration(days: 3));
+    var suggested = today.add(const Duration(days: 4));
+    while (suggested.weekday != weekday) {
+      suggested = suggested.add(const Duration(days: 1));
+    }
+    final paid = _paidCount(c);
+    final day = await showDatePicker(
+        context: context,
+        helpText: t('First meetup'),
+        initialDate: suggested,
+        firstDate: first,
+        lastDate: today.add(const Duration(days: 120)),
+        selectableDayPredicate: (d) => d.weekday == weekday);
+    if (day == null || !context.mounted) return;
+    final ymd =
+        '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+    await confirmAction(
+        t('Start {1} on {2}?')
+            .replaceAll('{1}', '${c['name'] ?? t('this Circle')}')
+            .replaceAll('{2}', circleDate(ymd)),
+        '${paid < 5 ? '${t('Only {1} people have paid.').replaceAll('{1}', '$paid')} ' : ''}'
+            '${t('The six weeks move to this date. Paid members hear it straight away, and see the group, places and chat. Invitations not paid yet stay open until the day before.')}',
+        'admin_start',
+        {'id': c['id'], 'start_date': ymd});
+  }
+
+  Widget _toBookCard(BuildContext context, Json c, Json m) => _card([
+        Text('${t('Week ${m['week']}')} · ${m['title'] ?? ''}',
+            style: Theme.of(context).textTheme.titleMedium),
+        Text(
+            [
+              '${c['name'] ?? 'Circle'}',
+              '${circleDate(m['date'] as String?)} ${circleMeetupHours(m)}',
+              if ('${m['venue'] ?? ''}'.trim().isNotEmpty) '${m['venue']}',
+            ].where((x) => x.isNotEmpty).join(' · '),
+            style: const TextStyle(color: _muted)),
+        const SizedBox(height: 4),
+        ..._booking(m),
+      ]);
+
+  /// A week's booking: where it stands, and the way this place is booked.
+  /// "Booked" and "asked" only count for the current place and time; a
+  /// booking made before a change is listed so it can be cancelled.
+  List<Widget> _booking(Json m) {
+    if (m['completed'] == true || circleMeetupPast(m)) return const [];
+    const muted = TextStyle(fontSize: 12, color: _muted);
+    final previous = [
+      for (final p in rows(m['booking_previous']))
+        Text(
+            p['status'] == 'booked'
+                ? 'Was booked at ${p['venue'] ?? 'the old place'} for ${_nlWhen(p['starts_at'])}: cancel that booking.'
+                : 'We asked ${p['venue'] ?? 'the old place'} for ${_nlWhen(p['starts_at'])}: let them know it changed.',
+            style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: circleCoralText)),
+    ];
+    if ('${m['venue'] ?? ''}'.trim().isEmpty) {
+      return [
+        ...previous,
+        Text(
+            m['week'] == 5
+                ? 'Booking: waiting for the group’s plan'
+                : 'Booking: add the place first',
+            style: muted),
+        const SizedBox(height: 8),
+      ];
+    }
+    final status = '${m['booking_status'] ?? ''}';
+    final email = m['booking_email'] is Map
+        ? Map<String, dynamic>.from(m['booking_email'] as Map)
+        : null;
+    final failed = status == 'requested' && email?['failed'] == true;
+    final waiting = status == 'requested' &&
+        email != null &&
+        email['sent_at'] == null &&
+        !failed;
+    final venue = _venueFor(m);
+    return [
+      ...previous,
+      Text(
+          switch (status) {
+            'booked' => 'Booked ✓',
+            'requested' when failed =>
+              'The booking email could not be sent. Try again, or book another way.',
+            'requested' when waiting =>
+              'Booking email waiting to go out (within 10 minutes)',
+            'requested' =>
+              'Booking email sent on ${circleDate('${email?['sent_at'] ?? m['booking_requested_at'] ?? ''}')}. Waiting for their reply.',
+            _ => 'Not booked yet',
+          },
+          style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: status == 'booked'
+                  ? circleTealText
+                  : failed
+                      ? circleCoralText
+                      : _muted)),
+      Wrap(spacing: 8, children: [
+        if (venue?['booking'] == 'online' && venue?['booking_url'] != null)
+          TextButton.icon(
+              icon: const Icon(Icons.open_in_new_rounded, size: 18),
+              label: const Text('Book online'),
+              onPressed: () => _openLink('${venue!['booking_url']}')),
+        if (venue?['booking'] == 'email' &&
+            venue?['booking_email'] != null &&
+            status != 'booked' &&
+            !waiting)
+          TextButton.icon(
+              icon: const Icon(Icons.mail_outline_rounded, size: 18),
+              label: Text(status.isEmpty ? 'Send booking email' : 'Send again'),
+              onPressed: busy
+                  ? null
+                  : () => _sendBooking(m, venue!, status.isNotEmpty)),
+        if (venue?['booking_phone'] != null)
+          TextButton.icon(
+              icon: const Icon(Icons.call_outlined, size: 18),
+              label: const Text('Call'),
+              onPressed: () => _openLink(
+                  'tel:${'${venue!['booking_phone']}'.replaceAll(' ', '')}')),
+        if (status != 'booked')
+          TextButton.icon(
+              icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+              label: const Text('Mark booked'),
+              onPressed: busy
+                  ? null
+                  : () => action(
+                      'admin_booking', {'id': m['id'], 'step': 'booked'}))
+        else
+          TextButton(
+              onPressed: busy
+                  ? null
+                  : () =>
+                      action('admin_booking', {'id': m['id'], 'step': 'clear'}),
+              child: const Text('Not booked after all')),
+      ]),
+      if (venue == null)
+        const Text(
+            'This place isn’t in the places list, so book it your own way.',
+            style: muted),
+      const SizedBox(height: 8),
+    ];
+  }
+
+  /// Sends the place a booking email, after one look at what goes where.
+  Future<void> _sendBooking(Json m, Json venue, bool again) async {
+    final yes = await showDialog<bool>(
+        context: context,
+        builder: (d) => AlertDialog(
+                scrollable: true,
+                title: Text(again
+                    ? 'Send the booking email again?'
+                    : 'Send a booking email?'),
+                content: Text(
+                    t('We email {1} asking to book week {2} on {3}, under your Circle’s name. Replies go to support@vriendtime.com.')
+                        .replaceAll('{1}', '${venue['booking_email']}')
+                        .replaceAll('{2}', '${m['week']}')
+                        .replaceAll('{3}', circleDate(m['date'] as String?))),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(d, false),
+                      child: const Text('Cancel')),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(d, true),
+                      child: const Text('Send email')),
+                ]));
+    if (yes != true) return;
+    await action('admin_booking',
+        {'id': m['id'], 'step': 'email', if (again) 'again': true});
+    if (mounted && error == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+              t('Booking email on its way. It goes out within 10 minutes.'))));
+    }
+  }
 }

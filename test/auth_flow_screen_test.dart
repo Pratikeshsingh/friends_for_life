@@ -6,7 +6,7 @@ import 'package:vriendtime/src/screens/auth_flow_screen.dart';
 import 'package:vriendtime/src/screens/legal_document_screen.dart';
 
 void main() {
-  testWidgets('sign-in artwork remains a full-viewport background', (
+  testWidgets('the sign-in surface fills the viewport', (
     tester,
   ) async {
     final client = _testClient();
@@ -122,7 +122,7 @@ void main() {
 
     expect(find.byType(LegalDocumentScreen), findsOneWidget);
     expect(find.text('Terms & Conditions'), findsWidgets);
-    expect(find.text('Effective 13 October 2026'), findsOneWidget);
+    expect(find.text('Effective 16 October 2026'), findsOneWidget);
 
     await tester.pageBack();
     await tester.pumpAndSettle();

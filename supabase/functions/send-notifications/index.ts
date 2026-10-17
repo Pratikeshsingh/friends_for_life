@@ -90,6 +90,13 @@ export function render(row: Pending, appUrl: string): { html: string; text: stri
   return { html, text };
 }
 
+type VenueEmail = { id: string; to_email: string; subject: string; body: string };
+
+/// A booking email's plain text as simple HTML paragraphs.
+export function venueHtml(body: string): string {
+  return body.split(/\n{2,}/).map((p) => `<p>${escapeHtml(p).replace(/\n/g, "<br>")}</p>`).join("\n");
+}
+
 export async function handler(request: Request): Promise<Response> {
   if (request.method !== "POST") {
     return new Response("Method not allowed.", { status: 405 });
@@ -127,6 +134,7 @@ export async function handler(request: Request): Promise<Response> {
 
   const pending = (data ?? []) as Pending[];
   let sent = 0;
+  let limited = false;
   const started = Date.now();
 
   // Hand rows back unsent, without using up an attempt.
@@ -165,6 +173,7 @@ export async function handler(request: Request): Promise<Response> {
         const detail = await response.text().catch(() => "");
         const seconds = /quota/i.test(detail) ? 3600 : 120;
         await deferRest(pending.slice(i), seconds, "Email provider limit reached; retrying later.");
+        limited = true;
         break;
       }
       if (!response.ok) failure = `Provider HTTP ${response.status}`;
@@ -179,11 +188,36 @@ export async function handler(request: Request): Promise<Response> {
     if (failure === null) sent++;
   }
 
+  // Booking emails to places, queued by the organiser: plain Dutch text,
+  // replies to support. Skipped while the provider is limiting us.
+  let venueSent = 0;
+  if (!limited) {
+    const venue = await supabase.rpc("venue_emails_pending", { max_rows: 10 });
+    for (const mail of (venue.error ? [] : (venue.data ?? [])) as VenueEmail[]) {
+      let failure: string | null = null;
+      try {
+        const response = await fetch("https://api.resend.com/emails", {
+          method: "POST", signal: AbortSignal.timeout(10_000),
+          headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json",
+            "Idempotency-Key": `vriendtime-venue/${mail.id}` },
+          body: JSON.stringify({ from, to: [mail.to_email], reply_to: replyTo, subject: mail.subject,
+            text: mail.body, html: venueHtml(mail.body) }),
+        });
+        if (!response.ok) failure = `Provider HTTP ${response.status}`;
+      } catch { failure = "Delivery interrupted; retry with the same idempotency key."; }
+      const ack = await supabase.rpc("ack_venue_email", { email_id: mail.id, failure });
+      if (ack.error) console.error("Booking email acknowledgement failed", mail.id);
+      if (failure === null) venueSent++;
+      else break;
+    }
+  }
+
   return new Response(
     JSON.stringify({
       considered: pending.length,
       sent,
       not_sent: pending.length - sent,
+      booking_emails_sent: venueSent,
     }),
     { headers: { "Content-Type": "application/json" } },
   );

@@ -1,5 +1,7 @@
 -- Coffee reminder on the day, booking names, "would you go back?".
 begin;
+-- The old flow (meet the group, then pay); pay-first has its own test.
+select set_config('vriendtime.pay_first', 'off', false);
 create function pg_temp.assert_true(value boolean,message text) returns void language plpgsql as $$ begin if value is distinct from true then raise exception 'ASSERTION FAILED: %',message; end if; end; $$;
 insert into auth.users(id,email,raw_user_meta_data)
 select ('00000000-0000-0000-0000-'||lpad(i::text,12,'0'))::uuid,'cf'||i||'@example.test',jsonb_build_object('first_name','Member '||i) from generate_series(1,8) i;
@@ -52,7 +54,7 @@ select public.queue_coffee_reminders(true);
 select public.queue_coffee_reminders(true);
 select pg_temp.assert_true((select count(*) from public.notifications where dedupe_key like 'coffee-today:%')=2,'one reminder each, once');
 select pg_temp.assert_true((select body from public.notifications where dedupe_key like 'coffee-today:%' and recipient_profile_id='00000000-0000-0000-0000-000000000001')='23:30 at Mr. Gold. Running late? Let them know in the app.','reminder says when and where');
-select pg_temp.assert_true(exists(select 1 from public.notifications where title='Coffee with Member 2 today'),'names the other person');
+select pg_temp.assert_true(exists(select 1 from public.notifications where title='A drink with Member 2 tonight'),'names the other person, and a drink at 23:30');
 -- Running late: one tap posts in the group chat (in the member's language) and tells the coffee partner.
 update public.profiles set language='nl' where id='00000000-0000-0000-0000-000000000001';
 update public.circle_coffees set starts_at=now()+interval '30 minutes';

@@ -4,8 +4,8 @@ import '../core/i18n.dart';
 enum LegalDocumentType { terms, privacy }
 
 abstract final class LegalDocuments {
-  static const termsVersion = '2026-10-13-v10';
-  static const privacyVersion = '2026-10-13-v10';
+  static const termsVersion = '2026-10-16-v12';
+  static const privacyVersion = '2026-10-16-v12';
 
   static LegalDocument documentFor(LegalDocumentType type) {
     return switch (type) {
@@ -16,7 +16,7 @@ abstract final class LegalDocuments {
 
   static const _terms = LegalDocument(
     title: 'Terms & Conditions',
-    effectiveDate: '13 October 2026',
+    effectiveDate: '16 October 2026',
     introduction:
         'These Terms & Conditions govern your use of VriendTime. By creating an account, you agree to these terms.',
     sections: [
@@ -38,13 +38,13 @@ abstract final class LegalDocuments {
       LegalSection(
         heading: '3. Friendship Circles, payments and meetups',
         paragraphs: [
-          'The founding Circle programme costs €19 once for six weeks. Food, drinks, travel, and activity purchases are separate. There is no subscription or further programme fee after graduation. Your group and schedule are shown before you accept the invitation.',
-          'Accepting an invitation requires an explicit agreement to pay €19. You pay with the payment link shown in the app; during the pilot this is a Tikkie or bank payment link from the organiser. Accepting does not collect money. Your place and group chat open when the organiser confirms receipt.',
+          'The founding Circle programme costs €39 once for six weeks. It includes two group activities, in weeks two and four, which we book and pay for. Food, drinks, travel and other purchases are separate. There is no subscription or further programme fee after graduation. When we have found people for your time, we invite you to pay. Your group, the dates and the places are shown once your group is booked.',
+          'Accepting an invitation requires an explicit agreement to pay €39. You pay with the payment link shown in the app; during the pilot this is a Tikkie or bank payment link from the organiser. Accepting does not collect money. Your place is confirmed when the organiser confirms receipt. Please pay within 7 days of the invitation; after that your seat may be offered to someone else. You can still pay until the group starts: if a seat is free you join it, and if not, your €39 is kept as a credit for your next group.',
           'Each Circle is a leisure service on fixed dates. For this kind of service the statutory 14-day right of withdrawal for online purchases does not apply. Instead, the following cancellation rules apply.',
-          'Before your first meetup: until 48 hours before the first meetup starts, you can leave your Circle in the app and ask for your €19 back. We may ask why you are leaving, so we can offer you another group instead. If you still want a refund, we check your request and refund the full €19 to the account you paid from.',
-          'After that: the €19 is not refunded. If your Circle does not feel right, you can switch to another group once, free of charge, until your second meetup starts (also before your first meetup). You keep your place on the waiting list and your €19 covers the new Circle. If we cannot offer you a new group within a reasonable time, we refund your €19. After your second meetup has started, no switch or refund is possible, and joining a further Circle means paying again.',
+          'Before your group is booked: until we confirm your group’s first date, you can cancel in the app and ask for your €39 back. We may ask why, so we can offer you another group instead. If you still want a refund, we check your request and refund the full €39 to the account you paid from. Finding the last people can take a while; we don’t promise a start date, and your place stays reserved in the meantime.',
+          'After your group is booked: the €39 is not refunded. If your Circle does not feel right, you can switch to another group once, free of charge, until your second meetup starts (also before your first meetup). You keep your place on the waiting list and your €39 covers the new Circle. If we cannot offer you a new group within a reasonable time, we refund your €39. After your second meetup has started, no switch or refund is possible, and joining a further Circle means paying again.',
           'If VriendTime cancels your Circle, received programme fees are always refunded. If you leave because of a safety concern you have reported to us, we will look at a refund or a free move with you, separately from the rules above. Refunds are arranged manually and these terms do not limit any rights you have under mandatory consumer law. Contact the organiser for other cancellation or payment concerns.',
-          'Meetup details such as the venue, time or activity may change. For the weeks we plan, the venue is shown in the app from the invitation on. Venue details must not be used to disrupt the venue or compromise another member’s safety. If a meetup is cancelled or materially changed, we tell your Circle in the app.',
+          'Meetup details such as the venue, time or activity may change. For the weeks we plan, the venue is shown in the app once your group is booked. Venue details must not be used to disrupt the venue or compromise another member’s safety. If a meetup is cancelled or materially changed, we tell your Circle in the app.',
           'Between group meetups we may suggest an optional one-to-one coffee or drink with another member of your Circle, at a public place and at a time that fits both your availabilities. Saying no is always fine, you pay for your own order, and the same conduct rules apply.',
           'Venue purchases and services supplied directly by a third party may be governed by that third party’s own terms.',
           'Food and drinks are prepared and supplied by independent venues, not VriendTime. You are responsible for deciding what you consume, checking ingredients and allergens directly with the venue, communicating dietary needs, and deciding whether a venue’s food or hygiene practices are suitable for you. VriendTime cannot guarantee that food is allergen-free, safe for a particular diet, or that you will enjoy it.',
@@ -107,7 +107,7 @@ abstract final class LegalDocuments {
 
   static const _privacy = LegalDocument(
     title: 'Privacy Policy',
-    effectiveDate: '13 October 2026',
+    effectiveDate: '16 October 2026',
     introduction:
         'This policy explains how VriendTime collects, uses, shares, and protects personal data when you use the app and related services.',
     sections: [
@@ -123,9 +123,9 @@ abstract final class LegalDocuments {
           'Account data: email address, password authentication records, first name, account identifiers, and account timestamps.',
           'Profile data: first name, date of birth, gender (you can choose “Prefer not to say”), profile photo, a short introduction, the languages you speak, your interests, the days and times you are free, and, if you choose to give it, a WhatsApp number. Optional fields are identified in the app.',
           'Circle data: age based on your birthday, matching goals, social style, optional life context, your six-week commitment, membership, RSVPs, extra plans you add, private meetup check-ins and optional connection choices, people you would rather not be matched with again, requests to move to another group, programme outcomes, and the optional 90-day follow-up. Organisers use matching answers to form groups. Other members cannot see your private check-ins, matching choices or payment agreements.',
-          'Payment data: the €19 agreement and its version and timestamp, contact email, and organiser confirmations of payment or refund. Bank and card details are not collected through the app. Payment records and the contact email needed to resolve refunds may be retained after account deletion for accounting and dispute purposes.',
+          'Payment data: the €39 agreement and its version and timestamp, contact email, and organiser confirmations of payment or refund. Bank and card details are not collected through the app. Payment records and the contact email needed to resolve refunds may be retained after account deletion for accounting and dispute purposes.',
           'Communication and safety data: messages you send in your Circle’s group chat, reports, support enquiries, and information needed to investigate safety or policy concerns. Circle chats are moderated: the VriendTime team can read messages when needed for moderation and safety.',
-          'One-to-one coffees: whom we suggest you meet, the time and place, your yes or no answers, and the optional feedback you give afterwards.',
+          'One-to-ones: whom we suggest you meet, the time and place, your yes or no answers, and the optional feedback you give afterwards.',
           'Technical data: information necessary for authentication, security, diagnostics, and operation of the app, such as session data, device or browser information, IP address, and error information generated by our service providers.',
           'On your device, the app stores your sign-in session and your language choice, so you stay signed in and see the right language. We do not use tracking or advertising cookies.',
         ],
@@ -141,17 +141,17 @@ abstract final class LegalDocuments {
       LegalSection(
         heading: '4. What other members can see',
         paragraphs: [
-          'New Circle applications require a primary profile photo for recognition. A profile photo is not identity verification. That photo is available only to your assigned Circle and authorised matching organisers. It is never shown publicly.',
-          'Information is shared with the other members of your Circle only where needed for the programme: your first name, profile photo, short introduction, interests, and the messages you send to your Circle. If you give a WhatsApp number, the organiser sees it so they can contact you.',
-          'For a one-to-one coffee, the other person sees your first name, photo and answer. Your feedback afterwards is only seen by the VriendTime team.',
-          'Your email address, date of birth, gender, WhatsApp number, matching answers and private account details are never shown to other members. We use your gender only to help balance groups, so we try to avoid anyone being the only man or the only woman in their Circle. Avoid placing private information in your introduction or in messages that other members can read.',
+          'New Circle applications require a primary profile photo for recognition. A profile photo is not identity verification. That photo is available only to the people in your Circle, once it is booked, and authorised matching organisers. It is never shown publicly.',
+          'Information is shared with the other members of your Circle only where needed for the programme: your first name, profile photo, short introduction, interests, and the messages you send to your Circle. People invited to your Circle don’t see who is in it until they have paid and the group is booked. If you give a WhatsApp number, the organiser sees it so they can contact you. If you say yes to a WhatsApp group for your Circle, your number is also shared with the other members who said yes.',
+          'For a one-to-one, the other person sees your first name, photo and answer. Your feedback afterwards is only seen by the VriendTime team.',
+          'Your email address, date of birth, gender, WhatsApp number (unless you join a WhatsApp group for your Circle), matching answers and private account details are never shown to other members. We use your gender for two things only: to help balance groups, so we try to avoid anyone being the only man or the only woman in their Circle; and to time one-to-ones, where we suggest a daytime you’re both free before an evening, unless you are both men or both women. Avoid placing private information in your introduction or in messages that other members can read.',
         ],
       ),
       LegalSection(
         heading: '5. Service providers and other recipients',
         paragraphs: [
           'We use Supabase for sign-in, the database and file storage (on servers in the EU), Netlify to host the website, Resend to send account and app emails, and Zoho Mail for our support mailbox (support@vriendtime.com). These providers process data on our instructions and under appropriate contractual safeguards. We also keep private backup copies of the database and photos, for up to eight weeks, so we can recover from mistakes or outages.',
-          'You pay the €19 with a payment link (during the pilot a Tikkie or bank payment link). The payment provider and your bank process that payment under their own privacy policies; we see the name, amount and date of the payment so we can match it to your place.',
+          'You pay the €39 with a payment link (during the pilot a Tikkie or bank payment link). The payment provider and your bank process that payment under their own privacy policies; we see the name, amount and date of the payment so we can match it to your place.',
           'We may share relevant details with meetup venues, professional advisers, authorities, or safety partners when necessary to deliver a meetup, respond to an incident, protect rights and safety, or comply with law. We do not sell your personal data.',
           'If you choose an external action, such as opening WhatsApp, a maps service, or a calendar service, that provider receives information under its own privacy policy. VriendTime does not control the provider’s independent processing.',
         ],
@@ -226,7 +226,8 @@ class LegalDocumentScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(document.title)),
+      // The title is the page's own heading below, so not repeated here.
+      appBar: AppBar(),
       body: SafeArea(
         top: false,
         child: SelectionArea(

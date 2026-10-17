@@ -36,7 +36,7 @@ void main() {
     await _pumpShell(tester, repository);
     expect(find.text('Messages'), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
-    expect(find.text('You’re on the list.'), findsOneWidget);
+    expect(find.text('You’re on the list'), findsOneWidget);
     await tester.tap(find.text('Messages'));
     await tester.pumpAndSettle();
     expect(find.text('Opens when your place is confirmed'), findsOneWidget);
@@ -98,7 +98,7 @@ void main() {
 
     testWidgets('the finished Circle’s chat stays open next to the new one',
         (tester) async {
-      await repository.act('preview', {'stage': 'invited'});
+      await repository.act('preview', {'stage': 'invited', 'pay_first': false});
       await withState((s) => s['past_circles'] = [
             {
               'id': 'old',
@@ -130,10 +130,10 @@ void main() {
   });
 
   testWidgets('an invitation says when to reply by', (tester) async {
-    await repository.act('preview', {'stage': 'invited'});
+    await repository.act('preview', {'stage': 'invited', 'pay_first': false});
     await _pumpShell(tester, repository);
-    expect(find.textContaining('Please reply by'), findsOneWidget);
-    expect(find.text('Meet your Circle.'), findsOneWidget);
+    expect(find.textContaining('Accept and pay by'), findsOneWidget);
+    expect(find.text('Meet your Circle'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 
@@ -197,7 +197,7 @@ void main() {
     await tester.pumpAndSettle();
     final last = tester.widget<Opacity>(find
         .ancestor(
-            of: find.text('One last get-together'),
+            of: find.text('Graduation: a new beginning'),
             matching: find.byType(Opacity))
         .first);
     expect(last.opacity, 1.0);
@@ -265,7 +265,8 @@ void main() {
     expect(find.text('Month'), findsOneWidget);
     expect(find.text('Year'), findsOneWidget);
     // Change the month to February: 30 February does not exist.
-    await tester.tap(find.text('March'));
+    // Short month names in one row on a phone.
+    await tester.tap(find.text('Mar'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('February').last);
     await tester.pumpAndSettle();
@@ -275,7 +276,7 @@ void main() {
 
   testWidgets('notifications split into new and earlier, and open on tap',
       (tester) async {
-    await repository.act('preview', {'stage': 'invited'});
+    await repository.act('preview', {'stage': 'invited', 'pay_first': false});
     await _pumpShell(tester, repository);
     await tester.tap(find.byTooltip('Notifications'));
     await tester.pumpAndSettle();
@@ -286,7 +287,7 @@ void main() {
     await tester.pumpAndSettle();
     // The sheet closes and the person lands on their Circle.
     expect(find.text('Mark all as read'), findsNothing);
-    expect(find.text('Meet your Circle.'), findsOneWidget);
+    expect(find.text('Meet your Circle'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 }

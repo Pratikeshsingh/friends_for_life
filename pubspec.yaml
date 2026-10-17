@@ -17,6 +17,7 @@ dependencies:
   url_launcher: ^6.3.2
   shared_preferences: ^2.5.4
   web: ^1.1.1
+  font_awesome_flutter: ^11.0.0
 
 dev_dependencies:
   flutter_test:
@@ -26,13 +27,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/generated/home-hero-coffee.webp
-    - assets/generated/home-continuous-scene-v3.webp
-    - assets/generated/profile-continuous-scene-v3.webp
-    - assets/generated/landing-open-seat-desktop-v1.webp
-    - assets/generated/landing-open-seat-mobile-v1.webp
-    - assets/generated/onboarding-account-immersive-v2.webp
-    - assets/generated/profile-header-illustration.webp
+    - assets/generated/landing-friends-desktop-v2.webp
+    - assets/generated/landing-friends-mobile-v3.webp
+    - assets/generated/meetups/
     - assets/fonts/OFL-Manrope.txt
     - assets/fonts/OFL-Newsreader.txt
   fonts:

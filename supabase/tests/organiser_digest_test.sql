@@ -1,5 +1,7 @@
 -- Organiser alerts arrive as one email at set times; safety reports at once.
 begin;
+-- The old flow (meet the group, then pay); pay-first has its own test.
+select set_config('vriendtime.pay_first', 'off', false);
 create function pg_temp.assert_true(value boolean,message text) returns void language plpgsql as $$ begin if value is distinct from true then raise exception 'ASSERTION FAILED: %',message; end if; end; $$;
 insert into auth.users(id,email) select ('00000000-0000-0000-0000-'||lpad(i::text,12,'0'))::uuid,'dg'||i||'@example.test' from generate_series(1,2) i;
 insert into public.circle_admins values('00000000-0000-0000-0000-000000000001');

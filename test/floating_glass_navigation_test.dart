@@ -56,7 +56,6 @@ void main() {
         );
         await tester.pump();
 
-        expect(find.byType(BackdropFilter), findsOneWidget);
         expect(
           find.byKey(const ValueKey('floating-glass-navigation')),
           findsOneWidget,

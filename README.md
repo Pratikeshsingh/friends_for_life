@@ -2,8 +2,8 @@
 
 A web app (Flutter) for six-week Friendship Circles in Alkmaar: five or six
 people meet once a week for six weeks. Members apply, the organiser forms the
-groups, members accept and pay €19 by a manual WhatsApp payment link, and the
-Circle gets a group chat, the six meetup dates and extra plans.
+groups, members accept and pay €39 (two activities included) with a payment
+link, and the Circle gets a group chat, the six meetup dates and extra plans.
 
 - Live site: https://vriendtime.com (Netlify, built from `main`)
 - Backend: Supabase project `sageyiqyvzgoayehahyq` (Postgres, Auth, Storage,
